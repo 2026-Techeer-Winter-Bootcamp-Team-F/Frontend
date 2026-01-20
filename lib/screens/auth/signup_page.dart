@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/main_navigation.dart';
+import 'package:my_app/services/auth_service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -79,18 +80,33 @@ class _SignupPageState extends State<SignupPage> {
 
     setState(() => _isLoading = true);
 
-    // TODO: 실제 API 연동
-    await Future.delayed(const Duration(seconds: 1));
+    final authService = AuthService();
+    final result = await authService.signup(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      ageGroup: _selectedAgeGroup,
+      gender: _selectedGender,
+    );
 
     if (!mounted) return;
 
     setState(() => _isLoading = false);
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-      (route) => false,
-    );
+    if (result.success) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

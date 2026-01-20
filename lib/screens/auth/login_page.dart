@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/auth/signup_page.dart';
 import 'package:my_app/screens/main_navigation.dart';
+import 'package:my_app/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,17 +30,29 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
-    // TODO: 실제 API 연동
-    await Future.delayed(const Duration(seconds: 1));
+    final authService = AuthService();
+    final result = await authService.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
     if (!mounted) return;
 
     setState(() => _isLoading = false);
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
+    if (result.success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

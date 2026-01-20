@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/auth/login_page.dart';
+import 'package:my_app/screens/main_navigation.dart';
+import 'package:my_app/services/auth_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -15,13 +17,31 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    // 짧은 로고 노출 후 로그인 화면으로 이동
-    Timer(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // 스플래시 화면 최소 표시 시간
+    await Future.delayed(const Duration(milliseconds: 1200));
+    
+    if (!mounted) return;
+
+    final authService = AuthService();
+    final isLoggedIn = await authService.isLoggedIn();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      // 이미 로그인된 상태면 메인 화면으로
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } else {
+      // 로그인 안 된 상태면 로그인 화면으로
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );
-    });
+    }
   }
 
   @override

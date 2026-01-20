@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/screens/home/settings_page.dart';
+import 'package:my_app/services/auth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +12,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _authService = AuthService();
+  String? _userName;
+
   // 더미 데이터
   final int totalSpent = 1850000;
   final int totalBenefit = 45000;
@@ -24,6 +29,25 @@ class _HomePageState extends State<HomePage> {
   final int myRank = 35;
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    // 1) 로컬에 저장된 사용자 정보 우선 사용
+    final localUser = await _authService.getUserInfo();
+    if (localUser?.name != null && localUser!.name.isNotEmpty) {
+      if (!mounted) return;
+      setState(() => _userName = localUser.name);
+      return;
+    }
+
+    // 2) 여기에 이름을 불러올 때 함수 작성하세요 (예: 서버 프로필 호출)
+    // 현재는 로컬에 저장된 값만 사용합니다.
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +59,12 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
           ),
         ],
       ),
@@ -46,7 +75,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             // 인사말
             Text(
-              '안녕하세요, 사용자님',
+              '안녕하세요, ${_userName ?? '사용자'}님',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
