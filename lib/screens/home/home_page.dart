@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/providers/expense_provider.dart';
+import 'package:my_app/providers/card_provider.dart';
+import 'package:my_app/providers/auth_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,18 +14,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 더미 데이터
-  final int totalSpent = 1850000;
-  final int totalBenefit = 45000;
-  final Map<String, int> categorySpending = {
-    '식비': 520000,
-    '교통': 180000,
-    '쇼핑': 450000,
-    '생활': 320000,
-    '기타': 380000,
-  };
-  final int peerAverage = 2100000;
-  final int myRank = 35;
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final expenseProvider = context.read<ExpenseProvider>();
+    final cardProvider = context.read<CardProvider>();
+
+    await Future.wait([
+      expenseProvider.fetchAnalysis(),
+      cardProvider.fetchMyCards(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,50 +46,70 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 인사말
-            Text(
-              '안녕하세요, 사용자님',
-              style: Theme.of(context).textTheme.titleLarge,
+      body: Consumer2<ExpenseProvider, CardProvider>(
+        builder: (context, expenseProvider, cardProvider, child) {
+          if (expenseProvider.isLoading || cardProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return RefreshIndicator(
+            onRefresh: _loadData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 인사말
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, child) {
+                      final userName = auth.user?.name ?? '사용자';
+                      return Text(
+                        '안녕하세요, $userName님',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '이번 달 소비 현황을 확인해보세요',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 월간 지출 요약 카드
+                  _buildSummaryCard(expenseProvider),
+
+                  const SizedBox(height: 16),
+
+                  // 카테고리별 지출 차트
+                  _buildCategoryChart(expenseProvider),
+
+                  const SizedBox(height: 16),
+
+                  // 또래 비교
+                  _buildPeerComparisonCard(expenseProvider),
+
+                  const SizedBox(height: 16),
+
+                  // 카드별 손익 현황
+                  _buildCardBenefitCard(cardProvider),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '이번 달 소비 현황을 확인해보세요',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-
-            const SizedBox(height: 24),
-
-            // 월간 지출 요약 카드
-            _buildSummaryCard(),
-
-            const SizedBox(height: 16),
-
-            // 카테고리별 지출 차트
-            _buildCategoryChart(),
-
-            const SizedBox(height: 16),
-
-            // 또래 비교
-            _buildPeerComparisonCard(),
-
-            const SizedBox(height: 16),
-
-            // 카드별 손익 현황
-            _buildCardBenefitCard(),
-
-            const SizedBox(height: 24),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(ExpenseProvider provider) {
+    final totalSpent = provider.totalSpent;
+    final totalBenefit = provider.totalBenefit;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -92,9 +119,9 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '1월 지출',
-                  style: TextStyle(
+                Text(
+                  '${DateTime.now().month}월 지출',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
@@ -139,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(width: 24),
                 _buildMiniStat(
                   '일평균',
-                  _formatCurrency(totalSpent ~/ 20),
+                  _formatCurrency(totalSpent > 0 ? totalSpent ~/ 20 : 0),
                   AppColors.textSecondary,
                   Icons.calendar_today,
                 ),
@@ -175,7 +202,29 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCategoryChart() {
+  Widget _buildCategoryChart(ExpenseProvider provider) {
+    final categorySpending = provider.categorySpending;
+    if (categorySpending.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: const [
+              Text(
+                '카테고리별 지출',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 20),
+              Text('지출 데이터가 없습니다.'),
+            ],
+          ),
+        ),
+      );
+    }
+
     final total = categorySpending.values.reduce((a, b) => a + b);
     final colors = AppColors.chartColors;
 
@@ -257,7 +306,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPeerComparisonCard() {
+  Widget _buildPeerComparisonCard(ExpenseProvider provider) {
+    final totalSpent = provider.totalSpent;
+    final peerAverage = provider.peerAverage;
+    final myRank = provider.myRank;
+    final ageGroup = provider.ageGroup;
+    final gender = provider.gender;
+
     final difference = peerAverage - totalSpent;
     final isLessThanPeer = difference > 0;
 
@@ -275,9 +330,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '20대 남성 평균과 비교',
-              style: TextStyle(
+            Text(
+              '$ageGroup $gender 평균과 비교',
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -366,12 +421,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCardBenefitCard() {
-    final cardData = [
-      {'name': '삼성카드', 'benefit': 25000, 'cost': 12500, 'roi': 12500},
-      {'name': '신한카드', 'benefit': 15000, 'cost': 8333, 'roi': 6667},
-      {'name': '현대카드', 'benefit': 5000, 'cost': 12500, 'roi': -7500},
-    ];
+  Widget _buildCardBenefitCard(CardProvider provider) {
+    final myCards = provider.myCards;
+
+    if (myCards.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                '카드별 손익 현황',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text('등록된 카드가 없습니다.'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Card(
       child: Padding(
@@ -404,10 +477,10 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 16),
-            ...cardData.map((card) => _buildCardRoiItem(
-                  card['name'] as String,
-                  card['roi'] as int,
-                )),
+            ...myCards.take(3).map((userCard) {
+              final roi = userCard.roi.toInt();
+              return _buildCardRoiItem(userCard.card.name, roi);
+            }),
           ],
         ),
       ),

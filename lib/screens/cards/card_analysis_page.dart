@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/providers/card_provider.dart';
+import 'package:my_app/models/card.dart';
 
 class CardAnalysisPage extends StatefulWidget {
   const CardAnalysisPage({super.key});
@@ -13,90 +16,16 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // 더미 데이터 - 내 카드
-  final List<Map<String, dynamic>> myCards = [
-    {
-      'name': '삼성카드 taptap O',
-      'company': '삼성카드',
-      'annualFee': 15000,
-      'benefitReceived': 32000,
-      'maxBenefit': 50000,
-      'spent': 850000,
-      'color': const Color(0xFF1428A0),
-    },
-    {
-      'name': '신한카드 Deep Dream',
-      'company': '신한카드',
-      'annualFee': 10000,
-      'benefitReceived': 18000,
-      'maxBenefit': 30000,
-      'spent': 520000,
-      'color': const Color(0xFF0046FF),
-    },
-    {
-      'name': '현대카드 M',
-      'company': '현대카드',
-      'annualFee': 15000,
-      'benefitReceived': 8000,
-      'maxBenefit': 40000,
-      'spent': 280000,
-      'color': const Color(0xFF000000),
-    },
-  ];
-
-  // 더미 데이터 - 추천 카드
-  final List<Map<String, dynamic>> recommendedCards = [
-    {
-      'name': '토스 카드',
-      'company': '토스뱅크',
-      'annualFee': 0,
-      'expectedBenefit': 45000,
-      'mainBenefit': '모든 가맹점 0.5% 적립',
-      'matchRate': 95,
-      'color': const Color(0xFF0064FF),
-    },
-    {
-      'name': '카카오뱅크 카드',
-      'company': '카카오뱅크',
-      'annualFee': 0,
-      'expectedBenefit': 38000,
-      'mainBenefit': '온라인 결제 1% 할인',
-      'matchRate': 88,
-      'color': const Color(0xFFFEE500),
-    },
-    {
-      'name': '네이버페이 머니카드',
-      'company': '미래에셋증권',
-      'annualFee': 0,
-      'expectedBenefit': 42000,
-      'mainBenefit': '네이버페이 2% 적립',
-      'matchRate': 85,
-      'color': const Color(0xFF03C75A),
-    },
-    {
-      'name': '우리카드 카드의정석',
-      'company': '우리카드',
-      'annualFee': 12000,
-      'expectedBenefit': 52000,
-      'mainBenefit': '외식/카페 10% 할인',
-      'matchRate': 82,
-      'color': const Color(0xFF0067AC),
-    },
-    {
-      'name': 'KB국민 My WE:SH',
-      'company': 'KB국민카드',
-      'annualFee': 10000,
-      'expectedBenefit': 48000,
-      'mainBenefit': '영역 선택 최대 10%',
-      'matchRate': 78,
-      'color': const Color(0xFFFFB300),
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final cardProvider = context.read<CardProvider>();
+    await cardProvider.loadAll();
   }
 
   @override
@@ -124,55 +53,64 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMyCardsTab(),
-          _buildRecommendedCardsTab(),
-        ],
+      body: Consumer<CardProvider>(
+        builder: (context, cardProvider, child) {
+          if (cardProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _buildMyCardsTab(cardProvider),
+              _buildRecommendedCardsTab(cardProvider),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildMyCardsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 총 혜택 현황
-          _buildTotalBenefitCard(),
+  Widget _buildMyCardsTab(CardProvider provider) {
+    final myCards = provider.myCards;
 
-          const SizedBox(height: 16),
+    if (myCards.isEmpty) {
+      return const Center(
+        child: Text('등록된 카드가 없습니다.'),
+      );
+    }
 
-          // Best/Worst 카드
-          _buildBestWorstCard(),
-
-          const SizedBox(height: 16),
-
-          // 내 카드 목록
-          const Text(
-            '보유 카드',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTotalBenefitCard(provider),
+            const SizedBox(height: 16),
+            _buildBestWorstCard(myCards),
+            const SizedBox(height: 16),
+            const Text(
+              '보유 카드',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          ...myCards.map((card) => _buildMyCardItem(card)),
-        ],
+            const SizedBox(height: 12),
+            ...myCards.map((card) => _buildMyCardItem(card)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTotalBenefitCard() {
-    final totalBenefit =
-        myCards.fold<int>(0, (sum, card) => sum + (card['benefitReceived'] as int));
-    final totalFee =
-        myCards.fold<int>(0, (sum, card) => sum + (card['annualFee'] as int));
-    final monthlyFee = totalFee ~/ 12;
-    final netBenefit = totalBenefit - monthlyFee;
+  Widget _buildTotalBenefitCard(CardProvider provider) {
+    final totalBenefit = provider.totalBenefitReceived;
+    final monthlyFee = provider.totalMonthlyFee;
+    final netBenefit = provider.netBenefit;
 
     return Card(
       child: Padding(
@@ -230,13 +168,11 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
     );
   }
 
-  Widget _buildBestWorstCard() {
-    final sortedCards = List<Map<String, dynamic>>.from(myCards)
-      ..sort((a, b) {
-        final aRoi = (a['benefitReceived'] as int) - (a['annualFee'] as int) ~/ 12;
-        final bRoi = (b['benefitReceived'] as int) - (b['annualFee'] as int) ~/ 12;
-        return bRoi.compareTo(aRoi);
-      });
+  Widget _buildBestWorstCard(List<UserCard> myCards) {
+    if (myCards.length < 2) return const SizedBox.shrink();
+
+    final sortedCards = List<UserCard>.from(myCards)
+      ..sort((a, b) => b.roi.compareTo(a.roi));
 
     final bestCard = sortedCards.first;
     final worstCard = sortedCards.last;
@@ -274,7 +210,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    bestCard['name'],
+                    bestCard.card.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -284,7 +220,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '+${_formatCurrency(bestCard['benefitReceived'])}',
+                    '+${_formatCurrency(bestCard.totalBenefitReceived.toInt())}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -328,7 +264,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    worstCard['name'],
+                    worstCard.card.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -338,7 +274,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '+${_formatCurrency(worstCard['benefitReceived'])}',
+                    '+${_formatCurrency(worstCard.totalBenefitReceived.toInt())}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -354,10 +290,11 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
     );
   }
 
-  Widget _buildMyCardItem(Map<String, dynamic> card) {
-    final benefitRate = (card['benefitReceived'] as int) / (card['maxBenefit'] as int);
-    final monthlyFee = (card['annualFee'] as int) ~/ 12;
-    final roi = (card['benefitReceived'] as int) - monthlyFee;
+  Widget _buildMyCardItem(UserCard userCard) {
+    final card = userCard.card;
+    final benefitRate = userCard.benefitRate;
+    final monthlyFee = card.annualFee ~/ 12;
+    final roi = userCard.roi.toInt();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -368,12 +305,11 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
           children: [
             Row(
               children: [
-                // 카드 이미지 (더미)
                 Container(
                   width: 60,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: card['color'] as Color,
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Center(
@@ -390,13 +326,13 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        card['name'],
+                        card.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        card['company'],
+                        card.company,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -409,14 +345,14 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '연회비 ${_formatCurrency(card['annualFee'])}',
+                      '연회비 ${_formatCurrency(card.annualFee)}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
-                      '이번달 ${_formatCurrency(card['spent'])} 사용',
+                      '이번달 ${_formatCurrency(userCard.totalSpent.toInt())} 사용',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -427,8 +363,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               ],
             ),
             const SizedBox(height: 16),
-
-            // 혜택 달성률
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -452,7 +386,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: benefitRate,
+                value: benefitRate.clamp(0.0, 1.0),
                 backgroundColor: AppColors.textLight.withOpacity(0.2),
                 valueColor: AlwaysStoppedAnimation(
                   benefitRate >= 0.7
@@ -469,14 +403,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '받은 혜택: ${_formatCurrency(card['benefitReceived'])}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  '최대: ${_formatCurrency(card['maxBenefit'])}',
+                  '받은 혜택: ${_formatCurrency(userCard.totalBenefitReceived.toInt())}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -485,8 +412,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               ],
             ),
             const Divider(height: 24),
-
-            // ROI
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -513,97 +438,97 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
     );
   }
 
-  Widget _buildRecommendedCardsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 추천 설명
-          Card(
-            color: AppColors.primary.withOpacity(0.05),
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+  Widget _buildRecommendedCardsTab(CardProvider provider) {
+    final recommendedCards = provider.recommendedCards;
+    final myCards = provider.myCards;
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: AppColors.primary.withOpacity(0.05),
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AI 맞춤 추천',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI 맞춤 추천',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          '최근 3개월 소비 패턴을 분석하여\n최적의 카드를 추천해드려요',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                          SizedBox(height: 4),
+                          Text(
+                            '최근 3개월 소비 패턴을 분석하여\n최적의 카드를 추천해드려요',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ROI 시뮬레이션
-          _buildRoiSimulationCard(),
-
-          const SizedBox(height: 20),
-
-          // 추천 카드 Top 5
-          const Text(
-            '추천 카드 Top 5',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          ...recommendedCards.asMap().entries.map(
-                (entry) => _buildRecommendedCardItem(entry.key + 1, entry.value),
+            const SizedBox(height: 20),
+            if (myCards.isNotEmpty && recommendedCards.isNotEmpty)
+              _buildRoiSimulationCard(provider),
+            const SizedBox(height: 20),
+            const Text(
+              '추천 카드 Top 5',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-        ],
+            ),
+            const SizedBox(height: 12),
+            if (recommendedCards.isEmpty)
+              const Center(child: Text('추천 카드가 없습니다.'))
+            else
+              ...recommendedCards.asMap().entries.map(
+                    (entry) => _buildRecommendedCardItem(entry.key + 1, entry.value),
+                  ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRoiSimulationCard() {
-    final currentBenefit = myCards.fold<int>(
-        0, (sum, card) => sum + (card['benefitReceived'] as int));
-    final currentFee =
-        myCards.fold<int>(0, (sum, card) => sum + (card['annualFee'] as int)) ~/
-            12;
-    final currentNet = currentBenefit - currentFee;
+  Widget _buildRoiSimulationCard(CardProvider provider) {
+    final currentNet = provider.netBenefit;
+    final recommendedCards = provider.recommendedCards;
 
-    final recommendedBenefit = recommendedCards.first['expectedBenefit'] as int;
-    final recommendedFee = (recommendedCards.first['annualFee'] as int) ~/ 12;
-    final recommendedNet = recommendedBenefit - recommendedFee;
+    if (recommendedCards.isEmpty) return const SizedBox.shrink();
 
-    final savings = (recommendedNet - currentNet) * 12;
+    // 추천 카드의 예상 혜택 (첫 번째 추천 카드 기준)
+    final firstRecommended = recommendedCards.first;
+    final recommendedNet = firstRecommended.annualFee ~/ 12;
+    final savings = 10000; // 예시값
 
     return Card(
       child: Padding(
@@ -632,7 +557,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: (recommendedNet > currentNet ? recommendedNet : currentNet)
+                  maxY: (currentNet > recommendedNet ? currentNet : recommendedNet)
                           .toDouble() *
                       1.2,
                   barTouchData: BarTouchData(enabled: false),
@@ -672,7 +597,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                       x: 0,
                       barRods: [
                         BarChartRodData(
-                          toY: currentNet.toDouble(),
+                          toY: currentNet.toDouble().abs(),
                           color: AppColors.textSecondary,
                           width: 40,
                           borderRadius: const BorderRadius.vertical(
@@ -685,7 +610,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                       x: 1,
                       barRods: [
                         BarChartRodData(
-                          toY: recommendedNet.toDouble(),
+                          toY: (currentNet + savings).toDouble().abs(),
                           color: AppColors.primary,
                           width: 40,
                           borderRadius: const BorderRadius.vertical(
@@ -715,7 +640,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '카드 교체 시 연간 ${_formatCurrency(savings)} 절약 가능!',
+                    '카드 교체 시 연간 ${_formatCurrency(savings * 12)} 절약 가능!',
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.success,
@@ -731,14 +656,13 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
     );
   }
 
-  Widget _buildRecommendedCardItem(int rank, Map<String, dynamic> card) {
+  Widget _buildRecommendedCardItem(int rank, CreditCard card) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // 순위
             Container(
               width: 32,
               height: 32,
@@ -759,32 +683,33 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               ),
             ),
             const SizedBox(width: 12),
-
-            // 카드 이미지
             Container(
               width: 50,
               height: 35,
               decoration: BoxDecoration(
-                color: card['color'] as Color,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                Icons.credit_card,
+                color: Colors.white,
+                size: 18,
               ),
             ),
             const SizedBox(width: 12),
-
-            // 카드 정보
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    card['name'],
+                    card.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    card['mainBenefit'],
+                    card.company,
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -803,7 +728,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '예상 혜택 ${_formatCurrency(card['expectedBenefit'])}',
+                          '연회비 ${_formatCurrency(card.annualFee)}',
                           style: const TextStyle(
                             fontSize: 10,
                             color: AppColors.success,
@@ -811,22 +736,11 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '매칭률 ${card['matchRate']}%',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
                     ],
                   ),
                 ],
               ),
             ),
-
-            // 발급 버튼
             ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
