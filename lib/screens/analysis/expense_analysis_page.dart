@@ -12,6 +12,13 @@ class ExpenseAnalysisPage extends StatefulWidget {
 class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  
+  // 스크롤 제어를 위한 컨트롤러 (카테고리 클릭 시 차트로 자동 스크롤)
+  final ScrollController _scrollController = ScrollController();
+  
+  // 차트 위젯의 위치를 식별하기 위한 키
+  final GlobalKey _chartKey = GlobalKey();
+  
   String? _selectedCategory;
 
   // 더미 데이터
@@ -63,6 +70,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose(); // 스크롤 컨트롤러 메모리 해제
     super.dispose();
   }
 
@@ -91,6 +99,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
 
   Widget _buildCategoryTab() {
     return SingleChildScrollView(
+      controller: _scrollController, // 스크롤 제어를 위해 컨트롤러 연결
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -117,7 +126,9 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
         .reduce((a, b) => a + b);
     final colors = AppColors.chartColors;
 
-    return Card(
+    return Container(
+      key: _chartKey, // 스크롤 목표 지점을 식별하기 위한 키
+      child: Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -185,7 +196,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildSubCategoryCard() {
@@ -290,9 +301,15 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
 
               return InkWell(
                 onTap: () {
+                  print('🔥 ${entry.key} 클릭됨!'); // 디버그: 클릭 감지 확인
                   setState(() {
                     _selectedCategory =
                         _selectedCategory == entry.key ? null : entry.key;
+                  });
+                  // setState 이후 화면이 다시 그려진 후 스크롤 실행
+                  // 바로 실행하면 setState 렌더링과 충돌할 수 있음
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToChart(); // 차트 위치로 자동 스크롤
                   });
                 },
                 child: Container(
@@ -406,6 +423,32 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
         );
       },
     );
+  }
+
+  // 카테고리 클릭 시 차트 위치로 스크롤하는 메서드
+  void _scrollToChart() {
+    print('📍 _scrollToChart 호출됨'); // 디버그: 메서드 호출 확인
+    print('📍 현재 스크롤 위치: ${_scrollController.offset}'); // 디버그: 현재 위치
+    
+    // 방법 1: 스크롤을 맨 위(0)로 부드럽게 이동
+    _scrollController.animateTo(
+      0, // 스크롤 목표 위치 (0 = 최상단)
+      duration: const Duration(milliseconds: 350), // 애니메이션 시간
+      curve: Curves.easeInOut, // 부드러운 애니메이션 곡선
+    ).then((_) {
+      print('✅ 스크롤 완료!'); // 디버그: 스크롤 완료 확인
+    });
+    
+    // 방법 2: ensureVisible 사용 (백업 - 필요 시 주석 해제)
+    // _chartKey로 식별된 위젯이 화면에 보이도록 스크롤
+    // final ctx = _chartKey.currentContext;
+    // if (ctx != null) {
+    //   Scrollable.ensureVisible(
+    //     ctx,
+    //     duration: const Duration(milliseconds: 350),
+    //     curve: Curves.easeInOut,
+    //   );
+    // }
   }
 
   IconData _getCategoryIcon(String category) {

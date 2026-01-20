@@ -91,12 +91,16 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     if (_selectedFilter == '전체') {
       return subscriptions.where((s) => s['status'] == 'active').toList();
     } else if (_selectedFilter == '해지됨') {
+      // 해지된 구독만 필터링
       return subscriptions.where((s) => s['status'] == 'canceled').toList();
     } else if (_selectedFilter == '해지 권장') {
+      // 활성 상태이면서 유용성 점수가 3.0 미만인 구독만 필터링
       return subscriptions
-          .where((s) =>
-              s['status'] == 'active' && (s['utilityScore'] as double) < 3.0)
-          .toList();
+        .where((s) =>
+          s['status'] == 'active' &&
+          // utilityScore가 int/double 둘 다 올 수 있어 num으로 받아 안전 변환
+          (s['utilityScore'] as num).toDouble() < 3.0)
+        .toList();
     }
     return subscriptions;
   }
@@ -114,7 +118,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   int get lowUtilityCount {
     return subscriptions
         .where((s) =>
-            s['status'] == 'active' && (s['utilityScore'] as double) < 3.0)
+        s['status'] == 'active' &&
+        // utilityScore가 int/double 둘 다 올 수 있어 num으로 받아 안전 변환
+        (s['utilityScore'] as num).toDouble() < 3.0)
         .length;
   }
 
@@ -140,8 +146,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
             const SizedBox(height: 16),
 
-            // 해지 권장 알림
-            if (lowUtilityCount > 0) _buildLowUtilityAlert(),
+            // 해지 권장 알림 (전체 탭일 때만 표시 - 다른 탭에서는 이미 필터링된 목록을 보고 있으므로 불필요)
+            if (lowUtilityCount > 0 && _selectedFilter == '전체') _buildLowUtilityAlert(),
 
             const SizedBox(height: 16),
 
@@ -384,7 +390,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _buildSubscriptionItem(Map<String, dynamic> subscription) {
     final isActive = subscription['status'] == 'active';
-    final utilityScore = subscription['utilityScore'] as double;
+    // utilityScore를 안전하게 double로 변환 (int일 수도 있고 double일 수도 있음)
+    final utilityScore = (subscription['utilityScore'] as num).toDouble();
     final isLowUtility = isActive && utilityScore < 3.0;
 
     return Card(
