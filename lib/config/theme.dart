@@ -41,6 +41,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'sans-serif', // 시스템 폰트 사용
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
