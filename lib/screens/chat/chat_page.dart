@@ -31,8 +31,7 @@ class _ChatPageState extends State<ChatPage> {
   void _addWelcomeMessage() {
     _messages.add(
       ChatMessage(
-        text:
-            '안녕하세요! BeneFit AI 금융 비서입니다.\n\n소비 내역, 카드 혜택, 구독 서비스 등에 대해 무엇이든 물어보세요.',
+        text: '안녕하세요! BeneFit(베네핏)입니다 :)\n궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
         isUser: false,
         timestamp: DateTime.now(),
       ),
@@ -144,7 +143,7 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             Icon(Icons.smart_toy, size: 24),
             SizedBox(width: 8),
-            Text('AI 금융 비서'),
+            Text('베네핏(BeneFit)'),
           ],
         ),
         actions: [
