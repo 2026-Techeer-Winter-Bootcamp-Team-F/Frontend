@@ -22,19 +22,25 @@ class ApiService {
 
   String? _accessToken;
   String? _refreshToken;
+  String? _userId;
 
   // 토큰 로드
   Future<void> loadTokens() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
+    _userId = prefs.getString('user_id');
   }
 
   // 토큰 저장
-  Future<void> saveTokens(String accessToken, String refreshToken) async {
+  Future<void> saveTokens(String accessToken, String refreshToken, {String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
+    if (userId != null) {
+      await prefs.setString('user_id', userId);
+      _userId = userId;
+    }
     _accessToken = accessToken;
     _refreshToken = refreshToken;
   }
@@ -44,9 +50,14 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
+    await prefs.remove('user_id');
     _accessToken = null;
     _refreshToken = null;
+    _userId = null;
   }
+
+  // Getter for userId
+  String? get userId => _userId;
 
   // 인증 여부 확인
   bool get isAuthenticated => _accessToken != null;
@@ -138,9 +149,15 @@ class ApiService {
       'password': password,
     });
 
-    // 토큰 저장
-    if (response['access'] != null && response['refresh'] != null) {
-      await saveTokens(response['access'], response['refresh']);
+    // 토큰 및 user_id 저장 (백엔드 응답 구조: { token: { access: ..., refresh: ... }, user_id: ... })
+    if (response['token'] != null &&
+        response['token']['access'] != null &&
+        response['token']['refresh'] != null) {
+      await saveTokens(
+        response['token']['access'],
+        response['token']['refresh'],
+        userId: response['user_id']?.toString(),
+      );
     }
 
     return response;
