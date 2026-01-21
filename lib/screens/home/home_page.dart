@@ -526,7 +526,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 이번달/지난날 비교 탭 버튼
+  // 이번달/지난달 비교 탭 버튼
   Widget _buildTabButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -583,7 +583,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 child: Text(
-                  '지난날 비교',
+                  '지난달 비교',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
