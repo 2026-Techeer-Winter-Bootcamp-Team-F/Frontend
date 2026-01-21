@@ -15,7 +15,7 @@ class CardAnalysisPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('내 지갑'),
+        // Title intentionally left blank per UI request
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -38,8 +38,9 @@ class CardAnalysisPage extends StatelessWidget {
                     clipBehavior: Clip.none,
                     children: List.generate(_cards.length, (i) {
                       final card = _cards[i];
-                      final offset = i * 70.0;
-                      final scale = 1.0 - i * 0.03;
+                      // Keep all visible cards the same scale/size.
+                      final offset = i * 40.0; // tighten overlap so more cards are visible
+                      final scale = 1.0;
                       return Positioned(
                         top: offset,
                         left: 0,
