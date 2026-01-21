@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
-import 'package:my_app/screens/login/login_page.dart'; // 수정: auth -> login 폴더로 변경
 import 'package:my_app/screens/splash/splash_page.dart';
 
 void main() {

@@ -1,875 +1,278 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:my_app/config/theme.dart';
+import 'package:my_app/screens/cards/card_detail_page.dart';
 
-class CardAnalysisPage extends StatefulWidget {
+class CardAnalysisPage extends StatelessWidget {
   const CardAnalysisPage({super.key});
 
-  @override
-  State<CardAnalysisPage> createState() => _CardAnalysisPageState();
-}
-
-class _CardAnalysisPageState extends State<CardAnalysisPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // 더미 데이터 - 내 카드
-  final List<Map<String, dynamic>> myCards = [
-    {
-      'name': '삼성카드 taptap O',
-      'company': '삼성카드',
-      'annualFee': 15000,
-      'benefitReceived': 32000,
-      'maxBenefit': 50000,
-      'spent': 850000,
-      'color': const Color(0xFF1428A0),
-    },
-    {
-      'name': '신한카드 Deep Dream',
-      'company': '신한카드',
-      'annualFee': 10000,
-      'benefitReceived': 18000,
-      'maxBenefit': 30000,
-      'spent': 520000,
-      'color': const Color(0xFF0046FF),
-    },
-    {
-      'name': '현대카드 M',
-      'company': '현대카드',
-      'annualFee': 15000,
-      'benefitReceived': 8000,
-      'maxBenefit': 40000,
-      'spent': 280000,
-      'color': const Color(0xFF000000),
-    },
+  static final List<WalletCard> _cards = [
+    WalletCard(imagePath: 'assets/cards/card1.png', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
+    WalletCard(imagePath: 'assets/cards/card2.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
+    WalletCard(imagePath: 'assets/cards/card3.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
+    WalletCard(imagePath: 'assets/cards/card4.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
   ];
-
-  // 더미 데이터 - 추천 카드
-  final List<Map<String, dynamic>> recommendedCards = [
-    {
-      'name': '토스 카드',
-      'company': '토스뱅크',
-      'annualFee': 0,
-      'expectedBenefit': 45000,
-      'mainBenefit': '모든 가맹점 0.5% 적립',
-      'matchRate': 95,
-      'color': const Color(0xFF0064FF),
-    },
-    {
-      'name': '카카오뱅크 카드',
-      'company': '카카오뱅크',
-      'annualFee': 0,
-      'expectedBenefit': 38000,
-      'mainBenefit': '온라인 결제 1% 할인',
-      'matchRate': 88,
-      'color': const Color(0xFFFEE500),
-    },
-    {
-      'name': '네이버페이 머니카드',
-      'company': '미래에셋증권',
-      'annualFee': 0,
-      'expectedBenefit': 42000,
-      'mainBenefit': '네이버페이 2% 적립',
-      'matchRate': 85,
-      'color': const Color(0xFF03C75A),
-    },
-    {
-      'name': '우리카드 카드의정석',
-      'company': '우리카드',
-      'annualFee': 12000,
-      'expectedBenefit': 52000,
-      'mainBenefit': '외식/카페 10% 할인',
-      'matchRate': 82,
-      'color': const Color(0xFF0067AC),
-    },
-    {
-      'name': 'KB국민 My WE:SH',
-      'company': 'KB국민카드',
-      'annualFee': 10000,
-      'expectedBenefit': 48000,
-      'mainBenefit': '영역 선택 최대 10%',
-      'matchRate': 78,
-      'color': const Color(0xFFFFB300),
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('카드 분석'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: '내 카드'),
-            Tab(text: '추천 카드'),
-          ],
+        title: const Text('내 지갑'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showAddCardDialog,
-          ),
-        ],
+        centerTitle: true,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMyCardsTab(),
-          _buildRecommendedCardsTab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyCardsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 총 혜택 현황
-          _buildTotalBenefitCard(),
-
-          const SizedBox(height: 16),
-
-          // Best/Worst 카드
-          _buildBestWorstCard(),
-
-          const SizedBox(height: 16),
-
-          // 내 카드 목록
-          const Text(
-            '보유 카드',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          ...myCards.map((card) => _buildMyCardItem(card)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalBenefitCard() {
-    final totalBenefit =
-        myCards.fold<int>(0, (sum, card) => sum + (card['benefitReceived'] as int));
-    final totalFee =
-        myCards.fold<int>(0, (sum, card) => sum + (card['annualFee'] as int));
-    final monthlyFee = totalFee ~/ 12;
-    final netBenefit = totalBenefit - monthlyFee;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Text(
-              '이번 달 총 카드 혜택',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _formatCurrency(totalBenefit),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: netBenefit >= 0
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    netBenefit >= 0 ? Icons.trending_up : Icons.trending_down,
-                    color: netBenefit >= 0 ? AppColors.success : AppColors.error,
-                    size: 20,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Wallet stack (full width inside padding)
+                SizedBox(
+                  width: double.infinity,
+                  height: 520,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: List.generate(_cards.length, (i) {
+                      final card = _cards[i];
+                      final offset = i * 70.0;
+                      final scale = 1.0 - i * 0.03;
+                      return Positioned(
+                        top: offset,
+                        left: 0,
+                        right: 0,
+                        child: Transform.scale(
+                          scale: scale,
+                          alignment: Alignment.topCenter,
+                          child: _buildCard(context, card, i == _cards.length - 1),
+                        ),
+                      );
+                    }),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '연회비 월할(${_formatCurrency(monthlyFee)}) 제외 순이익: ${netBenefit >= 0 ? '+' : ''}${_formatCurrency(netBenefit)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: netBenefit >= 0 ? AppColors.success : AppColors.error,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // Header text like the screenshot (left-aligned)
+                const Text(
+                  '이 카드는 어때요?',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
+                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                ),
+                const SizedBox(height: 18),
+
+                // Recommendation sections
+                Column(
+                  children: _recommendations.map((section) => _buildRecommendationSection(context, section)).toList(),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBestWorstCard() {
-    final sortedCards = List<Map<String, dynamic>>.from(myCards)
-      ..sort((a, b) {
-        final aRoi = (a['benefitReceived'] as int) - (a['annualFee'] as int) ~/ 12;
-        final bRoi = (b['benefitReceived'] as int) - (b['annualFee'] as int) ~/ 12;
-        return bRoi.compareTo(aRoi);
-      });
+  // Sample recommendation data: category, totalSpent, recommended cards
+  static final List<Map<String, dynamic>> _recommendations = [
+    {
+      'category': '택시',
+      'total': 27133,
+      'items': [
+        {'image': 'assets/cards/card1.png', 'title': '현대카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
+        {'image': 'assets/cards/card2.png', 'title': 'BC카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
+        {'image': 'assets/cards/card3.png', 'title': '롯데카드', 'subtitle': '연회비: 20만 원', 'percent': '230%'},
+        {'image': 'assets/cards/card4.png', 'title': 'Mr.Life', 'subtitle': '연회비: 20만 원', 'percent': '190%'},
+      ],
+    },
+    {
+      'category': '교통',
+      'total': 7816,
+      'items': [
+        {'image': 'assets/cards/card1.png', 'title': '현대카드', 'subtitle': '연회비: 20만 원', 'percent': 'ROI'},
+        {'image': 'assets/cards/card2.png', 'title': 'BC카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
+        {'image': 'assets/cards/card3.png', 'title': '롯데카드', 'subtitle': '연회비: 20만 원', 'percent': '95%'},
+        {'image': 'assets/cards/card4.png', 'title': '신한카드', 'subtitle': '연회비: 20만 원', 'percent': '130%'},
+      ],
+    },
+    {
+      'category': '마트',
+      'total': 4500,
+      'items': [
+        {'image': 'assets/cards/card2.png', 'title': '이마트카드', 'subtitle': '연회비: 10만 원', 'percent': '150%'},
+        {'image': 'assets/cards/card3.png', 'title': '롯데마트카드', 'subtitle': '연회비: 12만 원', 'percent': '140%'},
+        {'image': 'assets/cards/card4.png', 'title': '홈플러스카드', 'subtitle': '연회비: 8만 원', 'percent': '125%'},
+        {'image': 'assets/cards/card1.png', 'title': '쿠팡카드', 'subtitle': '연회비: 0원', 'percent': '115%'},
+      ],
+    },
+  ];
 
-    final bestCard = sortedCards.first;
-    final worstCard = sortedCards.last;
-
-    return Row(
+  Widget _buildRecommendationSection(BuildContext context, Map<String, dynamic> section) {
+    final items = section['items'] as List<dynamic>;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'BEST',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.success,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    bestCard['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '+${_formatCurrency(bestCard['benefitReceived'])}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.success,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(section['category'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text('총 ${_formatWon(section['total'] as int)} 썼어요', style: const TextStyle(color: Colors.black54)),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'WORST',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    worstCard['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '+${_formatCurrency(worstCard['benefitReceived'])}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.error,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          childAspectRatio: 1.05,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: items.map((it) => _RecommendationCard(data: it as Map<String, dynamic>)).toList(),
         ),
+        const SizedBox(height: 28),
       ],
     );
   }
 
-  Widget _buildMyCardItem(Map<String, dynamic> card) {
-    final benefitRate = (card['benefitReceived'] as int) / (card['maxBenefit'] as int);
-    final monthlyFee = (card['annualFee'] as int) ~/ 12;
-    final roi = (card['benefitReceived'] as int) - monthlyFee;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // 카드 이미지 (더미)
-                Container(
-                  width: 60,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: card['color'] as Color,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.credit_card,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card['name'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        card['company'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '연회비 ${_formatCurrency(card['annualFee'])}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      '이번달 ${_formatCurrency(card['spent'])} 사용',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 혜택 달성률
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '혜택 달성률',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  '${(benefitRate * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: benefitRate,
-                backgroundColor: AppColors.textLight.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation(
-                  benefitRate >= 0.7
-                      ? AppColors.success
-                      : benefitRate >= 0.4
-                          ? AppColors.warning
-                          : AppColors.error,
-                ),
-                minHeight: 10,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '받은 혜택: ${_formatCurrency(card['benefitReceived'])}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  '최대: ${_formatCurrency(card['maxBenefit'])}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-
-            // ROI
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '월간 순이익',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  '${roi >= 0 ? '+' : ''}${_formatCurrency(roi)}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: roi >= 0 ? AppColors.success : AppColors.error,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatWon(int value) {
+    final s = value.toString();
+    final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
+    return '${out}원';
   }
 
-  Widget _buildRecommendedCardsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+      child: Container(
+      height: 160,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: card.color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 20,
+            top: 20,
+            child: Container(
+              width: 48,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          // optional badge on top-right
+          Positioned(
+            right: 18,
+            top: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(card.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            bottom: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(card.bankName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+                const SizedBox(height: 6),
+                Text(card.maskedNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
+            ),
+          ),
+          if (!isBottom)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.02)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+    );
+  }
+}
+
+class WalletCard {
+  final Color color;
+  final String label;
+  final String bankName;
+  final String maskedNumber;
+  final String? imagePath;
+
+  const WalletCard({this.imagePath, required this.color, required this.label, this.bankName = '카드', this.maskedNumber = ''});
+}
+
+class _RecommendationCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _RecommendationCard({super.key, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
+      ),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 추천 설명
-          Card(
-            color: AppColors.primary.withOpacity(0.05),
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AI 맞춤 추천',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          '최근 3개월 소비 패턴을 분석하여\n최적의 카드를 추천해드려요',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              height: 80,
+              width: double.infinity,
+              child: Image.asset(
+                data['image'] as String,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.credit_card, size: 28, color: Colors.black26),
+                ),
               ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // ROI 시뮬레이션
-          _buildRoiSimulationCard(),
-
-          const SizedBox(height: 20),
-
-          // 추천 카드 Top 5
-          const Text(
-            '추천 카드 Top 5',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          ...recommendedCards.asMap().entries.map(
-                (entry) => _buildRecommendedCardItem(entry.key + 1, entry.value),
-              ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoiSimulationCard() {
-    final currentBenefit = myCards.fold<int>(
-        0, (sum, card) => sum + (card['benefitReceived'] as int));
-    final currentFee =
-        myCards.fold<int>(0, (sum, card) => sum + (card['annualFee'] as int)) ~/
-            12;
-    final currentNet = currentBenefit - currentFee;
-
-    final recommendedBenefit = recommendedCards.first['expectedBenefit'] as int;
-    final recommendedFee = (recommendedCards.first['annualFee'] as int) ~/ 12;
-    final recommendedNet = recommendedBenefit - recommendedFee;
-
-    final savings = (recommendedNet - currentNet) * 12;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'ROI 시뮬레이션',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              '카드 교체 시 예상 절약 금액',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 150,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: (recommendedNet > currentNet ? recommendedNet : currentNet)
-                          .toDouble() *
-                      1.2,
-                  barTouchData: BarTouchData(enabled: false),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              value == 0 ? '현재 카드' : '추천 카드',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  gridData: const FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  barGroups: [
-                    BarChartGroupData(
-                      x: 0,
-                      barRods: [
-                        BarChartRodData(
-                          toY: currentNet.toDouble(),
-                          color: AppColors.textSecondary,
-                          width: 40,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    BarChartGroupData(
-                      x: 1,
-                      barRods: [
-                        BarChartRodData(
-                          toY: recommendedNet.toDouble(),
-                          color: AppColors.primary,
-                          width: 40,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.savings,
-                    color: AppColors.success,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '카드 교체 시 연간 ${_formatCurrency(savings)} 절약 가능!',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecommendedCardItem(int rank, Map<String, dynamic> card) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // 순위
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: rank <= 3
-                    ? AppColors.primary.withOpacity(0.1)
-                    : AppColors.textLight.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  '$rank',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: rank <= 3 ? AppColors.primary : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // 카드 이미지
-            Container(
-              width: 50,
-              height: 35,
-              decoration: BoxDecoration(
-                color: card['color'] as Color,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // 카드 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    card['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    card['mainBenefit'],
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '예상 혜택 ${_formatCurrency(card['expectedBenefit'])}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '매칭률 ${card['matchRate']}%',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // 발급 버튼
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                minimumSize: Size.zero,
-              ),
-              child: const Text(
-                '상세',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddCardDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('카드 추가'),
-        content: const Text('카드 검색 및 추가 기능은\n추후 업데이트 예정입니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
+          const SizedBox(height: 10),
+          Text(data['title'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: Text(data['subtitle'] as String, style: const TextStyle(fontSize: 11, color: Colors.black54))),
+              const SizedBox(width: 8),
+              Text(data['percent'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black87)),
+            ],
           ),
         ],
       ),
     );
-  }
-
-  String _formatCurrency(int amount) {
-    if (amount.abs() >= 10000) {
-      return '${(amount / 10000).toStringAsFixed(1)}만원';
-    }
-    return '${amount.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (match) => '${match[1]},',
-        )}원';
   }
 }
+
