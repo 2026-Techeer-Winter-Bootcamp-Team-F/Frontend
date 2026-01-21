@@ -5,7 +5,7 @@ import 'package:my_app/models/home_data.dart';
 
 class TransactionService {
   // TODO: 실제 백엔드 API 도메인으로 변경 필요
-  static const String baseUrl = 'http://localhost:80/api';
+  static const String baseUrl = 'http://localhost:8000/api';
   
   // 인증 토큰 (실제로는 secure storage에서 가져와야 함)
   String? _authToken;
