@@ -25,11 +25,78 @@ class _HomePageState extends State<HomePage> {
   // 도넛 차트 선택된 카테고리 인덱스
   int selectedCategoryIndex = 0;
   
+  // 선택된 날짜 (캘린더에서 선택한 날짜)
+  DateTime? selectedDate;
+  
   // 더미 데이터
   final int thisMonthTotal = 646137; // 1월 19일까지
   final int lastMonthSameDay = 1014051; // 12월 19일까지
   final int weeklyAverage = 200000;
   final int monthlyAverage = 880000;
+  
+  // 일별 소비 데이터 (날짜별 지출 금액)
+  final Map<int, int> dailyExpenses = {
+    1: -118620,
+    2: -75745,
+    3: -57402,
+    4: -53151,
+    5: 133100,
+    6: -87071,
+    7: -25497,
+    8: -22500,
+    9: -20400,
+    10: -37050,
+    11: -5900,
+    12: -26520,
+    13: -13340,
+    14: 7907,
+    15: -13340,
+    16: -14000,
+    17: -14000,
+    18: -35000,
+    19: 183400,
+    20: -13123,
+    21: 9481,
+    22: -11900,
+  };
+  
+  // 선택된 날짜의 거래 내역 (더미 데이터)
+  List<Map<String, dynamic>> _getTransactionsForDate(int day) {
+    if (day == 21) {
+      return [
+        {
+          'name': '키움 | 자예별 | 토스뱅크 하이알츠 세이빙즈',
+          'category': 'github',
+          'amount': -15727,
+          'currency': '(-10 USD)',
+          'icon': Icons.code,
+          'color': Colors.black,
+        },
+        {
+          'name': '토스페이먼트 -> 내 KG전자계좌',
+          'category': 'money',
+          'amount': 9481,
+          'icon': Icons.account_balance_wallet,
+          'color': Colors.blue,
+        },
+        {
+          'name': '네이버페이 충전 | 토스뱅크 -> 네이버페이 머니',
+          'category': 'money',
+          'amount': -10000,
+          'icon': Icons.account_balance_wallet,
+          'color': Colors.blue,
+        },
+        {
+          'name': 'ABLY',
+          'category': 'shopping',
+          'amount': -11900,
+          'icon': Icons.shopping_bag,
+          'color': Colors.grey,
+        },
+      ];
+    }
+    return [];
+  }
   
   final Map<String, Map<String, dynamic>> categoryData = {
     '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF4CAF50)},
@@ -158,29 +225,43 @@ class _HomePageState extends State<HomePage> {
           children: [
             _buildIndicator('누적', 0),
             const SizedBox(width: 24),
-            _buildIndicator('주간', 1),
+            _buildIndicator('일간', 1),
             const SizedBox(width: 24),
-            _buildIndicator('월간', 2),
+            _buildIndicator('주간', 2),
+            const SizedBox(width: 24),
+            _buildIndicator('월간', 3),
           ],
         ),
         const SizedBox(height: 16),
         
         // 스크롤 가능한 페이지
         SizedBox(
-          height: 320,
-          child: PageView(
-            controller: topPageController,
-            onPageChanged: (index) {
-              setState(() {
-                topPageIndex = index;
-              });
-            },
-            children: [
-              _buildAccumulatedView(),
-              _buildWeeklyView(),
-              _buildMonthlyView(),
-            ],
-          ),
+          height: topPageIndex == 1 ? null : 320, // 일간 뷰는 높이 제한 없음
+          child: topPageIndex == 1
+            ? _buildDailyView() // 일간 뷰는 직접 표시
+            : SizedBox(
+                height: 320,
+                child: PageView(
+                  controller: topPageController,
+                  onPageChanged: (pageIndex) {
+                    setState(() {
+                      // PageView 인덱스를 실제 topPageIndex로 변환
+                      if (pageIndex == 0) {
+                        topPageIndex = 0; // 누적
+                      } else if (pageIndex == 1) {
+                        topPageIndex = 2; // 주간
+                      } else if (pageIndex == 2) {
+                        topPageIndex = 3; // 월간
+                      }
+                    });
+                  },
+                  children: [
+                    _buildAccumulatedView(), // PageView 0 = 누적
+                    _buildWeeklyView(),      // PageView 1 = 주간
+                    _buildMonthlyView(),     // PageView 2 = 월간
+                  ],
+                ),
+              ),
         ),
       ],
     );
@@ -190,11 +271,24 @@ class _HomePageState extends State<HomePage> {
     final isSelected = topPageIndex == index;
     return GestureDetector(
       onTap: () {
-        topPageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+        setState(() {
+          topPageIndex = index;
+        });
+        if (index != 1) { // 일간이 아닌 경우만 PageView 이동
+          int pageIndex;
+          if (index == 0) {
+            pageIndex = 0; // 누적 → PageView 0
+          } else if (index == 2) {
+            pageIndex = 1; // 주간 → PageView 1
+          } else {
+            pageIndex = 2; // 월간 → PageView 2
+          }
+          topPageController.animateToPage(
+            pageIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
       },
       child: Column(
         children: [
@@ -320,6 +414,293 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  // 일간 뷰 (캘린더)
+  Widget _buildDailyView() {
+    // 해당 월의 첫날과 마지막 날
+    final firstDay = DateTime(selectedMonth.year, selectedMonth.month, 1);
+    final lastDay = DateTime(selectedMonth.year, selectedMonth.month + 1, 0);
+    final daysInMonth = lastDay.day;
+    
+    // 첫날의 요일 (0: 일요일, 6: 토요일)
+    final firstWeekday = firstDay.weekday % 7;
+    
+    // 달력에 필요한 총 칸 수
+    final totalCells = firstWeekday + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // 요일 헤더
+          Row(
+            children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
+              return Expanded(
+                child: Center(
+                  child: Text(
+                    day,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: day == '일' ? Colors.red : (day == '토' ? Colors.blue : Colors.grey[700]),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // 날짜 그리드
+          ...List.generate(rows, (weekIndex) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: List.generate(7, (dayIndex) {
+                  final cellIndex = weekIndex * 7 + dayIndex;
+                  final dayNumber = cellIndex - firstWeekday + 1;
+                  
+                  if (cellIndex < firstWeekday || dayNumber > daysInMonth) {
+                    return Expanded(child: Container());
+                  }
+                  
+                  final expense = dailyExpenses[dayNumber];
+                  final isSelected = selectedDate?.day == dayNumber && 
+                                    selectedDate?.month == selectedMonth.month &&
+                                    selectedDate?.year == selectedMonth.year;
+                  final isToday = DateTime.now().day == dayNumber && 
+                                  DateTime.now().month == selectedMonth.month &&
+                                  DateTime.now().year == selectedMonth.year;
+                  
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          // 같은 날짜를 다시 클릭하면 선택 해제
+                          if (selectedDate?.day == dayNumber && 
+                              selectedDate?.month == selectedMonth.month &&
+                              selectedDate?.year == selectedMonth.year) {
+                            selectedDate = null;
+                          } else {
+                            selectedDate = DateTime(selectedMonth.year, selectedMonth.month, dayNumber);
+                          }
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              dayNumber.toString(),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                color: isToday ? Colors.blue : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (expense != null && expense < 0)
+                              Text(
+                                _formatShortCurrency(expense),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )
+                            else if (expense != null && expense > 0)
+                              Text(
+                                '+${_formatShortCurrency(expense)}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blue[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+          
+          const SizedBox(height: 20),
+          
+          // 선택된 날짜의 거래 내역 (애니메이션 적용)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: selectedDate != null && 
+                selectedDate!.month == selectedMonth.month &&
+                selectedDate!.year == selectedMonth.year
+              ? _buildDailyTransactions()
+              : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 선택된 날짜의 거래 내역
+  Widget _buildDailyTransactions() {
+    if (selectedDate == null) return Container();
+    
+    final transactions = _getTransactionsForDate(selectedDate!.day);
+    final totalExpense = dailyExpenses[selectedDate!.day] ?? 0;
+    
+    // 요일 이름
+    final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+    final weekdayName = weekdays[selectedDate!.weekday - 1];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 날짜 헤더
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${selectedDate!.day}일 ($weekdayName)',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              _formatCurrencyFull(totalExpense),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: totalExpense < 0 ? Colors.red : Colors.blue,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // 거래 내역 리스트
+        if (transactions.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                '거래 내역이 없습니다',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          )
+        else
+          ...transactions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final transaction = entry.value;
+            
+            return TweenAnimationBuilder<double>(
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              tween: Tween<double>(begin: 0, end: 1),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    // 아이콘
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: (transaction['color'] as Color).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        transaction['icon'] as IconData,
+                        color: transaction['color'] as Color,
+                        size: 22,
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // 거래 정보
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction['name'] as String,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (transaction['currency'] != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              transaction['currency'] as String,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // 금액
+                    Text(
+                      _formatCurrencyFull(transaction['amount'] as int),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: (transaction['amount'] as int) < 0 ? Colors.black : Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  String _formatShortCurrency(int amount) {
+    if (amount.abs() >= 10000) {
+      return '${(amount / 10000).toStringAsFixed(0)}만';
+    }
+    return '${(amount / 1000).toStringAsFixed(0)}천';
   }
 
   // 주간 평균 뷰
