@@ -1,12 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/screens/main_navigation.dart';
 
-class SignupCompletePage extends StatelessWidget {
+class SignupCompletePage extends StatefulWidget {
   final String name;
   const SignupCompletePage({super.key, required this.name});
 
   @override
+  State<SignupCompletePage> createState() => _SignupCompletePageState();
+}
+
+class _SignupCompletePageState extends State<SignupCompletePage> {
+  @override
+  void initState() {
+    super.initState();
+    // 2초 후 자동으로 메인 화면으로 이동
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigation()),
+          (route) => false,
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final displayName = name;
+    final displayName = widget.name;
     return Scaffold(
       body: SafeArea(
         child: Padding(

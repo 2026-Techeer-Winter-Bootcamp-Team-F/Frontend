@@ -10,21 +10,55 @@ class PasswordPage extends StatefulWidget {
   State<PasswordPage> createState() => _PasswordPageState();
 }
 
-class _PasswordPageState extends State<PasswordPage> {
+class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderStateMixin {
   final TextEditingController _pwController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
   bool _obscurePw = true;
   bool _obscureConfirm = true;
   String? _pwError;
   String? _confirmError;
-  int _step = 0; // 0: 비밀번호 입력, 1: 재확인 입력
+  bool _showConfirmField = false;
+
+  late AnimationController _animationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
 
   final RegExp _pwRule = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _slideAnimation = Tween<double>(
+      begin: 0.0,
+      end: 80.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
+      ),
+    );
+  }
 
   @override
   void dispose() {
     _pwController.dispose();
     _confirmController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -34,7 +68,7 @@ class _PasswordPageState extends State<PasswordPage> {
     } else {
       _pwError = _pwRule.hasMatch(v) ? null : '영문, 숫자, 특수문자 조합 (최소 8자)';
     }
-    if (_step == 1) _validateConfirm(_confirmController.text);
+    if (_showConfirmField) _validateConfirm(_confirmController.text);
     setState(() {});
   }
 
@@ -51,29 +85,24 @@ class _PasswordPageState extends State<PasswordPage> {
     setState(() {});
   }
 
-  bool get _canProceedStep0 {
+  bool get _canProceedInitial {
     return _pwController.text.isNotEmpty && _pwError == null && _pwRule.hasMatch(_pwController.text);
   }
 
-  bool get _canProceedStep1 {
+  bool get _canComplete {
     return _confirmController.text.isNotEmpty && _confirmError == null && _pwRule.hasMatch(_confirmController.text) && _confirmController.text == _pwController.text;
   }
 
   void _onNext() {
-    if (!_canProceedStep0) return;
+    if (!_canProceedInitial) return;
     setState(() {
-      _step = 1;
-      _confirmController.clear();
-      _obscureConfirm = true;
-      _confirmError = null;
+      _showConfirmField = true;
     });
-    Future.delayed(const Duration(milliseconds: 100), () {
-      FocusScope.of(context).requestFocus(FocusNode());
-    });
+    _animationController.forward();
   }
 
   void _onComplete() {
-    if (!_canProceedStep1) return;
+    if (!_canComplete) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => BankSelectionPage(name: widget.name)),
     );
@@ -104,109 +133,113 @@ class _PasswordPageState extends State<PasswordPage> {
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '최소 8자리 이상\n비밀번호를 입력해주세요.',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _showConfirmField ? '비밀번호를 재입력해주세요.' : '최소 8자리 이상\n비밀번호를 입력해주세요.',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 비밀번호 재확인 필드 (애니메이션)
+                  if (_showConfirmField) ...[
+                    Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _confirmController,
+                            obscureText: _obscureConfirm,
+                            onChanged: _validateConfirm,
+                            decoration: _buildDecoration(
+                              theme: theme,
+                              hint: '영문, 숫자, 특수문자 조합',
+                              error: _confirmError,
+                              suffix: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_confirmController.text.isNotEmpty)
+                                    IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () => setState(() => _confirmController.clear()),
+                                    ),
+                                  IconButton(
+                                    icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // 비밀번호 입력 필드 (이동 애니메이션)
+                  Transform.translate(
+                    offset: Offset(0, _showConfirmField ? _slideAnimation.value : 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('비밀번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _pwController,
+                          obscureText: _obscurePw,
+                          onChanged: _validatePw,
+                          decoration: _buildDecoration(
+                            theme: theme,
+                            hint: '영문, 숫자, 특수문자 조합',
+                            error: _pwError,
+                            suffix: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_pwController.text.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () => setState(() => _pwController.clear()),
+                                  ),
+                                IconButton(
+                                  icon: Icon(_obscurePw ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: () => setState(() => _obscurePw = !_obscurePw),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _showConfirmField 
+                          ? (_canComplete ? _onComplete : null)
+                          : (_canProceedInitial ? _onNext : null),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('확인'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-
-              if (_step == 0) ...[
-                const Text('비밀번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _pwController,
-                  obscureText: _obscurePw,
-                  onChanged: _validatePw,
-                  decoration: _buildDecoration(
-                    theme: theme,
-                    hint: '영문, 숫자, 특수문자 조합',
-                    error: _pwError,
-                    suffix: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_pwController.text.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => setState(() => _pwController.clear()),
-                          ),
-                        IconButton(
-                          icon: Icon(_obscurePw ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePw = !_obscurePw),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _canProceedStep0 ? _onNext : null,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('확인'),
-                  ),
-                ),
-              ],
-
-              if (_step == 1) ...[
-                const Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _confirmController,
-                  obscureText: _obscureConfirm,
-                  onChanged: _validateConfirm,
-                  decoration: _buildDecoration(
-                    theme: theme,
-                    hint: '영문, 숫자, 특수문자 조합',
-                    error: _confirmError,
-                    suffix: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_confirmController.text.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => setState(() => _confirmController.clear()),
-                          ),
-                        IconButton(
-                          icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Text('비밀번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: TextEditingController(text: _pwController.text),
-                  obscureText: true,
-                  enabled: false,
-                  decoration: _buildDecoration(theme: theme, hint: '', error: null),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _canProceedStep1 ? _onComplete : null,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('확인'),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
