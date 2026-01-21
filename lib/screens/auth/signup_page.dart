@@ -123,7 +123,7 @@ class _SignupPageState extends State<SignupPage> {
             builder: (context, auth, child) {
               return LinearProgressIndicator(
                 value: (_currentStep + 1) / 2,
-                backgroundColor: AppColors.textLight.withOpacity(0.3),
+                backgroundColor: AppColors.textLight.withValues(alpha: 0.3),
                 valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               );
             },
@@ -141,7 +141,7 @@ class _SignupPageState extends State<SignupPage> {
                   height: 2,
                   color: _currentStep >= 1
                       ? AppColors.primary
-                      : AppColors.textLight.withOpacity(0.3),
+                      : AppColors.textLight.withValues(alpha: 0.3),
                 ),
                 _buildStepDot(1),
               ],

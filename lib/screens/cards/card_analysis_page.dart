@@ -138,8 +138,8 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: netBenefit >= 0
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.error.withOpacity(0.1),
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -194,7 +194,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
+                          color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -248,7 +248,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
+                          color: AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -293,7 +293,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
   Widget _buildMyCardItem(UserCard userCard) {
     final card = userCard.card;
     final benefitRate = userCard.benefitRate;
-    final monthlyFee = card.annualFee ~/ 12;
     final roi = userCard.roi.toInt();
 
     return Card(
@@ -387,7 +386,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: benefitRate.clamp(0.0, 1.0),
-                backgroundColor: AppColors.textLight.withOpacity(0.2),
+                backgroundColor: AppColors.textLight.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation(
                   benefitRate >= 0.7
                       ? AppColors.success
@@ -451,7 +450,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -460,7 +459,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -627,7 +626,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -668,8 +667,8 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
               height: 32,
               decoration: BoxDecoration(
                 color: rank <= 3
-                    ? AppColors.primary.withOpacity(0.1)
-                    : AppColors.textLight.withOpacity(0.2),
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.textLight.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -724,7 +723,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage>
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
+                          color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

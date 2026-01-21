@@ -218,7 +218,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -306,7 +306,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Widget _buildLowUtilityAlert() {
     return Card(
-      color: AppColors.warning.withOpacity(0.1),
+      color: AppColors.warning.withValues(alpha: 0.1),
       elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -315,7 +315,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.2),
+                color: AppColors.warning.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -341,7 +341,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     '유용성이 낮은 $lowUtilityCount개 서비스를 확인해보세요',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.warning.withOpacity(0.8),
+                      color: AppColors.warning.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -375,7 +375,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               onSelected: (selected) {
                 setState(() => _selectedFilter = filter);
               },
-              selectedColor: AppColors.primary.withOpacity(0.2),
+              selectedColor: AppColors.primary.withValues(alpha: 0.2),
               checkmarkColor: AppColors.primary,
               labelStyle: TextStyle(
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
@@ -407,7 +407,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: (subscription['color'] as Color).withOpacity(0.1),
+                    color: (subscription['color'] as Color).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -442,7 +442,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.textLight.withOpacity(0.2),
+                                color: AppColors.textLight.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
@@ -462,7 +462,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.warning.withOpacity(0.1),
+                                color: AppColors.warning.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
@@ -558,7 +558,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           return const Icon(Icons.star_half, size: 14, color: AppColors.warning);
         } else {
           return Icon(Icons.star_border,
-              size: 14, color: AppColors.textLight.withOpacity(0.5));
+              size: 14, color: AppColors.textLight.withValues(alpha: 0.5));
         }
       }),
     );

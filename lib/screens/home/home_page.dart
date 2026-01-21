@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -350,7 +350,7 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   width: 1,
                   height: 40,
-                  color: AppColors.textLight.withOpacity(0.3),
+                  color: AppColors.textLight.withValues(alpha: 0.3),
                 ),
                 Expanded(
                   child: _buildCompareItem(
@@ -366,7 +366,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: (isLessThanPeer ? AppColors.success : AppColors.warning)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -522,7 +522,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: AppColors.textLight.withOpacity(0.2),
+              backgroundColor: AppColors.textLight.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation(
                 isPositive ? AppColors.success : AppColors.error,
               ),

@@ -255,8 +255,8 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: percentage,
-                        backgroundColor: AppColors.textLight.withOpacity(0.2),
-                        valueColor: AlwaysStoppedAnimation(color.withOpacity(0.7)),
+                        backgroundColor: AppColors.textLight.withValues(alpha: 0.2),
+                        valueColor: AlwaysStoppedAnimation(color.withValues(alpha: 0.7)),
                         minHeight: 8,
                       ),
                     ),
@@ -305,7 +305,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? colors[index % colors.length].withOpacity(0.1)
+                        ? colors[index % colors.length].withValues(alpha: 0.1)
                         : null,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -315,7 +315,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: colors[index % colors.length].withOpacity(0.2),
+                          color: colors[index % colors.length].withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -392,7 +392,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
@@ -454,9 +454,9 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage>
       final man = amount ~/ 10000;
       final remainder = amount % 10000;
       if (remainder == 0) {
-        return '${man}만원';
+        return '$man만원';
       }
-      return '${man}만 ${remainder}원';
+      return '$man만 $remainder원';
     }
     return '${amount.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
