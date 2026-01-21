@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/analysis/category_detail_page.dart';
+import 'package:my_app/services/transaction_service.dart';
+import 'package:my_app/models/home_data.dart' as models;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,6 +13,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // API 서비스
+  final TransactionService _transactionService = TransactionService();
+  
+  // 로딩 상태
+  bool isLoading = false;
+  String? errorMessage;
+  
   // 현재 선택된 월
   DateTime selectedMonth = DateTime.now();
   
@@ -28,14 +37,17 @@ class _HomePageState extends State<HomePage> {
   // 선택된 날짜 (캘린더에서 선택한 날짜)
   DateTime? selectedDate;
   
-  // 더미 데이터
-  final int thisMonthTotal = 646137; // 1월 19일까지
-  final int lastMonthSameDay = 1014051; // 12월 19일까지
-  final int weeklyAverage = 200000;
-  final int monthlyAverage = 880000;
+  // API에서 받아온 데이터
+  models.AccumulatedData? accumulatedData;
+  models.DailySummary? dailySummary;
+  models.WeeklyData? weeklyData;
+  models.MonthlyData? monthlyData;
+  List<models.CategoryData>? categories;
+  models.MonthComparison? monthComparison;
+  Map<int, List<models.Transaction>> dailyTransactionsCache = {};
   
-  // 일별 소비 데이터 (날짜별 지출 금액)
-  final Map<int, int> dailyExpenses = {
+  // 더미 데이터 (백업용)
+  final Map<int, int> _dummyDailyExpenses = {
     1: -118620,
     2: -75745,
     3: -57402,
@@ -60,45 +72,44 @@ class _HomePageState extends State<HomePage> {
     22: -11900,
   };
   
-  // 선택된 날짜의 거래 내역 (더미 데이터)
-  List<Map<String, dynamic>> _getTransactionsForDate(int day) {
-    if (day == 21) {
-      return [
-        {
-          'name': '키움 | 자예별 | 토스뱅크 하이알츠 세이빙즈',
-          'category': 'github',
-          'amount': -15727,
-          'currency': '(-10 USD)',
-          'icon': Icons.code,
-          'color': Colors.black,
-        },
-        {
-          'name': '토스페이먼트 -> 내 KG전자계좌',
-          'category': 'money',
-          'amount': 9481,
-          'icon': Icons.account_balance_wallet,
-          'color': Colors.blue,
-        },
-        {
-          'name': '네이버페이 충전 | 토스뱅크 -> 네이버페이 머니',
-          'category': 'money',
-          'amount': -10000,
-          'icon': Icons.account_balance_wallet,
-          'color': Colors.blue,
-        },
-        {
-          'name': 'ABLY',
-          'category': 'shopping',
-          'amount': -11900,
-          'icon': Icons.shopping_bag,
-          'color': Colors.grey,
-        },
-      ];
-    }
-    return [];
+  // 데이터 접근 헬퍼 메서드들
+  int get thisMonthTotal => accumulatedData?.total ?? 0;
+  int get lastMonthSameDay => monthComparison?.lastMonthSameDay ?? 0;
+  int get weeklyAverage => weeklyData?.average ?? 0;
+  int get monthlyAverage => monthlyData?.average ?? 0;
+  Map<int, int> get dailyExpenses => dailySummary?.expenses ?? _dummyDailyExpenses;
+  
+  List<double> get thisMonthDailyData {
+    return accumulatedData?.dailyData.map((e) => e.amount).toList() ?? _dummyThisMonthData;
   }
   
-  final Map<String, Map<String, dynamic>> categoryData = {
+  List<double> get lastMonthDailyData {
+    return monthComparison?.lastMonthData.map((e) => e.amount).toList() ?? _dummyLastMonthData;
+  }
+  
+  Map<String, Map<String, dynamic>> get categoryData {
+    if (categories == null) return _dummyCategoryData;
+    
+    final Map<String, Map<String, dynamic>> result = {};
+    for (var category in categories!) {
+      result[category.name] = {
+        'amount': category.amount,
+        'change': category.change,
+        'percent': category.percent,
+        'icon': category.emoji,
+        'color': category.color,
+      };
+    }
+    return result;
+  }
+  
+  // 선택된 날짜의 거래 내역 가져오기
+  List<models.Transaction> _getTransactionsForDate(int day) {
+    return dailyTransactionsCache[day] ?? [];
+  }
+  
+  // 더미 카테고리 데이터 (백업용)
+  final Map<String, Map<String, dynamic>> _dummyCategoryData = {
     '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF4CAF50)},
     '이체': {'amount': 142562, 'change': -146449, 'percent': 22, 'icon': '🏦', 'color': Color(0xFF2196F3)},
     '생활': {'amount': 83351, 'change': 37551, 'percent': 13, 'icon': '🏠', 'color': Color(0xFFFF9800)},
@@ -106,24 +117,96 @@ class _HomePageState extends State<HomePage> {
     '카페·간식': {'amount': 21000, 'change': 21000, 'percent': 3, 'icon': '☕', 'color': Color(0xFF9C27B0)},
   };
   
-  // 일별 누적 데이터 생성 (1월 19일까지)
-  List<double> get thisMonthDailyData {
-    return [
-      0, 15000, 35000, 58000, 85000, 120000, 145000, // 1-7일
-      180000, 215000, 245000, 280000, 320000, 365000, 395000, // 8-14일
-      435000, 485000, 535000, 580000, 646137, // 15-19일
-    ];
+  // 더미 누적 데이터 (백업용)
+  final List<double> _dummyThisMonthData = [
+    0, 15000, 35000, 58000, 85000, 120000, 145000, // 1-7일
+    180000, 215000, 245000, 280000, 320000, 365000, 395000, // 8-14일
+    435000, 485000, 535000, 580000, 646137, // 15-19일
+  ];
+  
+  final List<double> _dummyLastMonthData = [
+    0, 25000, 55000, 95000, 145000, 195000, 240000, // 1-7일
+    295000, 350000, 410000, 475000, 540000, 610000, 675000, // 8-14일
+    735000, 795000, 860000, 920000, 1014051, 1070000, 1125000, // 15-21일
+    1180000, 1235000, 1285000, 1340000, 1395000, 1445000, 1495000, // 22-28일
+    1545000, 1595000, 1660000, // 29-31일
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    // 임시 액세스 토큰 설정
+    _transactionService.setAuthToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MDIzMjk1LCJpYXQiOjE3NjkwMTk2OTUsImp0aSI6ImYwZjZiMmQzZTg3OTQ0NWQ4ZDQ4ZjVlZDBjZTIyYmJjIiwidXNlcl9pZCI6IjEifQ.fmpmOxVJbz77yj2lco2_BJa5ksGk8m3Kd7kp1w1yDbM');
+    _loadHomeData();
   }
   
-  // 지난달 일별 누적 데이터 (12월 31일까지)
-  List<double> get lastMonthDailyData {
-    return [
-      0, 25000, 55000, 95000, 145000, 195000, 240000, // 1-7일
-      295000, 350000, 410000, 475000, 540000, 610000, 675000, // 8-14일
-      735000, 795000, 860000, 920000, 1014051, 1070000, 1125000, // 15-21일
-      1180000, 1235000, 1285000, 1340000, 1395000, 1445000, 1495000, // 22-28일
-      1545000, 1595000, 1660000, // 29-31일
-    ];
+  // 홈 페이지 데이터 로드
+  Future<void> _loadHomeData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final year = selectedMonth.year;
+      final month = selectedMonth.month;
+
+      // 병렬로 모든 API 호출
+      final results = await Future.wait([
+        _transactionService.getAccumulatedData(year, month),
+        _transactionService.getDailySummary(year, month),
+        _transactionService.getWeeklyAverage(year, month),
+        _transactionService.getMonthlyAverage(year, month),
+        _transactionService.getCategorySummary(year, month),
+        _transactionService.getMonthComparison(year, month),
+      ]);
+
+      setState(() {
+        accumulatedData = results[0] as models.AccumulatedData;
+        dailySummary = results[1] as models.DailySummary;
+        weeklyData = results[2] as models.WeeklyData;
+        monthlyData = results[3] as models.MonthlyData;
+        categories = results[4] as List<models.CategoryData>;
+        monthComparison = results[5] as models.MonthComparison;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = '데이터를 불러오는데 실패했습니다: $e';
+        isLoading = false;
+      });
+    }
+  }
+  
+  // 특정 날짜의 거래 내역 로드
+  Future<void> _loadDailyTransactions(int day) async {
+    if (dailyTransactionsCache.containsKey(day)) {
+      return; // 이미 캐시에 있으면 다시 로드하지 않음
+    }
+
+    try {
+      final transactions = await _transactionService.getDailyTransactions(
+        selectedMonth.year,
+        selectedMonth.month,
+        day,
+      );
+      
+      setState(() {
+        dailyTransactionsCache[day] = transactions;
+      });
+    } catch (e) {
+      print('거래 내역 로드 실패: $e');
+    }
+  }
+  
+  // 월 선택 변경 시
+  void _onMonthChanged(DateTime newMonth) {
+    setState(() {
+      selectedMonth = newMonth;
+      selectedDate = null;
+      dailyTransactionsCache.clear();
+    });
+    _loadHomeData();
   }
 
   @override
@@ -138,16 +221,34 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // 상단 월 선택 헤더
-            _buildMonthHeader(),
-            
-            // 스크롤 가능한 컨텐츠
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(errorMessage!),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadHomeData,
+                          child: const Text('다시 시도'),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadHomeData,
+                    child: Column(
+                      children: [
+                        // 상단 월 선택 헤더
+                        _buildMonthHeader(),
+                        
+                        // 스크롤 가능한 컨텐츠
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
                     const SizedBox(height: 16),
                     
                     // 상단 섹션 (누적/주간/월간)
@@ -171,9 +272,11 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+                  ),
     );
   }
 
+  // 상단 월 선택 헤더
   // 상단 월 선택 헤더
   Widget _buildMonthHeader() {
     return Container(
@@ -184,12 +287,10 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: () {
-              setState(() {
-                selectedMonth = DateTime(
-                  selectedMonth.year,
-                  selectedMonth.month - 1,
-                );
-              });
+              _onMonthChanged(DateTime(
+                selectedMonth.year,
+                selectedMonth.month - 1,
+              ));
             },
           ),
           Text(
@@ -202,12 +303,10 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: () {
-              setState(() {
-                selectedMonth = DateTime(
-                  selectedMonth.year,
-                  selectedMonth.month + 1,
-                );
-              });
+              _onMonthChanged(DateTime(
+                selectedMonth.year,
+                selectedMonth.month + 1,
+              ));
             },
           ),
         ],
@@ -467,6 +566,7 @@ class _HomePageState extends State<HomePage> {
                     return Expanded(child: Container());
                   }
                   
+                  
                   final expense = dailyExpenses[dayNumber];
                   final isSelected = selectedDate?.day == dayNumber && 
                                     selectedDate?.month == selectedMonth.month &&
@@ -477,17 +577,23 @@ class _HomePageState extends State<HomePage> {
                   
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
+                      onTap: () async {
+                        final isSameDate = selectedDate?.day == dayNumber && 
+                            selectedDate?.month == selectedMonth.month &&
+                            selectedDate?.year == selectedMonth.year;
+                        
+                        if (isSameDate) {
                           // 같은 날짜를 다시 클릭하면 선택 해제
-                          if (selectedDate?.day == dayNumber && 
-                              selectedDate?.month == selectedMonth.month &&
-                              selectedDate?.year == selectedMonth.year) {
+                          setState(() {
                             selectedDate = null;
-                          } else {
+                          });
+                        } else {
+                          // 새로운 날짜 선택 및 거래 내역 로드
+                          setState(() {
                             selectedDate = DateTime(selectedMonth.year, selectedMonth.month, dayNumber);
-                          }
-                        });
+                          });
+                          await _loadDailyTransactions(dayNumber);
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -636,12 +742,12 @@ class _HomePageState extends State<HomePage> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: (transaction['color'] as Color).withOpacity(0.1),
+                        color: transaction.color.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        transaction['icon'] as IconData,
-                        color: transaction['color'] as Color,
+                        transaction.icon,
+                        color: transaction.color,
                         size: 22,
                       ),
                     ),
@@ -654,7 +760,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            transaction['name'] as String,
+                            transaction.name,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -662,10 +768,10 @@ class _HomePageState extends State<HomePage> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (transaction['currency'] != null) ...[
+                          if (transaction.currency != null) ...[
                             const SizedBox(height: 4),
                             Text(
-                              transaction['currency'] as String,
+                              transaction.currency!,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -680,11 +786,11 @@ class _HomePageState extends State<HomePage> {
                     
                     // 금액
                     Text(
-                      _formatCurrencyFull(transaction['amount'] as int),
+                      _formatCurrencyFull(transaction.amount),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: (transaction['amount'] as int) < 0 ? Colors.black : Colors.blue,
+                        color: transaction.amount < 0 ? Colors.black : Colors.blue,
                       ),
                     ),
                   ],
