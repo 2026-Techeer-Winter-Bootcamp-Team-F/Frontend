@@ -8,7 +8,7 @@ class SubscriptionPage extends StatelessWidget {
   static final List<_SubscriptionItem> _sample = [
     _SubscriptionItem(name: '넷플릭스', amount: 13000, daysLeft: 21, color: Color(0xFFe50914), icon: Icons.play_circle_fill),
     _SubscriptionItem(name: '유튜브 프리미엄', amount: 20000, daysLeft: 15, color: Color(0xFFFF0000), icon: Icons.ondemand_video),
-    _SubscriptionItem(name: '제미니+', amount: 3000, daysLeft: 10, color: Color(0xFF2D9CDB), icon: Icons.star),
+    _SubscriptionItem(name: '제미나이', amount: 3000, daysLeft: 10, color: Color(0xFF2D9CDB), icon: Icons.star),
     _SubscriptionItem(name: '네이버플러스', amount: 4000, daysLeft: 15, color: Color(0xFF03C75A), icon: Icons.check_circle),
     _SubscriptionItem(name: '듀오링고', amount: 12500, daysLeft: 20, color: Color(0xFF72D22F), icon: Icons.school),
     _SubscriptionItem(name: '챗GPT플러스', amount: 33500, daysLeft: 17, color: Color(0xFF000000), icon: Icons.smart_toy),
