@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/screens/home/home_page.dart';
 import 'package:my_app/screens/cards/card_analysis_page.dart';
 import 'package:my_app/screens/subscription/subscription_page.dart';
+import 'package:my_app/screens/chat/chat_page.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
