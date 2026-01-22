@@ -76,37 +76,14 @@ class SubscriptionPage extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: const [
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: SpeechBubble(
-                              text: '내가 구독한 서비스가 뭐더라?',
-                              tailAlignment: TailAlignment.left,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: SpeechBubble(
-                              text: '내게 꼭 필요한 걸까?',
-                              tailAlignment: TailAlignment.right,
-                            ),
-                          ),
-                        ),
-                      ],
+                  Center(
+                    child: Image.asset(
+                      'assets/images/subs.png',
+                      width: 340,
+                      height: 340,
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  const Center(
-                    child: Text('🧐', style: TextStyle(fontSize: 220)),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
