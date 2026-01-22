@@ -32,16 +32,13 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Color(0xFF15171A),
                 ),
               ),
               const SizedBox(height: 32),
               const Text(
                 '휴대전화번호',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               TextField(
                 controller: _controller,
@@ -63,7 +60,11 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                     borderSide: BorderSide(color: Colors.blue, width: 2),
                   ),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.cancel, color: Colors.grey, size: 20),
+                    icon: const Icon(
+                      Icons.cancel,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
                     onPressed: _controller.clear,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),

@@ -41,9 +41,30 @@ class _SignupCompletePageState extends State<SignupCompletePage> {
               Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: displayName, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-                    const TextSpan(text: '님,\n', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-                    const TextSpan(text: '환영합니다!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+                    TextSpan(
+                      text: displayName,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF171F29),
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '님,\n',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF171F29),
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '환영합니다!',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF171F29),
+                      ),
+                    ),
                   ],
                 ),
                 textAlign: TextAlign.center,

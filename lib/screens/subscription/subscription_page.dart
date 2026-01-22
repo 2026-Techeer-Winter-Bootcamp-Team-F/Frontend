@@ -6,14 +6,62 @@ class SubscriptionPage extends StatelessWidget {
   // Sample data used for previewing the UI. In the real app this should
   // come from your backend / state management layer.
   static final List<_SubscriptionItem> _sample = [
-    _SubscriptionItem(name: '넷플릭스', amount: 13000, daysLeft: 21, color: Color(0xFFe50914), icon: Icons.play_circle_fill),
-    _SubscriptionItem(name: '유튜브 프리미엄', amount: 20000, daysLeft: 15, color: Color(0xFFFF0000), icon: Icons.ondemand_video),
-    _SubscriptionItem(name: '제미나이', amount: 3000, daysLeft: 10, color: Color(0xFF2D9CDB), icon: Icons.star),
-    _SubscriptionItem(name: '네이버플러스', amount: 4000, daysLeft: 15, color: Color(0xFF03C75A), icon: Icons.check_circle),
-    _SubscriptionItem(name: '듀오링고', amount: 12500, daysLeft: 20, color: Color(0xFF72D22F), icon: Icons.school),
-    _SubscriptionItem(name: '챗GPT플러스', amount: 33500, daysLeft: 17, color: Color(0xFF000000), icon: Icons.smart_toy),
-    _SubscriptionItem(name: '알바몬', amount: 5000, daysLeft: 13, color: Color(0xFF8A4FFF), icon: Icons.local_offer),
-    _SubscriptionItem(name: '쿠팡이츠', amount: 7500, daysLeft: 20, color: Color(0xFFFF8A00), icon: Icons.delivery_dining),
+    _SubscriptionItem(
+      name: '넷플릭스',
+      amount: 13000,
+      daysLeft: 21,
+      color: Color(0xFFe50914),
+      icon: Icons.play_circle_fill,
+    ),
+    _SubscriptionItem(
+      name: '유튜브 프리미엄',
+      amount: 20000,
+      daysLeft: 15,
+      color: Color(0xFFFF0000),
+      icon: Icons.ondemand_video,
+    ),
+    _SubscriptionItem(
+      name: '제미나이',
+      amount: 3000,
+      daysLeft: 10,
+      color: Color(0xFF2D9CDB),
+      icon: Icons.star,
+    ),
+    _SubscriptionItem(
+      name: '네이버플러스',
+      amount: 4000,
+      daysLeft: 15,
+      color: Color(0xFF03C75A),
+      icon: Icons.check_circle,
+    ),
+    _SubscriptionItem(
+      name: '듀오링고',
+      amount: 12500,
+      daysLeft: 20,
+      color: Color(0xFF72D22F),
+      icon: Icons.school,
+    ),
+    _SubscriptionItem(
+      name: '챗GPT플러스',
+      amount: 33500,
+      daysLeft: 17,
+      color: Color(0xFF000000),
+      icon: Icons.smart_toy,
+    ),
+    _SubscriptionItem(
+      name: '알바몬',
+      amount: 5000,
+      daysLeft: 13,
+      color: Color(0xFF8A4FFF),
+      icon: Icons.local_offer,
+    ),
+    _SubscriptionItem(
+      name: '쿠팡이츠',
+      amount: 7500,
+      daysLeft: 20,
+      color: Color(0xFFFF8A00),
+      icon: Icons.delivery_dining,
+    ),
   ];
 
   @override
@@ -56,10 +104,7 @@ class SubscriptionPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   const Center(
-                    child: Text(
-                      '🧐',
-                      style: TextStyle(fontSize: 220),
-                    ),
+                    child: Text('🧐', style: TextStyle(fontSize: 220)),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -69,10 +114,12 @@ class SubscriptionPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               sliver: SliverGrid.count(
                 crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.02,
-                children: _sample.map((s) => SubscriptionCard(item: s)).toList(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.0,
+                children: _sample
+                    .map((s) => SubscriptionCard(item: s))
+                    .toList(),
               ),
             ),
           ],
@@ -88,7 +135,11 @@ class SpeechBubble extends StatelessWidget {
   final String text;
   final TailAlignment tailAlignment;
 
-  const SpeechBubble({super.key, required this.text, this.tailAlignment = TailAlignment.left});
+  const SpeechBubble({
+    super.key,
+    required this.text,
+    this.tailAlignment = TailAlignment.left,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +157,10 @@ class SpeechBubble extends StatelessWidget {
 
     final triangle = CustomPaint(
       size: const Size(18, 12),
-      painter: _TrianglePainter(color: const Color(0xFFF2F4F5), alignLeft: tailAlignment == TailAlignment.left),
+      painter: _TrianglePainter(
+        color: const Color(0xFFF2F4F5),
+        alignLeft: tailAlignment == TailAlignment.left,
+      ),
     );
 
     if (tailAlignment == TailAlignment.left) {
@@ -166,7 +220,13 @@ class _SubscriptionItem {
   final Color color;
   final IconData icon;
 
-  const _SubscriptionItem({required this.name, required this.amount, required this.daysLeft, required this.color, required this.icon});
+  const _SubscriptionItem({
+    required this.name,
+    required this.amount,
+    required this.daysLeft,
+    required this.color,
+    required this.icon,
+  });
 }
 
 class SubscriptionCard extends StatelessWidget {
@@ -178,37 +238,55 @@ class SubscriptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8F9),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF9FAFA),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                backgroundColor: item.color,
-                radius: 22,
-                child: Icon(item.icon, color: Colors.white, size: 22),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item.name,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF2F3A45), fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatAmount(item.amount),
-                style: const TextStyle(fontSize: 12, color: Colors.black45, fontWeight: FontWeight.w600),
-              ),
-            ],
+          // 아이콘
+          CircleAvatar(
+            backgroundColor: item.color,
+            radius: 24,
+            child: Icon(item.icon, color: Colors.white, size: 24),
           ),
-          Text(
-            '${item.daysLeft}일',
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF2F3A45)),
+          const SizedBox(height: 40),
+          // 텍스트 (좌측정렬)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // 첫 번째 줄: 서비스명 | 가격
+                Text(
+                  '${item.name} | ${_formatAmount(item.amount)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF2F3A45),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 두 번째 줄: 결제일
+                Text(
+                  '${item.daysLeft}일',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -217,7 +295,6 @@ class SubscriptionCard extends StatelessWidget {
 
   String _formatAmount(int amount) {
     final s = amount.toString();
-    // simple thousands separator
     final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
     return s.replaceAllMapped(reg, (m) => ',') + '원';
   }

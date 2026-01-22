@@ -71,9 +71,9 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _signup() async {
     if (_selectedAgeGroup == null || _selectedGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('연령대와 성별을 선택해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('연령대와 성별을 선택해주세요')));
       return;
     }
 
@@ -136,10 +136,7 @@ class _SignupPageState extends State<SignupPage> {
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildBasicInfoStep(),
-                _buildAdditionalInfoStep(),
-              ],
+              children: [_buildBasicInfoStep(), _buildAdditionalInfoStep()],
             ),
           ),
 
@@ -207,6 +204,7 @@ class _SignupPageState extends State<SignupPage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Color(0xFF15171A),
               ),
             ),
             const SizedBox(height: 8),
@@ -301,7 +299,8 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   onPressed: () {
                     setState(
-                        () => _obscureConfirmPassword = !_obscureConfirmPassword);
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                    );
                   },
                 ),
               ),
@@ -332,6 +331,7 @@ class _SignupPageState extends State<SignupPage> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: Color(0xFF15171A),
             ),
           ),
           const SizedBox(height: 8),
@@ -347,6 +347,7 @@ class _SignupPageState extends State<SignupPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
+              color: Color(0xFF15171A),
             ),
           ),
           const SizedBox(height: 12),
@@ -377,6 +378,7 @@ class _SignupPageState extends State<SignupPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
+              color: Color(0xFF15171A),
             ),
           ),
           const SizedBox(height: 12),
