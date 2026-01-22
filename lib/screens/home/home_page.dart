@@ -136,7 +136,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     // 임시 액세스 토큰 설정
-    _transactionService.setAuthToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MDU0MTA4LCJpYXQiOjE3NjkwNTA1MDgsImp0aSI6ImE3Yzk0Njg1MWE4ZDRmYTY5OTI5MWM3ZmQxMjk1MWM2IiwidXNlcl9pZCI6IjEifQ.stIR4jEmncL2jljKl-cyVQyMl7KpbL-eVzptQFKXDsM');
+    _transactionService.setAuthToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MDk0MTcyLCJpYXQiOjE3NjkwOTA1NzIsImp0aSI6IjRkYTgyZmM2M2IzZDQ5ZGI5ZGVmOGY0MWZkZDNhZWQ1IiwidXNlcl9pZCI6IjEifQ.IOXtYAMVUnDBjWxix2WrOVTC6M4F1Nuxi6Ll38hEt-Y');
     _loadHomeData();
   }
   
