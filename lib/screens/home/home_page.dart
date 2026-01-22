@@ -1018,7 +1018,7 @@ class _HomePageState extends State<HomePage> {
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (match) => '${match[1]},',
     );
-    return '${amount < 0 ? '-' : ''}${formatted}원';
+    return '${amount < 0 ? '-' : ''}$formatted원';
   }
 }
 

@@ -273,6 +273,6 @@ class SubscriptionCard extends StatelessWidget {
   String _formatAmount(int amount) {
     final s = amount.toString();
     final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
-    return s.replaceAllMapped(reg, (m) => ',') + '원';
+    return '${s.replaceAllMapped(reg, (m) => ',')}원';
   }
 }

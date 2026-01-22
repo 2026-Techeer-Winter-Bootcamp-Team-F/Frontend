@@ -41,8 +41,8 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bool _isValidPassword = _passwordRegex.hasMatch(_pwController.text.trim());
-    final canProceed = _isValidPassword;
+    final bool isValidPassword = _passwordRegex.hasMatch(_pwController.text.trim());
+    final canProceed = isValidPassword;
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(

@@ -86,8 +86,9 @@ class CardAnalysisPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 28),
-
+                const SizedBox(height: 16),
+                Divider(thickness: 1, height: 24, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 10),
                 // Header text like the screenshot (left-aligned)
                 const Text(
                   '이 카드는 어때요?',
@@ -104,8 +105,7 @@ class CardAnalysisPage extends StatelessWidget {
                 Column(
                   children: _recommendations
                       .map(
-                        (section) =>
-                            _buildRecommendationSection(context, section),
+                        (section) => _buildRecommendationSection(context, section),
                       )
                       .toList(),
                 ),
@@ -120,62 +120,50 @@ class CardAnalysisPage extends StatelessWidget {
   // Sample recommendation data: category, totalSpent, recommended cards
   static final List<Map<String, dynamic>> _recommendations = [
     {
-      'category': '택시',
-      'total': 27133,
-      'items': [
-        {
-          'image': 'assets/cards/card1.png',
-          'title': '현대카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '110%',
-        },
-        {
-          'image': 'assets/cards/card2.png',
-          'title': 'BC카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '110%',
-        },
-        {
-          'image': 'assets/cards/card3.png',
-          'title': '롯데카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '230%',
-        },
-        {
-          'image': 'assets/cards/card4.png',
-          'title': 'Mr.Life',
-          'subtitle': '연회비: 20만 원',
-          'percent': '190%',
-        },
-      ],
-    },
-    {
       'category': '교통',
       'total': 7816,
       'items': [
         {
-          'image': 'assets/cards/card1.png',
+          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
           'title': '현대카드',
           'subtitle': '연회비: 20만 원',
-          'percent': 'ROI',
+          'percent': '120%',
         },
         {
           'image': 'assets/cards/card2.png',
           'title': 'BC카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '110%',
+          'percent': '128%',
         },
+      ],
+    },
+    {
+      'category': '택시',
+      'total': 27133,
+      'items': [
         {
-          'image': 'assets/cards/card3.png',
-          'title': '롯데카드',
+          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
+          'title': '현대카드 택시',
           'subtitle': '연회비: 20만 원',
-          'percent': '95%',
+          'percent': '112%',
         },
         {
-          'image': 'assets/cards/card4.png',
-          'title': '신한카드',
+          'image': 'https://www.bccard.com/images/individual/card/renew/list/card_104239.png',
+          'title': 'BC카드 택시',
           'subtitle': '연회비: 20만 원',
           'percent': '130%',
+        },
+        {
+          'image': 'https://image.lottecard.co.kr/UploadFiles/ecenterPath/cdInfo/ecenterCdInfoP11881-A11881_nm1.png',
+          'title': '롯데카드 택시',
+          'subtitle': '연회비: 20만 원',
+          'percent': '210%',
+        },
+        {
+          'image': 'https://img.cdn.nicebizinfo.com/mi/2020/07/20/20200720155313_1.jpg',
+          'title': 'Mr.Life',
+          'subtitle': '연회비: 20만 원',
+          'percent': '175%',
         },
       ],
     },
@@ -184,68 +172,49 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 4500,
       'items': [
         {
-          'image': 'assets/cards/card2.png',
-          'title': '이마트카드',
-          'subtitle': '연회비: 10만 원',
-          'percent': '150%',
+          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
+          'title': '현대카드 마트',
+          'subtitle': '연회비: 20만 원',
+          'percent': '120%',
         },
         {
-          'image': 'assets/cards/card3.png',
-          'title': '롯데마트카드',
-          'subtitle': '연회비: 12만 원',
-          'percent': '140%',
-        },
-        {
-          'image': 'assets/cards/card4.png',
-          'title': '홈플러스카드',
-          'subtitle': '연회비: 8만 원',
+          'image': 'https://www.bccard.com/images/individual/card/renew/list/card_104239.png',
+          'title': 'BC카드 마트',
+          'subtitle': '연회비: 20만 원',
           'percent': '125%',
         },
         {
-          'image': 'assets/cards/card1.png',
-          'title': '쿠팡카드',
-          'subtitle': '연회비: 0원',
-          'percent': '115%',
+          'image': 'https://image.lottecard.co.kr/UploadFiles/ecenterPath/cdInfo/ecenterCdInfoP11881-A11881_nm1.png',
+          'title': '롯데카드 마트',
+          'subtitle': '연회비: 20만 원',
+          'percent': '210%',
+        },
+        {
+          'image': 'https://img.cdn.nicebizinfo.com/mi/2020/07/20/20200720155313_1.jpg',
+          'title': 'Mr.Life',
+          'subtitle': '연회비: 20만 원',
+          'percent': '170%',
         },
       ],
     },
   ];
 
-  Widget _buildRecommendationSection(
-    BuildContext context,
-    Map<String, dynamic> section,
-  ) {
+  Widget _buildRecommendationSection(BuildContext context, Map<String, dynamic> section) {
     final items = section['items'] as List<dynamic>;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              section['category'],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-            Text(
-              '총 ${_formatWon(section['total'] as int)} 썼어요',
-              style: const TextStyle(color: Colors.black54),
-            ),
-          ],
+        Text(
+          section['category'] ?? '',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          childAspectRatio: 1.05,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: items
-              .map(
-                (it) => _RecommendationCard(data: it as Map<String, dynamic>),
-              )
-              .toList(),
+        const SizedBox(height: 8),
+        Text(
+          '총 사용 금액: ${_formatWon(section['total'] ?? 0)}',
+          style: const TextStyle(fontSize: 14, color: Colors.black54),
         ),
+        const SizedBox(height: 8),
+        ...items.map((it) => _RecommendationCard(data: it as Map<String, dynamic>)).toList(),
         const SizedBox(height: 28),
       ],
     );
@@ -254,14 +223,14 @@ class CardAnalysisPage extends StatelessWidget {
   String _formatWon(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '${out}원';
+    return '$out원';
   }
 
   Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
     return GestureDetector(
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
+      ),
       child: Container(
         width: 317,
         height: 210,
@@ -279,21 +248,28 @@ class CardAnalysisPage extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned(
-              left: 20,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Container(
-                  width: 57,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37),
-                    borderRadius: BorderRadius.circular(6),
+            // 현대카드 이미지 좌측 정렬, 103x65
+            if (card.imagePath == 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png')
+              Positioned(
+                left: 20,
+                top: 30,
+                child: Image.network(
+                  card.imagePath!,
+                  width: 103,
+                  height: 65,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => Container(
+                    color: Colors.grey.shade200,
+                    width: 103,
+                    height: 65,
+                    child: const Icon(
+                      Icons.credit_card,
+                      size: 28,
+                      color: Colors.black26,
+                    ),
                   ),
                 ),
               ),
-            ),
             // optional badge on top-right
             Positioned(
               right: 18,
@@ -380,7 +356,7 @@ class WalletCard {
 
 class _RecommendationCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  const _RecommendationCard({super.key, required this.data});
+  const _RecommendationCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -405,15 +381,22 @@ class _RecommendationCard extends StatelessWidget {
             child: SizedBox(
               height: 80,
               width: double.infinity,
-              child: Image.asset(
-                data['image'] as String,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
-                  color: Colors.grey.shade200,
-                  child: const Icon(
-                    Icons.credit_card,
-                    size: 28,
-                    color: Colors.black26,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Image.network(
+                  data['image'] as String,
+                  width: 103,
+                  height: 65,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => Container(
+                    color: Colors.grey.shade200,
+                    width: 103,
+                    height: 65,
+                    child: const Icon(
+                      Icons.credit_card,
+                      size: 28,
+                      color: Colors.black26,
+                    ),
                   ),
                 ),
               ),
