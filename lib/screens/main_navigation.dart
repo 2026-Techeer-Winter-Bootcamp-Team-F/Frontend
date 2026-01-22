@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/home/home_page.dart';
+import 'package:my_app/screens/onboarding/benefit_score_page.dart';
+// '소비' 탭은 기존 `HomePage`로 이동했으므로 ExpenseAnalysisPage import는 더 이상 필요하지 않습니다.
 import 'package:my_app/screens/cards/card_analysis_page.dart';
 import 'package:my_app/screens/subscription/subscription_page.dart';
 import 'package:my_app/screens/chat/chat_page.dart';
@@ -313,6 +315,7 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
+    const BenefitScorePage(),
     const HomePage(),
     const CardAnalysisPage(),
     const SubscriptionPage(),
@@ -320,19 +323,37 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _buildNavItem({required int index, required IconData icon, required String label}) {
     final bool selected = _currentIndex == index;
-    final color = selected ? const Color(0xFF0066FF) : Colors.grey.shade500;
+    final color = selected ? const Color(0xFF1560FF) : Colors.grey.shade400;
+
+    // scale factor for bottom bar (0.6 = 60%)
+    const double navScale = 0.6;
+
+    // Use larger icon when selected for emphasis (scaled)
+    final iconSize = selected ? 30.0 * navScale : 24.0 * navScale;
+    final selectedCircleSize = 44.0 * navScale;
+    final labelFontSize = 12.0 * navScale;
+    final spacing = 6.0 * navScale;
 
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _currentIndex = index),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: spacing),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 4),
-              Text(label, style: TextStyle(color: color, fontSize: 12)),
+              // selected 상태는 파란 원 배경에 흰 아이콘
+              if (selected)
+                Container(
+                  width: selectedCircleSize,
+                  height: selectedCircleSize,
+                  decoration: const BoxDecoration(color: Color(0xFF1560FF), shape: BoxShape.circle),
+                  child: Center(child: Icon(icon, color: Colors.white, size: iconSize)),
+                )
+              else
+                Icon(icon, color: color, size: iconSize),
+              SizedBox(height: spacing),
+              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
             ],
           ),
         ),
@@ -367,19 +388,17 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey.shade200)),
+          border: Border(top: BorderSide(color: Colors.grey.shade100)),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        height: 72,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        height: (90 * 0.6), // 원래 높이의 60%
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Spacer(),
             _buildNavItem(index: 0, icon: Icons.home, label: '홈'),
-            _buildNavItem(index: 1, icon: Icons.credit_card, label: '카드'),
-            _buildNavItem(index: 2, icon: Icons.subscriptions, label: '구독'),
-            const Spacer(),
+            _buildNavItem(index: 1, icon: Icons.pie_chart_outline, label: '소비'),
+            _buildNavItem(index: 2, icon: Icons.credit_card, label: '카드'),
+            _buildNavItem(index: 3, icon: Icons.subscriptions, label: '구독'),
           ],
         ),
       ),

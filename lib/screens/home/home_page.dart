@@ -5,6 +5,7 @@ import 'package:my_app/screens/analysis/category_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+  // 카드 스택 위젯
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -66,6 +67,8 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // (카드 스택은 홈 탭으로 이동됨)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,7 +85,9 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    
+
+                    const SizedBox(height: 16),
+
                     // 상단 섹션 (누적/주간/월간)
                     _buildTopSection(),
                     
@@ -1005,6 +1010,8 @@ class _HomePageState extends State<HomePage> {
           (match) => '${match[1]},',
         )}원';
   }
+
+  
 
   String _formatCurrencyFull(int amount) {
     final formatted = amount.abs().toString().replaceAllMapped(

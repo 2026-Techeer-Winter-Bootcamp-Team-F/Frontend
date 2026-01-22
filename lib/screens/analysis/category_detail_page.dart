@@ -687,7 +687,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  '**님의 당신의 카드를 분석해봤어요!',
+                  '**님의 카드를 분석해봤어요!',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
