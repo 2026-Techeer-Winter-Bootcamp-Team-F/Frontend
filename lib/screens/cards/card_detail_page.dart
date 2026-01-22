@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'card_analysis_page.dart';
+import 'package:my_app/models/user_card.dart';
 
 class CardDetailPage extends StatelessWidget {
-  final WalletCard card;
+  final UserCard card;
 
   const CardDetailPage({super.key, required this.card});
 
@@ -25,9 +25,9 @@ class CardDetailPage extends StatelessWidget {
               const SizedBox(height: 8),
               Center(child: _buildVerticalCard(context)),
               const SizedBox(height: 10),
-              Text(card.label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(card.cardName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
-              Text(card.maskedNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Text(card.displayCardNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(height: 18),
 
               // Month selector
@@ -123,11 +123,11 @@ class CardDetailPage extends StatelessWidget {
     final width = MediaQuery.of(context).size.width * 0.5;
     final height = width * 1.6;
 
-    if (card.imagePath != null) {
+    if (card.cardImageUrl.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.asset(
-          card.imagePath!,
+        child: Image.network(
+          card.cardImageUrl,
           width: width,
           height: height,
           fit: BoxFit.cover,
@@ -140,11 +140,14 @@ class CardDetailPage extends StatelessWidget {
   }
 
   Widget _fallbackCard(double width, double height) {
+    // 카드사별 색상 지정
+    Color cardColor = _getCardColor(card.company);
+    
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: card.color,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8))],
       ),
@@ -153,10 +156,25 @@ class CardDetailPage extends StatelessWidget {
         children: [
           Icon(Icons.credit_card, size: 56, color: Colors.white.withOpacity(0.9)),
           const SizedBox(height: 16),
-          Text(card.bankName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          Text(card.company, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         ],
       ),
     );
+  }
+
+  // 카드사별 색상 매핑
+  Color _getCardColor(String company) {
+    final companyLower = company.toLowerCase();
+    if (companyLower.contains('삼성')) return const Color(0xFF4A90E2);
+    if (companyLower.contains('신한')) return const Color(0xFF0046FF);
+    if (companyLower.contains('kb') || companyLower.contains('국민')) return const Color(0xFFFFB900);
+    if (companyLower.contains('현대')) return const Color(0xFF00A0E9);
+    if (companyLower.contains('롯데')) return const Color(0xFFE61E2B);
+    if (companyLower.contains('우리')) return const Color(0xFF0489B1);
+    if (companyLower.contains('하나')) return const Color(0xFF00857D);
+    if (companyLower.contains('농협') || companyLower.contains('nh')) return const Color(0xFF00B140);
+    if (companyLower.contains('bc')) return const Color(0xFFD32F2F);
+    return const Color(0xFF6C757D); // 기본 회색
   }
 
   static String _formatWon(int value) {

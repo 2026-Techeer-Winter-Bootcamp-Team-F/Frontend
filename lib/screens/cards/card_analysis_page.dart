@@ -1,15 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
+import 'package:my_app/services/card_service.dart';
+import 'package:my_app/models/user_card.dart';
 
-class CardAnalysisPage extends StatelessWidget {
+class CardAnalysisPage extends StatefulWidget {
   const CardAnalysisPage({super.key});
 
-  static final List<WalletCard> _cards = [
-    WalletCard(imagePath: 'assets/cards/card1.png', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
-    WalletCard(imagePath: 'assets/cards/card2.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
-    WalletCard(imagePath: 'assets/cards/card3.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
-    WalletCard(imagePath: 'assets/cards/card4.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
-  ];
+  @override
+  State<CardAnalysisPage> createState() => _CardAnalysisPageState();
+}
+
+class _CardAnalysisPageState extends State<CardAnalysisPage> {
+  final CardService _cardService = CardService();
+  List<UserCard>? _userCards;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // 임시 액세스 토큰 설정 (홈페이지와 동일한 토큰 사용)
+    _cardService.setAuthToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MDU0MTA4LCJpYXQiOjE3NjkwNTA1MDgsImp0aSI6ImE3Yzk0Njg1MWE4ZDRmYTY5OTI5MWM3ZmQxMjk1MWM2IiwidXNlcl9pZCI6IjEifQ.stIR4jEmncL2jljKl-cyVQyMl7KpbL-eVzptQFKXDsM');
+    _loadCards();
+  }
+
+  Future<void> _loadCards() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final cards = await _cardService.getMyCards();
+      setState(() {
+        _userCards = cards;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '카드 목록을 불러오는데 실패했습니다: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,62 +55,74 @@ class CardAnalysisPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Wallet stack (full width inside padding)
-                SizedBox(
-                  width: double.infinity,
-                  height: 520,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: List.generate(_cards.length, (i) {
-                      final card = _cards[i];
-                      // Keep all visible cards the same scale/size.
-                      final offset = i * 40.0; // tighten overlap so more cards are visible
-                      final scale = 1.0;
-                      return Positioned(
-                        top: offset,
-                        left: 0,
-                        right: 0,
-                        child: Transform.scale(
-                          scale: scale,
-                          alignment: Alignment.topCenter,
-                          child: _buildCard(context, card, i == _cards.length - 1),
-                        ),
-                      );
-                    }),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(_errorMessage!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadCards,
+                        child: const Text('다시 시도'),
+                      ),
+                    ],
                   ),
-                ),
+                )
+              : _userCards == null || _userCards!.isEmpty
+                  ? const Center(child: Text('등록된 카드가 없습니다'))
+                  : SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Wallet stack (full width inside padding)
+                              SizedBox(
+                                width: double.infinity,
+                                height: _userCards!.length * 40.0 + 160.0,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: List.generate(_userCards!.length, (i) {
+                                    final card = _userCards![i];
+                                    final offset = i * 40.0;
+                                    return Positioned(
+                                      top: offset,
+                                      left: 0,
+                                      right: 0,
+                                      child: _buildCard(context, card, i == _userCards!.length - 1),
+                                    );
+                                  }),
+                                ),
+                              ),
 
-                const SizedBox(height: 28),
+                              const SizedBox(height: 28),
 
-                // Header text like the screenshot (left-aligned)
-                const Text(
-                  '이 카드는 어때요?',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
-                  style: TextStyle(fontSize: 13, color: Colors.black54),
-                ),
-                const SizedBox(height: 18),
+                              // Header text like the screenshot (left-aligned)
+                              const Text(
+                                '이 카드는 어때요?',
+                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
+                                style: TextStyle(fontSize: 13, color: Colors.black54),
+                              ),
+                              const SizedBox(height: 18),
 
-                // Recommendation sections
-                Column(
-                  children: _recommendations.map((section) => _buildRecommendationSection(context, section)).toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+                              // Recommendation sections
+                              Column(
+                                children: _recommendations.map((section) => _buildRecommendationSection(context, section)).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
     );
   }
 
@@ -148,87 +193,147 @@ class CardAnalysisPage extends StatelessWidget {
     return '${out}원';
   }
 
-  Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
+  Widget _buildCard(BuildContext context, UserCard card, bool isBottom) {
+    // 카드 번호에서 마지막 4자리 추출
+    final last4Digits = card.cardNumber.isNotEmpty && card.cardNumber.length >= 4
+        ? card.cardNumber.substring(card.cardNumber.length - 4)
+        : '';
+    final cardLabel = '${card.company} ${last4Digits}';
+
+    // 회사명으로 색상 지정 (기본값)
+    Color cardColor = _getCardColor(card.company);
+
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+      onTap: () {
+        // 필요시 카드 상세 페이지로 이동
+        // Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card)));
+      },
       child: Container(
-      height: 160,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: card.color,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 20,
-            top: 20,
-            child: Container(
-              width: 48,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-          ),
-          // optional badge on top-right
-          Positioned(
-            right: 18,
-            top: 18,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(card.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-            ),
-          ),
-          Positioned(
-            left: 20,
-            bottom: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(card.bankName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
-                const SizedBox(height: 6),
-                Text(card.maskedNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-              ],
-            ),
-          ),
-          if (!isBottom)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
+        height: 160,
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // 카드 이미지 (네트워크 이미지)
+            if (card.cardImageUrl.isNotEmpty)
+              Positioned.fill(
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.02)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                  child: Image.network(
+                    card.cardImageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      // 이미지 로딩 실패 시 기본 UI 표시
+                      return Container(color: cardColor);
+                    },
                   ),
                 ),
               ),
+            // 칩 아이콘
+            Positioned(
+              left: 20,
+              top: 20,
+              child: Container(
+                width: 48,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
             ),
-        ],
+            // 카드 라벨 (우측 상단)
+            Positioned(
+              right: 18,
+              top: 18,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.75),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  cardLabel,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                ),
+              ),
+            ),
+            // 카드 정보 (좌측 하단)
+            Positioned(
+              left: 20,
+              bottom: 24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.cardName,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    card.displayCardNumber.isNotEmpty ? card.displayCardNumber : card.company,
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            // 오버레이 효과 (맨 위 카드가 아닐 경우)
+            if (!isBottom)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.02)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
     );
+  }
+
+  // 카드사별 색상 매핑
+  Color _getCardColor(String company) {
+    switch (company) {
+      case '신한카드':
+        return const Color(0xFF0046FF);
+      case '현대카드':
+        return const Color(0xFF000000);
+      case '삼성카드':
+        return const Color(0xFF1428A0);
+      case 'KB국민카드':
+        return const Color(0xFFFFB900);
+      case '하나카드':
+        return const Color(0xFF008485);
+      case '우리카드':
+        return const Color(0xFF0033A0);
+      case '롯데카드':
+        return const Color(0xFFED1C24);
+      case 'NH농협카드':
+        return const Color(0xFF4FA449);
+      case 'BC카드':
+      case '비씨카드':
+        return const Color(0xFFE51937);
+      case '토스뱅크':
+        return const Color(0xFF0064FF);
+      default:
+        return const Color(0xFFECECEC);
+    }
   }
 }
 
-class WalletCard {
-  final Color color;
-  final String label;
-  final String bankName;
-  final String maskedNumber;
-  final String? imagePath;
-
-  const WalletCard({this.imagePath, required this.color, required this.label, this.bankName = '카드', this.maskedNumber = ''});
-}
+// WalletCard 클래스는 더 이상 사용하지 않음 (삭제 가능)
 
 class _RecommendationCard extends StatelessWidget {
   final Map<String, dynamic> data;
