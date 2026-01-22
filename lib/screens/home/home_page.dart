@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:my_app/config/theme.dart';
+// 'package:my_app/config/theme.dart'은 현재 이 파일에서 사용되지 않아 제거했습니다.
 import 'package:my_app/screens/analysis/category_detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -33,11 +33,11 @@ class _HomePageState extends State<HomePage> {
   final int monthlyAverage = 880000;
   
   final Map<String, Map<String, dynamic>> categoryData = {
-    '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF4CAF50)},
+    '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF1560FF)},
     '이체': {'amount': 142562, 'change': -146449, 'percent': 22, 'icon': '🏦', 'color': Color(0xFF2196F3)},
     '생활': {'amount': 83351, 'change': 37551, 'percent': 13, 'icon': '🏠', 'color': Color(0xFFFF9800)},
     '식비': {'amount': 48812, 'change': -15388, 'percent': 8, 'icon': '🍴', 'color': Color(0xFFFFEB3B)},
-    '카페·간식': {'amount': 21000, 'change': 21000, 'percent': 3, 'icon': '☕', 'color': Color(0xFF9C27B0)},
+    '카페·간식': {'amount': 21000, 'change': 21000, 'percent': 3, 'icon': '☕', 'color': Color(0xFF00BFA5)},
   };
   
   // 일별 누적 데이터 생성 (1월 19일까지)
@@ -100,7 +100,6 @@ class _HomePageState extends State<HomePage> {
                     
                     // 하단 섹션 (카테고리/지난달 비교)
                     _buildBottomSection(),
-                    
                     const SizedBox(height: 80), // 하단 네비게이션 바 공간
                   ],
                 ),
@@ -111,6 +110,8 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  
 
   // 상단 월 선택 헤더
   Widget _buildMonthHeader() {
@@ -172,7 +173,7 @@ class _HomePageState extends State<HomePage> {
         
         // 스크롤 가능한 페이지
         SizedBox(
-          height: 320,
+          height: 330,
           child: PageView(
             controller: topPageController,
             onPageChanged: (index) {
@@ -233,6 +234,34 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
+          // 텍스트 정보
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: '지난달 같은 기간보다\n'),
+                  TextSpan(
+                    text: _formatCurrency(difference),
+                    style: const TextStyle(
+                      color: Color(0xFF1560FF),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const TextSpan(text: ' 덜 썼어요'),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
           // 차트 영역
           Container(
             height: 180,
@@ -253,36 +282,11 @@ class _HomePageState extends State<HomePage> {
           
           const SizedBox(height: 20),
           
-          // 텍스트 정보
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                height: 1.5,
-              ),
-              children: [
-                const TextSpan(text: '지난달 같은 기간보다\n'),
-                TextSpan(
-                  text: _formatCurrency(difference),
-                  style: const TextStyle(
-                    color: Color(0xFF4CAF50),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const TextSpan(text: ' 덜 썼어요'),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
           // 월별 데이터
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildMonthData('1월 19일까지', thisMonthTotal, Colors.green),
+              _buildMonthData('1월 19일까지', thisMonthTotal, Color(0xFF1560FF)),
               const SizedBox(width: 40),
               _buildMonthData('12월 19일까지', lastMonthSameDay, Colors.grey),
             ],
@@ -333,6 +337,34 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
+          // 텍스트 정보
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: '일주일 평균\n'),
+                  TextSpan(
+                    text: _formatCurrency(weeklyAverage),
+                    style: const TextStyle(
+                      color: Color(0xFF1560FF),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const TextSpan(text: ' 정도 썼어요'),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
           // 차트 영역
           Container(
             height: 200,
@@ -350,31 +382,6 @@ class _HomePageState extends State<HomePage> {
                 _buildBarChart('01.11', 260000, 380000),
                 _buildBarChart('01.18', 90000, 380000),
                 _buildBarChart('0', 0, 380000, isToday: true),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 텍스트 정보
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                height: 1.5,
-              ),
-              children: [
-                const TextSpan(text: '일주일 평균\n'),
-                TextSpan(
-                  text: _formatCurrency(weeklyAverage),
-                  style: const TextStyle(
-                    color: Color(0xFF4CAF50),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const TextSpan(text: ' 정도 썼어요'),
               ],
             ),
           ),
@@ -412,8 +419,8 @@ class _HomePageState extends State<HomePage> {
         Container(
           width: 40,
           height: height.toDouble(),
-          decoration: BoxDecoration(
-            color: isToday ? const Color(0xFF4CAF50) : const Color(0xFFE0F2F1),
+            decoration: BoxDecoration(
+            color: isToday ? const Color(0xFF1560FF) : const Color(0xFFEAF3FF),
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -435,6 +442,34 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
+          // 텍스트 정보
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: '월 평균\n'),
+                  TextSpan(
+                    text: _formatCurrency(monthlyAverage),
+                    style: const TextStyle(
+                      color: Color(0xFF1560FF),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const TextSpan(text: ' 정도 썼어요'),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
           // 차트 영역
           Container(
             height: 200,
@@ -452,31 +487,6 @@ class _HomePageState extends State<HomePage> {
                 _buildMonthlyBar('25.11', 1700000, 1700000),
                 _buildMonthlyBar('25.12', 1400000, 1700000),
                 _buildMonthlyBar('26.01', 660000, 1700000, isCurrentMonth: true),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 텍스트 정보
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                height: 1.5,
-              ),
-              children: [
-                const TextSpan(text: '월 평균\n'),
-                TextSpan(
-                  text: _formatCurrency(monthlyAverage),
-                  style: const TextStyle(
-                    color: Color(0xFF4CAF50),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const TextSpan(text: ' 정도 썼어요'),
               ],
             ),
           ),
@@ -515,7 +525,7 @@ class _HomePageState extends State<HomePage> {
           width: 40,
           height: height,
           decoration: BoxDecoration(
-            color: isCurrentMonth ? const Color(0xFF4CAF50) : const Color(0xFFE0F2F1),
+            color: isCurrentMonth ? const Color(0xFF1560FF) : const Color(0xFFEAF3FF),
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -632,21 +642,28 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           // 메시지
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                height: 1.5,
-              ),
-              children: [
-                TextSpan(
-                  text: selectedEntry.key,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              textAlign: TextAlign.left,
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  height: 1.5,
+                  fontWeight: FontWeight.w900,
                 ),
-                const TextSpan(text: '에\n가장 많이 썼어요'),
-              ],
+                children: [
+                  TextSpan(
+                    text: selectedEntry.key,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1560FF),
+                    ),
+                  ),
+                  const TextSpan(text: '에\n가장 많이 썼어요'),
+                ],
+              ),
             ),
           ),
           
@@ -774,7 +791,7 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.05) : Colors.transparent,
+          color: isSelected ? color.withAlpha(13) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -782,8 +799,8 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                decoration: BoxDecoration(
+                color: color.withAlpha(26),
                 borderRadius: BorderRadius.circular(8),
                 border: isSelected ? Border.all(color: color, width: 2) : null,
               ),
@@ -828,9 +845,9 @@ class _HomePageState extends State<HomePage> {
             ),
             Text(
               '${isPositive ? '+' : ''}${_formatCurrencyFull(change)}',
-              style: TextStyle(
+                style: TextStyle(
                 fontSize: 12,
-                color: isPositive ? const Color(0xFFFF5252) : const Color(0xFF4CAF50),
+                color: isPositive ? const Color(0xFFFF5252) : const Color(0xFF1560FF),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -843,29 +860,33 @@ class _HomePageState extends State<HomePage> {
   // 지난달 비교 뷰
   Widget _buildComparisonView() {
     final topCategory = categoryData.entries.first;
-    final topChange = (topCategory.value['change'] as int).abs();
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
           // 메시지
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                height: 1.5,
-              ),
-              children: [
-                const TextSpan(text: '지난달 이맘때 대비\n'),
-                TextSpan(
-                  text: topCategory.key,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              textAlign: TextAlign.left,
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  height: 1.5,
+                  fontWeight: FontWeight.w900,
                 ),
-                const TextSpan(text: ' 지출이 줄었어요'),
-              ],
+                children: [
+                  const TextSpan(text: '지난달 이맘때 대비\n'),
+                  TextSpan(
+                    text: '${topCategory.key} 지출이 줄었어요',
+                    style: const TextStyle(
+                      color: Color(0xFF1560FF),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           
@@ -962,7 +983,7 @@ class _HomePageState extends State<HomePage> {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isChange ? Colors.transparent : (label.contains('1월') ? Colors.green : Colors.grey),
+            color: isChange ? Colors.transparent : (label.contains('1월') ? Color(0xFF1560FF) : Colors.grey),
             shape: BoxShape.circle,
             border: isChange ? Border.all(color: Colors.grey, width: 1) : null,
           ),
@@ -993,7 +1014,7 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isChange && amount.startsWith('-') ? const Color(0xFF4CAF50) : Colors.black,
+              color: isChange && amount.startsWith('-') ? const Color(0xFF1560FF) : Colors.black,
             ),
           ),
         ),
@@ -1018,7 +1039,7 @@ class _HomePageState extends State<HomePage> {
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (match) => '${match[1]},',
     );
-    return '${amount < 0 ? '-' : ''}${formatted}원';
+    return '${amount < 0 ? '-' : ''}$formatted원';
   }
 }
 
@@ -1055,7 +1076,7 @@ class LineChartPainter extends CustomPainter {
       lastMonthData.length,
     );
 
-    // 이번달 그래프 그리기 (초록색, 현재 날짜까지만)
+    // 이번달 그래프 그리기 (파란색, 현재 날짜까지만)
     _drawMonthLine(
       canvas,
       thisMonthData,
@@ -1063,8 +1084,8 @@ class LineChartPainter extends CustomPainter {
       chartWidth,
       chartHeight,
       padding,
-      const Color(0xFF4CAF50),
-      const Color(0xFF4CAF50).withOpacity(0.1),
+      const Color(0xFF1560FF),
+      const Color(0xFF1560FF).withOpacity(0.1),
       currentDay,
     );
 
@@ -1142,7 +1163,7 @@ class LineChartPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     // 마지막 점 표시 (이번달 데이터인 경우에만)
-    if (lineColor == const Color(0xFF4CAF50)) {
+    if (lineColor == const Color(0xFF1560FF)) {
       final lastPointX = padding + ((pointsToUse.length - 1) * xStep);
       final lastPointY = padding + chartHeight - (pointsToUse.last / maxValue * chartHeight);
 

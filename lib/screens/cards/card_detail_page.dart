@@ -162,7 +162,7 @@ class CardDetailPage extends StatelessWidget {
   static String _formatWon(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '${out}원';
+    return '$out원';
   }
 }
 
@@ -203,7 +203,7 @@ class SemicircleChart extends StatelessWidget {
   static String _formatWonStatic(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '${out}원';
+    return '$out원';
   }
 }
 

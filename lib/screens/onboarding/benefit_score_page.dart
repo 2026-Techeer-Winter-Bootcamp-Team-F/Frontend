@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class BenefitScorePage extends StatefulWidget {
@@ -11,14 +12,66 @@ class BenefitScorePage extends StatefulWidget {
   State<BenefitScorePage> createState() => _BenefitScorePageState();
 }
 
-class _BenefitScorePageState extends State<BenefitScorePage> {
-  // 더미 지갑 카드 리스트 (홈 탭에 표시)
-  // 카드 스택을 홈에서 제거함(디자인 요청)
+class _BenefitScorePageState extends State<BenefitScorePage> with SingleTickerProviderStateMixin {
+  late AnimationController _cardAnimationController;
+  late Animation<double> _cardAnimation;
+  bool _isBlueCardFront = false; // true면 파란 카드가 앞, false면 흰 카드가 앞
+  bool _isAnimating = false; // 애니메이션 진행 중 플래그
+
   @override
   void initState() {
     super.initState();
-    // 이 페이지는 이제 메인 내에서 탭 콘텐츠로 사용됩니다.
-    // 외부에서 직접 푸시할 때 자동 이동이 필요하면 auth 흐름에서 MainNavigation을 푸시하세요.
+    _cardAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _cardAnimation = CurvedAnimation(
+      parent: _cardAnimationController,
+      curve: Curves.easeInOutCubic,
+    );
+    
+    // 애니메이션 상태 감지
+    _cardAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _isBlueCardFront = true;
+          _isAnimating = false;
+        });
+      } else if (status == AnimationStatus.dismissed) {
+        setState(() {
+          _isBlueCardFront = false;
+          _isAnimating = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cardAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _onWhiteCardTap() {
+    if (_isAnimating) return;
+    // 흰 카드 탭: 파란 카드가 메인일 때만 reverse (흰 카드를 메인으로)
+    if (_isBlueCardFront) {
+      setState(() {
+        _isAnimating = true;
+      });
+      _cardAnimationController.reverse();
+    }
+  }
+
+  void _onBlueCardTap() {
+    if (_isAnimating) return;
+    // 파란 카드 탭: 흰 카드가 메인일 때만 forward (파란 카드를 메인으로)
+    if (!_isBlueCardFront) {
+      setState(() {
+        _isAnimating = true;
+      });
+      _cardAnimationController.forward();
+    }
   }
 
   @override
@@ -125,69 +178,152 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
 
   // 하단에 보여줄 큰 카드 컴포넌트 (스택된 스타일)
   Widget _buildBottomCard() {
-    return Center(
-      child: SizedBox(
-        width: 311, // 파란 카드의 너비 (가장 넓은 카드 기준)
-        height: 387,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // 파란 배경 카드 (뒤쪽) - width: 311, height: 365, 오프셋 적용
-            Positioned(
-              left: 26,
-              top: 10,
-              child: Container(
-                width: 311,
-                height: 365,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1560FF),
-                  borderRadius: BorderRadius.circular(26),
-                ),
-              ),
+    return AnimatedBuilder(
+      animation: _cardAnimation,
+      builder: (context, child) {
+        final progress = _cardAnimation.value;
+        
+        return Center(
+          child: SizedBox(
+            width: 311,
+            height: 387,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Stack 순서: 초기(progress=0)에는 흰 카드가 메인으로 보여야 함
+                // progress < 0.5: 파란 카드(아래), 흰 카드(위) -> 흰 카드 메인
+                // progress >= 0.5: 흰 카드(아래), 파란 카드(위) -> 파란 카드 메인
+                if (progress < 0.5) ...[
+                  // 파란 카드 (아래)
+                  _buildBlueCard(progress),
+                  // 흰색 카드 (위, 메인)
+                  _buildWhiteCard(progress),
+                ] else ...[
+                  // 흰색 카드 (아래)
+                  _buildWhiteCard(progress),
+                  // 파란 카드 (위, 메인)
+                  _buildBlueCard(progress),
+                ],
+              ],
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            // 흰색 카드 (앞쪽) - width: 285, height: 377
-            Positioned(
-              left: 0,
-              top: 0,
-              child: Container(
-                width: 285,
-                height: 377,
-                clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color.fromRGBO(0, 0, 0, 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
+  Widget _buildWhiteCard(double progress) {
+    // 흰 카드가 탭 가능한 조건: 애니메이션 중이 아닐 때
+    final isWhiteCardTappable = !_isAnimating;
+    
+    return Positioned(
+      left: progress * -245, // 0에서 -245로 (왼쪽으로 사라짐, 40px만 보이게)
+      top: 0,
+      child: IgnorePointer(
+        ignoring: !isWhiteCardTappable,
+        child: GestureDetector(
+          onTap: _onWhiteCardTap,
+          child: Transform.scale(
+            scale: 1.0 - (progress * 0.05), // 살짝 작아지는 효과
+            child: _buildCard(
+              color: Colors.white,
+              width: 285,
+              height: 377,
+              topOffset: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlueCard(double progress) {
+    // 파란 카드가 탭 가능한 조건: 애니메이션 중이 아닐 때
+    final isBlueCardTappable = !_isAnimating;
+    
+    return Positioned(
+      left: 26 - (progress * 26), // 26에서 0으로 (왼쪽으로 이동)
+      top: 10 - (progress * 10), // 10에서 0으로
+      child: IgnorePointer(
+        ignoring: !isBlueCardTappable,
+        child: GestureDetector(
+          onTap: _onBlueCardTap,
+          child: Transform.scale(
+            scale: 0.95 + (progress * 0.05), // 살짝 커지는 효과
+            child: _buildCard(
+              color: const Color(0xFF1560FF),
+              width: 311,
+              height: 365 + (progress * 12), // 365에서 377로
+              topOffset: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 카드 컨텐츠 생성 (동일한 UI 재사용)
+  Widget _buildCard({
+    required Color color,
+    required double width,
+    required double height,
+    required double topOffset,
+  }) {
+    final isWhiteCard = color == Colors.white;
+    
+    return Container(
+      width: width,
+      height: height,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: _buildCardContent(isWhiteCard: isWhiteCard),
+    );
+  }
+
+  // 카드 내부 컨텐츠 (흰색/파란색 카드 모두 동일)
+  Widget _buildCardContent({required bool isWhiteCard}) {
+    final textColor = isWhiteCard ? Colors.black : Colors.white;
+    final subtitleColor = isWhiteCard ? Colors.black54 : Colors.white70;
+    final cardImageUrl = isWhiteCard 
+        ? 'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBOADT2.gif'
+        : 'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBA7AQ7.gif';
+    
+    return Column(
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   // 상단 헤더 섹션 (카드 이미지 + 제목/부제 + 꺽쇠)
                   Expanded(
                     flex: 2,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // 카드 이미지
-                          Container(
-                            width: 88,
-                            height: 56,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Transform.rotate(
+                              angle: isWhiteCard ? 0 : math.pi,
                               child: Image.network(
-                                'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBOADT2.gif',
+                                cardImageUrl,
+                                width: 160,
+                                height: 101,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
+                                    width: 160,
+                                    height: 101,
                                     color: Colors.grey[200],
                                     child: const Center(
                                       child: Icon(Icons.credit_card, color: Colors.grey, size: 36),
@@ -198,40 +334,40 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // 제목 (오버플로우 방지)
-                          Flexible(
-                            child: Text(
-                              '신한은행 LG전자 The 구독케어',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                height: 1.3,
+                          // 제목 + 꺽쇠
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  isWhiteCard ? '신한은행 LG전자 The 구독케어' : '국민은행 Simple+',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.3,
+                                    color: textColor,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              Icon(
+                                Icons.chevron_right,
+                                color: isWhiteCard ? Colors.black26 : Colors.white38,
+                                size: 20,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           // 서브타이틀
                           Text(
-                            '본인 5699',
+                            isWhiteCard ? '본인 5699' : '본인 6842',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.black54,
+                              color: subtitleColor,
                               fontWeight: FontWeight.w400,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                          ),
-                          Expanded(child: SizedBox()),
-                          // 상단 꺽쇠 (오른쪽 중앙)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Icon(
-                              Icons.chevron_right,
-                              color: Colors.black26,
-                              size: 20,
-                            ),
                           ),
                         ],
                       ),
@@ -240,7 +376,7 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                   // 구분선 (전체 너비)
                   Container(
                     height: 1,
-                    color: Color(0xFFF0F0F0),
+                    color: isWhiteCard ? Color(0xFFF0F0F0) : Colors.white24,
                   ),
                   // 하단 금액 섹션
                   Expanded(
@@ -250,17 +386,17 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Flexible(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   '1월 이용금액',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey,
+                                    color: subtitleColor,
                                     fontWeight: FontWeight.w400,
                                   ),
                                   maxLines: 1,
@@ -271,22 +407,22 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
-                                    '579,790원',
+                                    isWhiteCard ? '579,790원' : '121,900원',
                                     style: TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.w900,
                                       height: 1.1,
+                                      color: textColor,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // 하단 꺽쇠 (오른쪽 중앙)
+                          // 하단 꺽쇠
                           Icon(
                             Icons.chevron_right,
-                            color: Colors.black26,
+                            color: isWhiteCard ? Colors.black26 : Colors.white38,
                             size: 20,
                           ),
                         ],
@@ -294,13 +430,6 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-    );
+              );
   }
-
 }

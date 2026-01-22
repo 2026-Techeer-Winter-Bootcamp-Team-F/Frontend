@@ -22,6 +22,40 @@ class _Conversation {
   const _Conversation({required this.id, required this.title, required this.lastMessage, required this.time});
 }
 
+// 말풍선 CustomPainter
+class ChatBubblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    // 둥근 사각형 말풍선 그리기
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height * 0.75),
+      const Radius.circular(4),
+    );
+    path.addRRect(rect);
+    
+    // 말풍선 꼬리 (아래쪽 작은 삼각형)
+    final tailWidth = size.width * 0.25;
+    final tailHeight = size.height * 0.25;
+    final tailStartX = size.width * 0.15;
+    
+    path.moveTo(tailStartX, size.height * 0.75);
+    path.lineTo(tailStartX, size.height);
+    path.lineTo(tailStartX + tailWidth, size.height * 0.75);
+    
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
 class ChatbotFloating extends StatefulWidget {
   final VoidCallback? onTap;
 
@@ -137,8 +171,27 @@ class _ChatbotFloatingState extends State<ChatbotFloating> {
               BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.14), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
-          child: const Center(
-            child: Icon(Icons.question_mark, color: Colors.white, size: 28),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 말풍선 모양
+              CustomPaint(
+                size: const Size(32, 32),
+                painter: ChatBubblePainter(),
+              ),
+              // 물음표
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2),
+                child: Text(
+                  '?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -250,7 +303,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: const [
-                                        Text('문의하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                        Text('질문하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                                         SizedBox(width: 8),
                                         Icon(Icons.send, color: Colors.white, size: 18),
                                       ],
@@ -261,7 +314,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text('챗봇 이용중', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const Center(
+                            child: Text('챗봇 이용중', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ),
                           const SizedBox(height: 12),
                           // Home can have additional content below
                           const SizedBox(height: 200),
@@ -350,7 +405,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('새 문의하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                  Text('새 질문하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                                   SizedBox(width: 8),
                                   Icon(Icons.send, color: Colors.white, size: 18),
                                 ],

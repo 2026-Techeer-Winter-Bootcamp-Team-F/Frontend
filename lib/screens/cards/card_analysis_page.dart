@@ -145,7 +145,7 @@ class CardAnalysisPage extends StatelessWidget {
   String _formatWon(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '${out}원';
+    return '$out원';
   }
 
   Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
@@ -232,7 +232,7 @@ class WalletCard {
 
 class _RecommendationCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  const _RecommendationCard({super.key, required this.data});
+  const _RecommendationCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
