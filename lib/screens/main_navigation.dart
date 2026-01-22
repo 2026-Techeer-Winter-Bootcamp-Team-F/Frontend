@@ -22,27 +22,124 @@ class _Conversation {
   const _Conversation({required this.id, required this.title, required this.lastMessage, required this.time});
 }
 
-class ChatbotFloating extends StatelessWidget {
+class ChatbotFloating extends StatefulWidget {
   final VoidCallback? onTap;
 
   const ChatbotFloating({super.key, this.onTap});
 
   @override
+  State<ChatbotFloating> createState() => _ChatbotFloatingState();
+}
+
+class _ChatbotFloatingState extends State<ChatbotFloating> {
+  double _xPosition = 0;
+  double _yPosition = 0;
+  bool _isInitialized = false;
+  bool _isHidden = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final screenSize = MediaQuery.of(context).size;
+      _xPosition = screenSize.width - 72; // 오른쪽 여백 16 + 위젯 크기 56
+      _yPosition = screenSize.height - 184; // 하단바 위
+      _isInitialized = true;
+    }
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final screenSize = MediaQuery.of(context).size;
+    final widgetSize = 56.0;
+    final threshold = 20.0; // 모서리 근처 감지 거리
+    final hideOffset = 42.0; // 숨김 시 튀어나오는 크기
+
+    setState(() {
+      // 왼쪽 가장자리 근처인지 확인
+      if (_xPosition < threshold) {
+        _xPosition = -hideOffset;
+        _isHidden = true;
+      }
+      // 오른쪽 가장자리 근처인지 확인
+      else if (_xPosition > screenSize.width - widgetSize - threshold) {
+        _xPosition = screenSize.width - (widgetSize - hideOffset);
+        _isHidden = true;
+      }
+      // 위쪽 가장자리 근처인지 확인
+      else if (_yPosition < threshold) {
+        _yPosition = -hideOffset;
+        _isHidden = true;
+      }
+      // 아래쪽 가장자리 근처인지 확인
+      else if (_yPosition > screenSize.height - widgetSize - threshold) {
+        _yPosition = screenSize.height - (widgetSize - hideOffset);
+        _isHidden = true;
+      } else {
+        _isHidden = false;
+      }
+
+      // 화면 경계 내로 제한 (완전히 숨기지 않을 때)
+      if (!_isHidden) {
+        _xPosition = _xPosition.clamp(0.0, screenSize.width - widgetSize);
+        _yPosition = _yPosition.clamp(0.0, screenSize.height - widgetSize);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1560FF),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.14), blurRadius: 10, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: const Center(
-          child: Icon(Icons.question_mark, color: Colors.white, size: 28),
+    if (!_isInitialized) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: _xPosition,
+      top: _yPosition,
+      child: GestureDetector(
+        onTap: () {
+          // 숨겨진 상태면 먼저 보이게 함
+          if (_isHidden) {
+            final screenSize = MediaQuery.of(context).size;
+            final widgetSize = 56.0;
+            setState(() {
+              // 가장 가까운 안전한 위치로 복귀
+              if (_xPosition < 0) {
+                _xPosition = 16;
+              } else if (_xPosition > screenSize.width - widgetSize) {
+                _xPosition = screenSize.width - widgetSize - 16;
+              }
+              if (_yPosition < 0) {
+                _yPosition = 16;
+              } else if (_yPosition > screenSize.height - widgetSize) {
+                _yPosition = screenSize.height - widgetSize - 16;
+              }
+              _isHidden = false;
+            });
+          } else {
+            widget.onTap?.call();
+          }
+        },
+        onPanUpdate: (details) {
+          setState(() {
+            _xPosition += details.delta.dx;
+            _yPosition += details.delta.dy;
+            _isHidden = false;
+          });
+        },
+        onPanEnd: _onDragEnd,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1560FF),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.14), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: const Center(
+            child: Icon(Icons.question_mark, color: Colors.white, size: 28),
+          ),
         ),
       ),
     );
@@ -325,14 +422,11 @@ class _MainNavigationState extends State<MainNavigation> {
     final bool selected = _currentIndex == index;
     final color = selected ? const Color(0xFF1560FF) : Colors.grey.shade400;
 
-    // scale factor for bottom bar (0.6 = 60%)
-    const double navScale = 0.6;
-
-    // Use larger icon when selected for emphasis (scaled)
-    final iconSize = selected ? 30.0 * navScale : 24.0 * navScale;
-    final selectedCircleSize = 44.0 * navScale;
-    final labelFontSize = 12.0 * navScale;
-    final spacing = 6.0 * navScale;
+    // Use larger icon when selected for emphasis
+    final iconSize = selected ? 26.0 : 22.0;
+    final selectedCircleSize = 36.0;
+    final labelFontSize = 11.0;
+    final spacing = 4.0;
 
     return Expanded(
       child: InkWell(
@@ -353,7 +447,7 @@ class _MainNavigationState extends State<MainNavigation> {
               else
                 Icon(icon, color: color, size: iconSize),
               SizedBox(height: spacing),
-              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: FontWeight.w400)),
             ],
           ),
         ),
@@ -371,29 +465,26 @@ class _MainNavigationState extends State<MainNavigation> {
             children: _pages,
           ),
           // Floating chatbot widget visible across all main pages
-          Positioned(
-            right: 16,
-            bottom: 110, // sits above the bottom navigation bar
-            child: ChatbotFloating(onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const ChatbotSheet(),
-              );
-            }),
-          ),
+          ChatbotFloating(onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const ChatbotSheet(),
+            );
+          }),
         ],
       ),
       bottomNavigationBar: Container(
+        width: 440,
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: Colors.grey.shade100)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        height: (90 * 0.6), // 원래 높이의 60%
+        height: 74,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _buildNavItem(index: 0, icon: Icons.home, label: '홈'),
             _buildNavItem(index: 1, icon: Icons.pie_chart_outline, label: '소비'),

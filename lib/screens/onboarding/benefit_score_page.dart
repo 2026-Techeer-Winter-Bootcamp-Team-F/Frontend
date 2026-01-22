@@ -13,14 +13,7 @@ class BenefitScorePage extends StatefulWidget {
 
 class _BenefitScorePageState extends State<BenefitScorePage> {
   // 더미 지갑 카드 리스트 (홈 탭에 표시)
-  final List<Map<String, String>> _walletCards = [
-    {'bank': '신한', 'last4': '5699', 'color': '0xFFECEFF1'},
-    {'bank': '토스', 'last4': '5289', 'color': '0xFFEFFB3'},
-    {'bank': '비씨', 'last4': '7892', 'color': '0xFFF1F5F9'},
-    {'bank': '국민', 'last4': '2095', 'color': '0xFFB0BEC5'},
-  ];
-
-  int _hoveredCard = -1;
+  // 카드 스택을 홈에서 제거함(디자인 요청)
   @override
   void initState() {
     super.initState();
@@ -38,29 +31,42 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
           child: Column(
             children: [
               const SizedBox(height: 8),
-              Text('${widget.score}', style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              const Text('/100', style: TextStyle(color: Colors.black54)),
-              const SizedBox(height: 18),
-              const Text('나의 혜택 점수', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${widget.score}',
+                    style: const TextStyle(fontSize: 70, fontWeight: FontWeight.w800, color: Colors.black, height: 1.0),
+                  ),
+                  Text(
+                    '/100',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, color: Colors.black, height: 1.0),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
-              const Text('**님이 사용하시는 카드 혜택의 85%를 챙기고 있어요', style: TextStyle(color: Colors.black54), textAlign: TextAlign.center),
+              const Text('나의 혜택 점수', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              const Text('용진님이 사용하시는 카드 혜택의 85%를 챙기고 있어요', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Colors.black54), textAlign: TextAlign.center),
               const SizedBox(height: 28),
 
               Row(
                 children: [
-                  Expanded(child: _statCard('받은 혜택', widget.received, accent: Colors.blue)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard('놓친 혜택', widget.missed, accent: Colors.redAccent)),
+                      Expanded(child: _statCard('받은 혜택', widget.received, accent: const Color(0xFF1560FF), percentLabel: '+12%')),
+                      const SizedBox(width: 12),
+                      Expanded(child: _statCard('놓친 혜택', widget.missed, accent: Colors.black, isWarning: true, note: '잠재 혜택')),
                 ],
               ),
-              const SizedBox(height: 20),
+              
+              const Spacer(),
 
-              // 홈 탭에 보여질 카드 스택 추가
+              // 하단 카드: 상세 카드 + 블루 백그라운드 (홈 탭에 표시)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: _buildCardStack(),
+                child: _buildBottomCard(),
               ),
+              
+              const Spacer(),
             ],
           ),
         ),
@@ -69,22 +75,39 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
     );
   }
 
-  Widget _statCard(String title, int amount, {Color? accent}) {
+  Widget _statCard(String title, int amount,
+      {Color? accent, String? note, String? percentLabel, bool isWarning = false}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.04), blurRadius: 12, offset: const Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black54)),
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(_formatWon(amount), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: accent ?? Colors.black)),
+              Text(_formatWon(amount), style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800, color: accent ?? Colors.black)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (percentLabel != null) ...[
+                Icon(Icons.trending_up, size: 14, color: accent ?? Colors.blue),
+                const SizedBox(width: 6),
+                Text(percentLabel, style: TextStyle(fontSize: 12, color: accent ?? Colors.blue)),
+              ] else if (isWarning) ...[
+                Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
+                const SizedBox(width: 6),
+                Text(note ?? '잠재 혜택', style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+              ] else if (note != null) ...[
+                Text(note, style: TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
             ],
           ),
         ],
@@ -92,80 +115,192 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
     );
   }
 
-  // 카드 스택 위젯
-  Widget _buildCardStack() {
-    final cardHeight = 70.0; // 절반 크기
-    final overlap = 11.0; // 카드 간 겹침 간격도 절반
-
-    return SizedBox(
-      height: cardHeight + (_walletCards.length - 1) * overlap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: List.generate(_walletCards.length, (i) {
-          final idx = _walletCards.length - 1 - i;
-          final data = _walletCards[idx];
-          final topOffset = i * overlap;
-          final isHovered = _hoveredCard == idx;
-
-          return Positioned(
-            left: 0,
-            right: 0,
-            top: topOffset,
-            child: MouseRegion(
-              onEnter: (_) => setState(() => _hoveredCard = idx),
-              onExit: (_) => setState(() => _hoveredCard = -1),
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => _hoveredCard = idx),
-                onTapUp: (_) => Future.delayed(const Duration(milliseconds: 180), () => setState(() => _hoveredCard = -1)),
-                onTapCancel: () => setState(() => _hoveredCard = -1),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  transform: Matrix4.identity()..scale(isHovered ? 1.04 : 1.0),
-                  transformAlignment: Alignment.center,
-                  child: Container(
-                    height: cardHeight,
-                    decoration: BoxDecoration(
-                      color: Color(int.parse(data['color']!)),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 4))],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 6),
-                                Text('${data['bank']}카드', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                                const Spacer(),
-                                Text('•••• ${data['last4']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.black.withOpacity(0.75), borderRadius: BorderRadius.circular(12)),
-                            child: Text('${data['bank']} ${data['last4']}', style: const TextStyle(color: Colors.white, fontSize: 10)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
+  // 카드 스택 관련 UI는 더 이상 홈에 표시하지 않습니다.
 
   String _formatWon(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
     return '₩$out';
   }
+
+  // 하단에 보여줄 큰 카드 컴포넌트 (스택된 스타일)
+  Widget _buildBottomCard() {
+    return Center(
+      child: SizedBox(
+        width: 311, // 파란 카드의 너비 (가장 넓은 카드 기준)
+        height: 387,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // 파란 배경 카드 (뒤쪽) - width: 311, height: 365, 오프셋 적용
+            Positioned(
+              left: 26,
+              top: 10,
+              child: Container(
+                width: 311,
+                height: 365,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1560FF),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+            ),
+
+            // 흰색 카드 (앞쪽) - width: 285, height: 377
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 285,
+                height: 377,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 0, 0, 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  // 상단 헤더 섹션 (카드 이미지 + 제목/부제 + 꺽쇠)
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 카드 이미지
+                          Container(
+                            width: 88,
+                            height: 56,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBOADT2.gif',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: Icon(Icons.credit_card, color: Colors.grey, size: 36),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // 제목 (오버플로우 방지)
+                          Flexible(
+                            child: Text(
+                              '신한은행 LG전자 The 구독케어',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // 서브타이틀
+                          Text(
+                            '본인 5699',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Expanded(child: SizedBox()),
+                          // 상단 꺽쇠 (오른쪽 중앙)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Icon(
+                              Icons.chevron_right,
+                              color: Colors.black26,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // 구분선 (전체 너비)
+                  Container(
+                    height: 1,
+                    color: Color(0xFFF0F0F0),
+                  ),
+                  // 하단 금액 섹션
+                  Expanded(
+                    flex: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '1월 이용금액',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '579,790원',
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // 하단 꺽쇠 (오른쪽 중앙)
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.black26,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    );
+  }
+
 }
