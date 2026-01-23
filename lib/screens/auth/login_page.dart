@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/providers/auth_provider.dart';
 import 'package:my_app/screens/auth/signup_page.dart';
 import 'package:my_app/screens/main_navigation.dart';
 
@@ -14,7 +16,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
@@ -27,19 +28,28 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    final authProvider = context.read<AuthProvider>();
 
-    // TODO: 실제 API 연동
-    await Future.delayed(const Duration(seconds: 1));
+    final success = await authProvider.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
 
     if (!mounted) return;
 
-    setState(() => _isLoading = false);
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? '로그인에 실패했습니다.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -163,21 +173,26 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24),
 
                 // Login Button
-                SizedBox(
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('로그인'),
-                  ),
+                Consumer<AuthProvider>(
+                  builder: (context, auth, child) {
+                    final isLoading = auth.status == AuthStatus.loading;
+                    return SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _login,
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('로그인'),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/providers/auth_provider.dart';
 import 'package:my_app/screens/main_navigation.dart';
 
 class SignupPage extends StatefulWidget {
@@ -24,7 +26,6 @@ class _SignupPageState extends State<SignupPage> {
   String? _selectedAgeGroup;
   String? _selectedGender;
 
-  bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -77,20 +78,32 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final authProvider = context.read<AuthProvider>();
 
-    // TODO: 실제 API 연동
-    await Future.delayed(const Duration(seconds: 1));
+    final success = await authProvider.signup(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      name: _nameController.text.trim(),
+      ageGroup: _selectedAgeGroup,
+      gender: _selectedGender == '선택안함' ? null : _selectedGender,
+    );
 
     if (!mounted) return;
 
-    setState(() => _isLoading = false);
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-      (route) => false,
-    );
+    if (success) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? '회원가입에 실패했습니다.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -106,10 +119,14 @@ class _SignupPageState extends State<SignupPage> {
       body: Column(
         children: [
           // Progress Indicator
-          LinearProgressIndicator(
-            value: (_currentStep + 1) / 2,
-            backgroundColor: AppColors.textLight.withOpacity(0.3),
-            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+          Consumer<AuthProvider>(
+            builder: (context, auth, child) {
+              return LinearProgressIndicator(
+                value: (_currentStep + 1) / 2,
+                backgroundColor: AppColors.textLight.withOpacity(0.3),
+                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+              );
+            },
           ),
 
           // Step Indicator
@@ -146,22 +163,27 @@ class _SignupPageState extends State<SignupPage> {
           // Next Button
           Padding(
             padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _nextStep,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(_currentStep == 1 ? '가입 완료' : '다음'),
-              ),
+            child: Consumer<AuthProvider>(
+              builder: (context, auth, child) {
+                final isLoading = auth.status == AuthStatus.loading;
+                return SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : _nextStep,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(_currentStep == 1 ? '가입 완료' : '다음'),
+                  ),
+                );
+              },
             ),
           ),
         ],
