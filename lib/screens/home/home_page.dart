@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/analysis/category_detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,32 +13,62 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // 현재 선택된 월
   DateTime selectedMonth = DateTime.now();
-  
+
   // 상단 스크롤 페이지 인덱스 (누적/주간/월간)
   int topPageIndex = 0;
   final PageController topPageController = PageController();
-  
+
   // 하단 스크롤 페이지 인덱스 (카테고리/지난달 비교)
   int bottomPageIndex = 0;
   final PageController bottomPageController = PageController();
-  
+
   // 도넛 차트 선택된 카테고리 인덱스
   int selectedCategoryIndex = 0;
-  
+
   // 더미 데이터
   final int thisMonthTotal = 646137; // 1월 19일까지
   final int lastMonthSameDay = 1014051; // 12월 19일까지
   final int weeklyAverage = 200000;
   final int monthlyAverage = 880000;
-  
+
   final Map<String, Map<String, dynamic>> categoryData = {
-    '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF4CAF50)},
-    '이체': {'amount': 142562, 'change': -146449, 'percent': 22, 'icon': '🏦', 'color': Color(0xFF2196F3)},
-    '생활': {'amount': 83351, 'change': 37551, 'percent': 13, 'icon': '🏠', 'color': Color(0xFFFF9800)},
-    '식비': {'amount': 48812, 'change': -15388, 'percent': 8, 'icon': '🍴', 'color': Color(0xFFFFEB3B)},
-    '카페·간식': {'amount': 21000, 'change': 21000, 'percent': 3, 'icon': '☕', 'color': Color(0xFF9C27B0)},
+    '쇼핑': {
+      'amount': 317918,
+      'change': -235312,
+      'percent': 49,
+      'icon': '🛍️',
+      'color': Color(0xFF4CAF50),
+    },
+    '이체': {
+      'amount': 142562,
+      'change': -146449,
+      'percent': 22,
+      'icon': '🏦',
+      'color': Color(0xFF2196F3),
+    },
+    '생활': {
+      'amount': 83351,
+      'change': 37551,
+      'percent': 13,
+      'icon': '🏠',
+      'color': Color(0xFFFF9800),
+    },
+    '식비': {
+      'amount': 48812,
+      'change': -15388,
+      'percent': 8,
+      'icon': '🍴',
+      'color': Color(0xFFFFEB3B),
+    },
+    '카페·간식': {
+      'amount': 21000,
+      'change': 21000,
+      'percent': 3,
+      'icon': '☕',
+      'color': Color(0xFF9C27B0),
+    },
   };
-  
+
   // 일별 누적 데이터 생성 (1월 19일까지)
   List<double> get thisMonthDailyData {
     return [
@@ -48,7 +77,7 @@ class _HomePageState extends State<HomePage> {
       435000, 485000, 535000, 580000, 646137, // 15-19일
     ];
   }
-  
+
   // 지난달 일별 누적 데이터 (12월 31일까지)
   List<double> get lastMonthDailyData {
     return [
@@ -78,7 +107,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             // 상단 월 선택 헤더
             _buildMonthHeader(),
-            
+
             // 스크롤 가능한 컨텐츠
             Expanded(
               child: SingleChildScrollView(
@@ -90,17 +119,17 @@ class _HomePageState extends State<HomePage> {
 
                     // 상단 섹션 (누적/주간/월간)
                     _buildTopSection(),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // 이번달/지난달 비교 탭
                     _buildTabButtons(),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // 하단 섹션 (카테고리/지난달 비교)
                     _buildBottomSection(),
-                    
+
                     const SizedBox(height: 80), // 하단 네비게이션 바 공간
                   ],
                 ),
@@ -132,10 +161,7 @@ class _HomePageState extends State<HomePage> {
           ),
           Text(
             '${selectedMonth.month}월',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
@@ -169,7 +195,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // 스크롤 가능한 페이지
         SizedBox(
           height: 320,
@@ -250,9 +276,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 텍스트 정보
           RichText(
             textAlign: TextAlign.center,
@@ -275,9 +301,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 월별 데이터
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -300,28 +326,19 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           _formatCurrencyFull(amount),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -353,9 +370,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 텍스트 정보
           RichText(
             textAlign: TextAlign.center,
@@ -378,22 +395,24 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           Text(
             '지난 4주 평균  ${_formatCurrencyFull(weeklyAverage)}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBarChart(String label, int amount, int maxAmount, {bool isToday = false}) {
+  Widget _buildBarChart(
+    String label,
+    int amount,
+    int maxAmount, {
+    bool isToday = false,
+  }) {
     final height = amount > 0 ? (amount / maxAmount * 120) : 2;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -403,10 +422,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               '${(amount / 10000).toStringAsFixed(0)}만',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           ),
         Container(
@@ -418,13 +434,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -451,13 +461,18 @@ class _HomePageState extends State<HomePage> {
                 _buildMonthlyBar('25.10', 540000, 1700000),
                 _buildMonthlyBar('25.11', 1700000, 1700000),
                 _buildMonthlyBar('25.12', 1400000, 1700000),
-                _buildMonthlyBar('26.01', 660000, 1700000, isCurrentMonth: true),
+                _buildMonthlyBar(
+                  '26.01',
+                  660000,
+                  1700000,
+                  isCurrentMonth: true,
+                ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 텍스트 정보
           RichText(
             textAlign: TextAlign.center,
@@ -480,22 +495,24 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           Text(
             '지난 4개월 평균  ${_formatCurrencyFull(754776)}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMonthlyBar(String label, int amount, int maxAmount, {bool isCurrentMonth = false}) {
+  Widget _buildMonthlyBar(
+    String label,
+    int amount,
+    int maxAmount, {
+    bool isCurrentMonth = false,
+  }) {
     final height = (amount / maxAmount * 120);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -505,28 +522,21 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               '${(amount / 10000).toStringAsFixed(0)}만',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           ),
         Container(
           width: 40,
           height: height,
           decoration: BoxDecoration(
-            color: isCurrentMonth ? const Color(0xFF4CAF50) : const Color(0xFFE0F2F1),
+            color: isCurrentMonth
+                ? const Color(0xFF4CAF50)
+                : const Color(0xFFE0F2F1),
             borderRadius: BorderRadius.circular(8),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -551,7 +561,9 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: bottomPageIndex == 0 ? Colors.black : Colors.transparent,
+                      color: bottomPageIndex == 0
+                          ? Colors.black
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -561,7 +573,9 @@ class _HomePageState extends State<HomePage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: bottomPageIndex == 0 ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: bottomPageIndex == 0
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                     color: bottomPageIndex == 0 ? Colors.black : Colors.grey,
                   ),
                 ),
@@ -582,7 +596,9 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: bottomPageIndex == 1 ? Colors.black : Colors.transparent,
+                      color: bottomPageIndex == 1
+                          ? Colors.black
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -592,7 +608,9 @@ class _HomePageState extends State<HomePage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: bottomPageIndex == 1 ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: bottomPageIndex == 1
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                     color: bottomPageIndex == 1 ? Colors.black : Colors.grey,
                   ),
                 ),
@@ -626,7 +644,7 @@ class _HomePageState extends State<HomePage> {
   // 소비 카테고리 뷰
   Widget _buildCategoryView() {
     final selectedEntry = categoryData.entries.toList()[selectedCategoryIndex];
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -649,9 +667,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 도넛 차트
           SizedBox(
             height: 200,
@@ -664,28 +682,35 @@ class _HomePageState extends State<HomePage> {
                     startDegreeOffset: -90,
                     pieTouchData: PieTouchData(
                       touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                        if (event is FlTapUpEvent && pieTouchResponse != null && pieTouchResponse.touchedSection != null) {
+                        if (event is FlTapUpEvent &&
+                            pieTouchResponse != null &&
+                            pieTouchResponse.touchedSection != null) {
                           setState(() {
-                            final touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                            if (touchedIndex >= 0 && touchedIndex < categoryData.length) {
+                            final touchedIndex = pieTouchResponse
+                                .touchedSection!
+                                .touchedSectionIndex;
+                            if (touchedIndex >= 0 &&
+                                touchedIndex < categoryData.length) {
                               selectedCategoryIndex = touchedIndex;
                             }
                           });
                         }
                       },
                     ),
-                    sections: categoryData.entries.toList().asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final data = entry.value.value;
-                      final isSelected = index == selectedCategoryIndex;
-                      
-                      return PieChartSectionData(
-                        color: data['color'] as Color,
-                        value: (data['percent'] as int).toDouble(),
-                        title: '',
-                        radius: isSelected ? 35 : 30,
-                      );
-                    }).toList(),
+                    sections: categoryData.entries.toList().asMap().entries.map(
+                      (entry) {
+                        final index = entry.key;
+                        final data = entry.value.value;
+                        final isSelected = index == selectedCategoryIndex;
+
+                        return PieChartSectionData(
+                          color: data['color'] as Color,
+                          value: (data['percent'] as int).toDouble(),
+                          title: '',
+                          radius: isSelected ? 35 : 30,
+                        );
+                      },
+                    ).toList(),
                   ),
                 ),
                 Center(
@@ -706,10 +731,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       Text(
                         selectedEntry.key,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -717,9 +739,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 카테고리 목록
           ...categoryData.entries.toList().asMap().entries.map((entry) {
             final index = entry.key;
@@ -739,9 +761,9 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }),
-          
+
           const SizedBox(height: 16),
-          
+
           TextButton(
             onPressed: () {
               Navigator.push(
@@ -802,26 +824,22 @@ class _HomePageState extends State<HomePage> {
                         name,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '$percent%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _formatCurrencyFull(amount),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -830,7 +848,9 @@ class _HomePageState extends State<HomePage> {
               '${isPositive ? '+' : ''}${_formatCurrencyFull(change)}',
               style: TextStyle(
                 fontSize: 12,
-                color: isPositive ? const Color(0xFFFF5252) : const Color(0xFF4CAF50),
+                color: isPositive
+                    ? const Color(0xFFFF5252)
+                    : const Color(0xFF4CAF50),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -843,8 +863,7 @@ class _HomePageState extends State<HomePage> {
   // 지난달 비교 뷰
   Widget _buildComparisonView() {
     final topCategory = categoryData.entries.first;
-    final topChange = (topCategory.value['change'] as int).abs();
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -868,9 +887,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // 카테고리별 막대 그래프
           SizedBox(
             height: 200,
@@ -881,7 +900,7 @@ class _HomePageState extends State<HomePage> {
                 final percent = entry.value['percent'] as int;
                 final change = entry.value['change'] as int;
                 final lastMonthPercent = percent + (change / 10000).round();
-                
+
                 return _buildComparisonBar(
                   entry.key,
                   lastMonthPercent,
@@ -891,17 +910,30 @@ class _HomePageState extends State<HomePage> {
               }).toList(),
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // 상세 정보
           Column(
             children: [
-              _buildComparisonDetail('1월 19일까지', '49%', _formatCurrencyFull(317918)),
+              _buildComparisonDetail(
+                '1월 19일까지',
+                '49%',
+                _formatCurrencyFull(317918),
+              ),
               const SizedBox(height: 8),
-              _buildComparisonDetail('12월 19일까지', '55%', _formatCurrencyFull(553230)),
+              _buildComparisonDetail(
+                '12월 19일까지',
+                '55%',
+                _formatCurrencyFull(553230),
+              ),
               const SizedBox(height: 8),
-              _buildComparisonDetail('증감', '-6%', _formatCurrencyFull(-235312), isChange: true),
+              _buildComparisonDetail(
+                '증감',
+                '-6%',
+                _formatCurrencyFull(-235312),
+                isChange: true,
+              ),
             ],
           ),
         ],
@@ -909,11 +941,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildComparisonBar(String label, int lastMonth, int thisMonth, Color color) {
+  Widget _buildComparisonBar(
+    String label,
+    int lastMonth,
+    int thisMonth,
+    Color color,
+  ) {
     final maxHeight = 150.0;
     final lastMonthHeight = (lastMonth / 60 * maxHeight).clamp(10.0, maxHeight);
     final thisMonthHeight = (thisMonth / 60 * maxHeight).clamp(10.0, maxHeight);
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -945,24 +982,28 @@ class _HomePageState extends State<HomePage> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildComparisonDetail(String label, String percent, String amount, {bool isChange = false}) {
+  Widget _buildComparisonDetail(
+    String label,
+    String percent,
+    String amount, {
+    bool isChange = false,
+  }) {
     return Row(
       children: [
         Container(
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isChange ? Colors.transparent : (label.contains('1월') ? Colors.green : Colors.grey),
+            color: isChange
+                ? Colors.transparent
+                : (label.contains('1월') ? Colors.green : Colors.grey),
             shape: BoxShape.circle,
             border: isChange ? Border.all(color: Colors.grey, width: 1) : null,
           ),
@@ -971,18 +1012,12 @@ class _HomePageState extends State<HomePage> {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ),
         Text(
           percent,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         const SizedBox(width: 16),
         SizedBox(
@@ -993,7 +1028,9 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isChange && amount.startsWith('-') ? const Color(0xFF4CAF50) : Colors.black,
+              color: isChange && amount.startsWith('-')
+                  ? const Color(0xFF4CAF50)
+                  : Colors.black,
             ),
           ),
         ),
@@ -1005,13 +1042,8 @@ class _HomePageState extends State<HomePage> {
     if (amount.abs() >= 10000) {
       return '${(amount / 10000).toStringAsFixed(0)}만원';
     }
-    return '${amount.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (match) => '${match[1]},',
-        )}원';
+    return '${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}원';
   }
-
-  
 
   String _formatCurrencyFull(int amount) {
     final formatted = amount.abs().toString().replaceAllMapped(
@@ -1106,7 +1138,8 @@ class LineChartPainter extends CustomPainter {
 
     // 첫 번째 포인트
     final firstX = padding;
-    final firstY = padding + chartHeight - (pointsToUse[0] / maxValue * chartHeight);
+    final firstY =
+        padding + chartHeight - (pointsToUse[0] / maxValue * chartHeight);
 
     path.moveTo(firstX, firstY);
     fillPath.moveTo(firstX, padding + chartHeight);
@@ -1115,7 +1148,8 @@ class LineChartPainter extends CustomPainter {
     // 나머지 포인트들 - 부드러운 곡선으로 연결
     for (int i = 1; i < pointsToUse.length; i++) {
       final x = padding + (i * xStep);
-      final y = padding + chartHeight - (pointsToUse[i] / maxValue * chartHeight);
+      final y =
+          padding + chartHeight - (pointsToUse[i] / maxValue * chartHeight);
 
       if (i == 1) {
         path.lineTo(x, y);
@@ -1123,10 +1157,13 @@ class LineChartPainter extends CustomPainter {
       } else {
         // 베지어 곡선으로 부드럽게 연결
         final prevX = padding + ((i - 1) * xStep);
-        final prevY = padding + chartHeight - (pointsToUse[i - 1] / maxValue * chartHeight);
-        
+        final prevY =
+            padding +
+            chartHeight -
+            (pointsToUse[i - 1] / maxValue * chartHeight);
+
         final controlX = (prevX + x) / 2;
-        
+
         path.quadraticBezierTo(controlX, prevY, x, y);
         fillPath.quadraticBezierTo(controlX, prevY, x, y);
       }
@@ -1144,7 +1181,8 @@ class LineChartPainter extends CustomPainter {
     // 마지막 점 표시 (이번달 데이터인 경우에만)
     if (lineColor == const Color(0xFF4CAF50)) {
       final lastPointX = padding + ((pointsToUse.length - 1) * xStep);
-      final lastPointY = padding + chartHeight - (pointsToUse.last / maxValue * chartHeight);
+      final lastPointY =
+          padding + chartHeight - (pointsToUse.last / maxValue * chartHeight);
 
       final circlePaint = Paint()
         ..color = lineColor
@@ -1159,16 +1197,18 @@ class LineChartPainter extends CustomPainter {
     }
   }
 
-  void _drawLabels(Canvas canvas, Size size, double chartWidth, double padding) {
+  void _drawLabels(
+    Canvas canvas,
+    Size size,
+    double chartWidth,
+    double padding,
+  ) {
     final textPainter = TextPainter(
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     );
 
-    final labelStyle = TextStyle(
-      color: Colors.grey[600],
-      fontSize: 10,
-    );
+    final labelStyle = TextStyle(color: Colors.grey[600], fontSize: 10);
 
     // 날짜 레이블 (1일, 중간, 31일)
     final labels = [
@@ -1184,7 +1224,10 @@ class LineChartPainter extends CustomPainter {
       );
       textPainter.layout();
 
-      final x = padding + (chartWidth * (label['position'] as double)) - textPainter.width / 2;
+      final x =
+          padding +
+          (chartWidth * (label['position'] as double)) -
+          textPainter.width / 2;
       final y = size.height - 8;
 
       textPainter.paint(canvas, Offset(x, y));
