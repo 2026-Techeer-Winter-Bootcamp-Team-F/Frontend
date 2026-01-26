@@ -130,7 +130,7 @@ class CardAnalysisPage extends StatelessWidget {
         const SizedBox(height: 12),
         GridView.count(
           crossAxisCount: 2,
-          childAspectRatio: 1.05,
+          childAspectRatio: 1.15,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           shrinkWrap: true,
@@ -242,9 +242,10 @@ class _RecommendationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
@@ -261,14 +262,31 @@ class _RecommendationCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          Text(data['title'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+          Text(
+            data['title'] as String,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(child: Text(data['subtitle'] as String, style: const TextStyle(fontSize: 11, color: Colors.black54))),
+              Expanded(
+                child: Text(
+                  data['subtitle'] as String,
+                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               const SizedBox(width: 8),
-              Text(data['percent'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black87)),
+              Text(
+                data['percent'] as String,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black87),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ],

@@ -83,77 +83,79 @@ void _onBlueCardTap() {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${widget.score}',
-                    style: const TextStyle(
-                      fontSize: 70,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                      height: 1.0,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${widget.score}',
+                      style: const TextStyle(
+                        fontSize: 70,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '/100',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                      height: 1.0,
+                    Text(
+                      '/100',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text('나의 혜택 점수',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              const Text(
-                '용진님이 사용하시는 카드 혜택의 85%를 챙기고 있어요',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black54,
+                  ],
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: _statCard(
-                      '받은 혜택',
-                      widget.received,
-                      accent: const Color(0xFF1560FF),
-                      percentLabel: '+12%',
-                    ),
+                const SizedBox(height: 8),
+                const Text('나의 혜택 점수',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                const Text(
+                  '용진님이 사용하시는 카드 혜택의 85%를 챙기고 있어요',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black54,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _statCard(
-                      '놓친 혜택',
-                      widget.missed,
-                      accent: Colors.black,
-                      isWarning: true,
-                      note: '잠재 혜택',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(
+                        '받은 혜택',
+                        widget.received,
+                        accent: const Color(0xFF1560FF),
+                        percentLabel: '+12%',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: _buildBottomCard(),
-              ),
-              const Spacer(),
-            ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _statCard(
+                        '놓친 혜택',
+                        widget.missed,
+                        accent: Colors.black,
+                        isWarning: true,
+                        note: '잠재 혜택',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  child: _buildBottomCard(),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
@@ -383,7 +385,25 @@ void _onBlueCardTap() {
                       width: 160,
                       height: 101,
                       fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: 160,
+                          height: 101,
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      },
                       errorBuilder: (context, error, stackTrace) {
+                        print('Image load error: $error');
                         return Container(
                           width: 160,
                           height: 101,
