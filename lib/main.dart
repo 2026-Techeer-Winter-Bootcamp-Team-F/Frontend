@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode; // ★ kReleaseMode 추가
+import 'package:device_preview/device_preview.dart'; // ★ 추가
 import 'package:my_app/config/theme.dart';
-import 'package:my_app/providers/auth_provider.dart';
-import 'package:my_app/providers/card_provider.dart';
-import 'package:my_app/providers/expense_provider.dart';
-import 'package:my_app/providers/chat_provider.dart';
 import 'package:my_app/screens/splash/splash_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  // 웹에서 Google Fonts 자동 로딩 방지
+  if (kIsWeb) {
+    // 웹 환경에서 추가 설정이 필요한 경우 여기에 작성
+  }
+
+  runApp(
+    DevicePreview( // ★ 추가
+      enabled: !kReleaseMode, // ★ 디버그에서만 활성화
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -16,19 +23,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => CardProvider()),
-        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
-      ],
-      child: MaterialApp(
-        title: 'BeneFit',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const SplashPage(),
-      ),
+    return MaterialApp(
+      title: 'BeneFit',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      home: const SplashPage(),
+
+      // ★ DevicePreview 적용: appBuilder만 사용
+      builder: DevicePreview.appBuilder,
     );
   }
 }

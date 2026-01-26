@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:my_app/config/theme.dart';
-import 'package:my_app/providers/chat_provider.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -13,7 +11,10 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final List<ChatMessage> _messages = [];
+  bool _isTyping = false;
 
+  // 추천 질문들
   final List<String> _suggestedQuestions = [
     '이번 달 커피값 얼마나 썼어?',
     '지금 쓰는 카드보다 더 좋은 거 있어?',
@@ -24,12 +25,17 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    _initializeChat();
+    _addWelcomeMessage();
   }
 
-  Future<void> _initializeChat() async {
-    final chatProvider = context.read<ChatProvider>();
-    await chatProvider.initializeRoom();
+  void _addWelcomeMessage() {
+    _messages.add(
+      ChatMessage(
+        text: '안녕하세요! BeneFit(베네핏)입니다 :)\n궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
+        isUser: false,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -39,17 +45,81 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  Future<void> _sendMessage() async {
+  void _sendMessage() {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add(
+        ChatMessage(
+          text: text,
+          isUser: true,
+          timestamp: DateTime.now(),
+        ),
+      );
+      _isTyping = true;
+    });
 
     _messageController.clear();
     _scrollToBottom();
 
-    final chatProvider = context.read<ChatProvider>();
-    await chatProvider.sendMessage(text);
+    // 더미 AI 응답 (실제로는 API 호출)
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          _messages.add(
+            ChatMessage(
+              text: _generateDummyResponse(text),
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+        });
+        _scrollToBottom();
+      }
+    });
+  }
 
-    _scrollToBottom();
+  String _generateDummyResponse(String question) {
+    if (question.contains('커피') || question.contains('카페')) {
+      return '이번 달 카페 지출을 분석해봤어요.\n\n'
+          '총 카페 지출: 75,000원\n'
+          '- 스타벅스: 42,000원 (8회)\n'
+          '- 투썸플레이스: 18,000원 (4회)\n'
+          '- 기타: 15,000원 (5회)\n\n'
+          '지난달(68,000원)보다 10% 증가했어요. 스타벅스를 자주 가시네요!';
+    } else if (question.contains('카드') && (question.contains('좋은') || question.contains('추천'))) {
+      return '현재 소비 패턴을 분석한 결과, 토스카드를 추천드려요!\n\n'
+          '예상 월간 혜택: 45,000원\n'
+          '- 모든 가맹점 0.5% 적립\n'
+          '- 온라인 결제 추가 0.5%\n\n'
+          '현재 삼성카드(32,000원)보다 월 13,000원 더 받을 수 있어요. '
+          '카드 탭에서 자세한 비교를 확인해보세요!';
+    } else if (question.contains('분석') || question.contains('패턴')) {
+      return '최근 3개월 소비 패턴을 분석했어요.\n\n'
+          '주요 소비 카테고리:\n'
+          '1. 식비 (28%) - 월 평균 52만원\n'
+          '2. 쇼핑 (24%) - 월 평균 45만원\n'
+          '3. 생활 (17%) - 월 평균 32만원\n\n'
+          '특징:\n'
+          '- 주말에 외식 지출이 집중돼요\n'
+          '- 온라인 쇼핑이 80% 이상이에요\n'
+          '- 배달비가 월 4만원 정도 나가요';
+    } else if (question.contains('연회비') || question.contains('아까')) {
+      return '연회비 대비 혜택을 분석했어요.\n\n'
+          '현대카드 M이 연회비 값을 못하고 있어요.\n'
+          '- 연회비: 15,000원\n'
+          '- 받은 혜택: 8,000원 (달성률 20%)\n'
+          '- 월할 손실: -7,000원\n\n'
+          '이 카드는 M포인트 적립 특화인데, '
+          '주로 사용하시는 곳이 적립 제외 가맹점이에요. '
+          '해지를 고려해보시는 게 좋을 것 같아요.';
+    }
+
+    return '네, 말씀하신 내용을 확인해볼게요.\n\n'
+        '죄송하지만 현재는 데모 버전이라 실제 데이터 분석이 제한적이에요. '
+        '아래 추천 질문들을 시도해보시거나, 다른 방식으로 질문해주세요!';
   }
 
   void _scrollToBottom() {
@@ -68,59 +138,74 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.smart_toy, size: 24),
-            SizedBox(width: 8),
-            Text('AI 금융 비서'),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  'BeneFit',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 8,
+                    letterSpacing: -0.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('베네핏(BeneFit)'),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              final chatProvider = context.read<ChatProvider>();
-              chatProvider.resetChat();
-              _initializeChat();
-            },
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
-      body: Consumer<ChatProvider>(
-        builder: (context, chatProvider, child) {
-          if (chatProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          // 채팅 메시지 목록
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (_isTyping && index == _messages.length) {
+                  return _buildTypingIndicator();
+                }
+                return _buildMessageBubble(_messages[index]);
+              },
+            ),
+          ),
 
-          final messages = chatProvider.messages;
-          final isSending = chatProvider.isSending;
+          // 추천 질문 (메시지가 적을 때만)
+          if (_messages.length <= 2) _buildSuggestedQuestions(),
 
-          return Column(
-            children: [
-              // 채팅 메시지 목록
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length + (isSending ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (isSending && index == messages.length) {
-                      return _buildTypingIndicator();
-                    }
-                    return _buildMessageBubble(messages[index]);
-                  },
-                ),
-              ),
-
-              // 추천 질문 (메시지가 적을 때만)
-              if (messages.length <= 2) _buildSuggestedQuestions(),
-
-              // 입력 영역
-              _buildInputArea(isSending),
-            ],
-          );
-        },
+          // 입력 영역
+          _buildInputArea(),
+        ],
       ),
     );
   }
@@ -138,13 +223,27 @@ class _ChatPageState extends State<ChatPage> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(18),
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(
-                Icons.smart_toy,
-                color: AppColors.primary,
-                size: 20,
+              child: const Center(
+                child: Text(
+                  'BeneFit',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9,
+                    letterSpacing: -0.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -182,7 +281,22 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           ),
-          if (message.isUser) const SizedBox(width: 44),
+          if (message.isUser) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black26,
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -198,13 +312,27 @@ class _ChatPageState extends State<ChatPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(18),
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.smart_toy,
-              color: AppColors.primary,
-              size: 20,
+            child: const Center(
+              child: Text(
+                'BeneFit',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 9,
+                  letterSpacing: -0.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -281,10 +409,10 @@ class _ChatPageState extends State<ChatPage> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withOpacity(0.5),
                     ),
                   ),
                   child: Text(
@@ -292,6 +420,7 @@ class _ChatPageState extends State<ChatPage> {
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -303,7 +432,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildInputArea(bool isSending) {
+  Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -322,7 +451,6 @@ class _ChatPageState extends State<ChatPage> {
             Expanded(
               child: TextField(
                 controller: _messageController,
-                enabled: !isSending,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요...',
                   border: OutlineInputBorder(
@@ -347,10 +475,10 @@ class _ChatPageState extends State<ChatPage> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                onPressed: isSending ? null : _sendMessage,
-                icon: Icon(
+                onPressed: _sendMessage,
+                icon: const Icon(
                   Icons.send,
-                  color: isSending ? Colors.grey : Colors.white,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -359,4 +487,16 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
+}
+
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  final DateTime timestamp;
+
+  ChatMessage({
+    required this.text,
+    required this.isUser,
+    required this.timestamp,
+  });
 }
