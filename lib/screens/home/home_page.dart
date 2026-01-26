@@ -225,17 +225,24 @@ class _HomePageState extends State<HomePage> {
     return Column(
       children: [
         // 페이지 인디케이터
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildIndicator('누적', 0),
-            const SizedBox(width: 24),
-            _buildIndicator('일간', 1),
-            const SizedBox(width: 24),
-            _buildIndicator('주간', 2),
-            const SizedBox(width: 24),
-            _buildIndicator('월간', 3),
-          ],
+        Center(
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildIndicator('누적', 0),
+                _buildIndicator('일간', 1),
+                _buildIndicator('주간', 2),
+                _buildIndicator('월간', 3),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         
@@ -296,28 +303,23 @@ class _HomePageState extends State<HomePage> {
           );
         }
       },
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? const Color(0xFF1E1E23) : Colors.grey,
-              fontFamily: 'Pretendard',
-            ),
+      child: Container(
+        height: 47.6,
+        padding: const EdgeInsets.symmetric(horizontal: 34),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? const Color(0xFF1E1E23) : const Color(0xFFBBBBBB),
+            fontFamily: 'Pretendard',
           ),
-          const SizedBox(height: 4),
-          if (isSelected)
-            Container(
-              width: 40,
-              height: 2,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E23),
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -712,15 +714,14 @@ class _HomePageState extends State<HomePage> {
           
           const SizedBox(height: 20),
           
-          // 월별 데이터 (오른쪽 정렬)
+          // 월별 데이터
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildMonthData('1월 19일까지', thisMonthTotal, const Color(0xFF1560FF)),
+                _buildMonthData('1월 19일까지', thisMonthTotal, const Color(0xFF1560FF), isCurrent: true),
                 const SizedBox(height: 8),
-                _buildMonthData('12월 19일까지', lastMonthSameDay, const Color(0xFFB3D9FF)),
+                _buildMonthData('12월 19일까지', lastMonthSameDay, const Color(0xFFB3D9FF), isCurrent: false),
               ],
             ),
           ),
@@ -729,9 +730,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildMonthData(String label, int amount, Color color) {
+  Widget _buildMonthData(String label, int amount, Color color, {required bool isCurrent}) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 8,
@@ -742,21 +742,23 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
-            fontFamily: 'Pretendard',
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+              fontFamily: 'Pretendard',
+            ),
           ),
         ),
-        const SizedBox(width: 24),
         Text(
           _formatCurrencyFull(amount),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E1E23),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+            color: const Color(0xFF1E1E23),
             fontFamily: 'Pretendard',
           ),
         ),
@@ -988,73 +990,55 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTabButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                bottomPageController.animateToPage(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: bottomPageIndex == 0 ? const Color(0xFF1E1E23) : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  '이번달',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: bottomPageIndex == 0 ? FontWeight.w600 : FontWeight.normal,
-                    color: bottomPageIndex == 0 ? const Color(0xFF1E1E23) : Colors.grey,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-              ),
-            ),
+      child: Center(
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(100),
           ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                bottomPageController.animateToPage(
-                  1,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: bottomPageIndex == 1 ? const Color(0xFF1E1E23) : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  '지난달 비교',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: bottomPageIndex == 1 ? FontWeight.w600 : FontWeight.normal,
-                    color: bottomPageIndex == 1 ? const Color(0xFF1E1E23) : Colors.grey,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-              ),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBottomTab('이번달', 0),
+              _buildBottomTab('지난달 비교', 1),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomTab(String label, int index) {
+    final isSelected = bottomPageIndex == index;
+    return GestureDetector(
+      onTap: () {
+        bottomPageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: Container(
+        height: 47.6,
+        constraints: const BoxConstraints(minWidth: 137),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? const Color(0xFF1E1E23) : const Color(0xFFBBBBBB),
+            fontFamily: 'Pretendard',
+          ),
+        ),
       ),
     );
   }
@@ -1082,6 +1066,11 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCategoryView() {
     final selectedEntry = categoryData.entries.toList()[selectedCategoryIndex];
     
+    // 상단 문구는 항상 최대 금액 카테고리로 표시
+    final maxAmountCategory = categoryData.entries.reduce((a, b) => 
+      (a.value['amount'] as int) > (b.value['amount'] as int) ? a : b
+    ).key;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -1101,7 +1090,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 children: [
                   TextSpan(
-                    text: selectedEntry.key,
+                    text: maxAmountCategory,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1560FF),

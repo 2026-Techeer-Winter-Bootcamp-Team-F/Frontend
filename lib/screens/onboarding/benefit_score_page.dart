@@ -58,27 +58,25 @@ class _BenefitScorePageState extends State<BenefitScorePage>
     super.dispose();
   }
 
-  void _onWhiteCardTap() {
-    if (_isAnimating) return;
-    // 흰 카드 탭: 파란 카드가 메인일 때만 reverse (흰 카드를 메인으로)
-    if (_isBlueCardFront) {
-      setState(() {
-        _isAnimating = true;
-      });
-      _cardAnimationController.reverse();
-    }
-  }
+void _onWhiteCardTap() {
+  if (_isAnimating) return;
 
-  void _onBlueCardTap() {
-    if (_isAnimating) return;
-    // 파란 카드 탭: 흰 카드가 메인일 때만 forward (파란 카드를 메인으로)
-    if (!_isBlueCardFront) {
-      setState(() {
-        _isAnimating = true;
-      });
-      _cardAnimationController.forward();
-    }
+  // 파란 카드가 어느 정도라도 앞으로 나와 있으면(= value > 0) 언제든 되돌리기 허용
+  if (_cardAnimationController.value > 0.0) {
+    setState(() => _isAnimating = true);
+    _cardAnimationController.reverse();
   }
+}
+
+void _onBlueCardTap() {
+  if (_isAnimating) return;
+
+  // 아직 완전히 앞으로 안 왔으면(= value < 1) 언제든 앞으로 보내기 허용
+  if (_cardAnimationController.value < 1.0) {
+    setState(() => _isAnimating = true);
+    _cardAnimationController.forward();
+  }
+}
 
   @override
   Widget build(BuildContext context) {
