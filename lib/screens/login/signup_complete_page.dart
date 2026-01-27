@@ -17,7 +17,7 @@ class _SignupCompletePageState extends State<SignupCompletePage> {
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
+          MaterialPageRoute(builder: (_) => MainNavigation(name: widget.name)),
           (route) => false,
         );
       }

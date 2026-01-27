@@ -20,7 +20,7 @@ class UserService {
       ApiConfig.login,
       body: {'phone': phone, 'password': password},
     );
-    final token = data['result']?['token']?['access'];
+    final token = data['token']?['access'];
     if (token != null) {
       await _api.setToken(token);
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/auth/signup_page.dart';
 import 'package:my_app/screens/main_navigation.dart';
+import 'package:my_app/services/user_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,14 +13,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _userService = UserService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -29,17 +31,28 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
-    // TODO: 실제 API 연동
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final result = await _userService.login(
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() => _isLoading = false);
+      final name = result['name'] as String? ?? '';
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainNavigation(name: name)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 실패: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -95,21 +108,21 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 60),
 
-                // Email Input
+                // Phone Input
                 TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: '이메일',
-                    hintText: 'example@email.com',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    labelText: '전화번호',
+                    hintText: '01012345678',
+                    prefixIcon: Icon(Icons.phone_outlined),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return '이메일을 입력해주세요';
+                      return '전화번호를 입력해주세요';
                     }
-                    if (!value.contains('@')) {
-                      return '올바른 이메일 형식이 아닙니다';
+                    if (!RegExp(r'^\d{10,11}$').hasMatch(value.trim())) {
+                      return '올바른 전화번호 형식이 아닙니다';
                     }
                     return null;
                   },

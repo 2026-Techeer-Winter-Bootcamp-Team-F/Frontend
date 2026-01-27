@@ -8,7 +8,8 @@ import 'package:my_app/screens/subscription/subscription_page.dart';
 import 'package:my_app/screens/chat/chat_page.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final String name;
+  const MainNavigation({super.key, this.name = ''});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -586,8 +587,8 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const BenefitScorePage(),
+  late final List<Widget> _pages = [
+    BenefitScorePage(name: widget.name),
     const HomePage(),
     const CardAnalysisPage(),
     const SubscriptionPage(),
