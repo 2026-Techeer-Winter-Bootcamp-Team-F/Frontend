@@ -1448,22 +1448,23 @@ class _HomePageState extends State<HomePage> {
           
           const SizedBox(height: 32),
           
-          // 카테고리별 막대 그래프
+          // 카테고리별 막대 그래프 (상위 5개)
           SizedBox(
             height: 200,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: categoryData.entries.map((entry) {
+              children: categoryData.entries.take(5).map((entry) {
                 final percent = entry.value['percent'] as int;
                 final change = entry.value['change'] as int;
                 final lastMonthPercent = percent + (change / 10000).round();
-                
-                return _buildComparisonBar(
-                  entry.key,
-                  lastMonthPercent,
-                  percent,
-                  entry.value['color'] as Color,
+
+                return Expanded(
+                  child: _buildComparisonBar(
+                    entry.key,
+                    lastMonthPercent,
+                    percent,
+                    entry.value['color'] as Color,
+                  ),
                 );
               }).toList(),
             ),
@@ -1490,11 +1491,12 @@ class _HomePageState extends State<HomePage> {
     final maxHeight = 150.0;
     final lastMonthHeight = (lastMonth / 60 * maxHeight).clamp(10.0, maxHeight);
     final thisMonthHeight = (thisMonth / 60 * maxHeight).clamp(10.0, maxHeight);
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Container(
@@ -1518,10 +1520,12 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          width: 40,
+          height: 28,
           child: Text(
             label,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
