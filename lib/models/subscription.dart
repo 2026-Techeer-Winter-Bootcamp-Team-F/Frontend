@@ -35,3 +35,40 @@ class Subscription {
 
   bool get isLowUtility => utilityScore != null && utilityScore! < 3.0;
 }
+
+class MySubscriptionInfo {
+  final int subsId;
+  final String serviceName;
+  final int monthlyFee;
+  final String nextBilling;
+  final int dDay;
+  final String status;
+  final String statusKor;
+  final String categoryName;
+
+  MySubscriptionInfo({
+    required this.subsId,
+    required this.serviceName,
+    required this.monthlyFee,
+    required this.nextBilling,
+    required this.dDay,
+    required this.status,
+    required this.statusKor,
+    required this.categoryName,
+  });
+
+  factory MySubscriptionInfo.fromJson(Map<String, dynamic> json) {
+    return MySubscriptionInfo(
+      subsId: json['subs_id'] ?? 0,
+      serviceName: json['service_name'] ?? '',
+      monthlyFee: json['monthly_fee'] ?? 0,
+      nextBilling: json['next_billing'] ?? '',
+      dDay: json['d_day'] ?? 0,
+      status: json['status'] ?? '',
+      statusKor: json['status_kor'] ?? '',
+      categoryName: json['category_name'] ?? '',
+    );
+  }
+
+  bool get isActive => status.toUpperCase() == 'ACTIVE';
+}
