@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/models/transaction_models.dart';
+import 'package:my_app/services/transaction_service.dart';
 import 'transaction_detail_page.dart';
 
 class CategoryTransactionPage extends StatefulWidget {
@@ -9,6 +12,7 @@ class CategoryTransactionPage extends StatefulWidget {
   final int change;
   final int percent;
   final Color color;
+  final DateTime? month;
 
   const CategoryTransactionPage({
     super.key,
@@ -18,6 +22,7 @@ class CategoryTransactionPage extends StatefulWidget {
     required this.change,
     required this.percent,
     required this.color,
+    this.month,
   });
 
   @override
@@ -26,61 +31,69 @@ class CategoryTransactionPage extends StatefulWidget {
 }
 
 class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
-  // 정렬 옵션
+  final TransactionService _service = TransactionService();
+
   String selectedSort = '최신순';
   final List<String> sortOptions = ['최신순', '고액순'];
 
-  // 거래 내역 데이터 (날짜별 그룹화)
-  final Map<String, List<Map<String, dynamic>>> transactions = {
-    '17일 (토)': [
-      {
-        'name': 'Apple Inc',
-        'detail': '카카오페이 머니',
-        'amount': -14000,
-        'paymentMethod': '결제',
-        'icon': '🛍️',
-        'time': '1건',
-      },
-      {
-        'name': '쿠팡',
-        'detail': '토스뱅크 통장',
-        'amount': -13340,
-        'paymentMethod': '출금',
-        'icon': '🛍️',
-        'time': '1건',
-      },
-    ],
-    '15일 (목)': [
-      {
-        'name': '쿠팡',
-        'detail': '토스뱅크 통장',
-        'amount': -13340,
-        'paymentMethod': '출금',
-        'icon': '🛍️',
-        'time': '1건',
-      },
-    ],
-    '13일 (화)': [
-      {
-        'name': '올리브영',
-        'detail': 'Npay 머니',
-        'amount': -26520,
-        'paymentMethod': '결제',
-        'icon': '🛍️',
-        'time': '1건',
-      },
-    ],
-    '10일 (토)': [
-      {
-        'name': '신세계백화점진천이마전',
-        'detail': '토스뱅크 체크카드',
-        'amount': -37050,
-        'paymentMethod': '일시불',
-        'icon': '🛍️',
-        'time': '1건',
-      },
-    ],
-  };
+  bool _isLoading = true;
+  String? _error;
+  CategoryDetail? _detail;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final now = widget.month ?? DateTime.now();
+      final detail = await _service.getCategoryDetail(
+        now.year,
+        now.month,
+        widget.categoryName,
+      );
+      setState(() {
+        _detail = detail;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Group transactions by date string (e.g. "23일 (금)")
+  Map<String, List<CategoryTransaction>> get _groupedTransactions {
+    if (_detail == null) return {};
+
+    final transactions = List<CategoryTransaction>.from(_detail!.transactions);
+
+    if (selectedSort == '고액순') {
+      transactions.sort((a, b) => b.amount.compareTo(a.amount));
+    } else {
+      transactions.sort((a, b) => b.spentAt.compareTo(a.spentAt));
+    }
+
+    final Map<String, List<CategoryTransaction>> grouped = {};
+    final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
+    for (final tx in transactions) {
+      final day = tx.spentAt.day;
+      final weekday = weekdays[tx.spentAt.weekday - 1];
+      final key = '${day}일 ($weekday)';
+      grouped.putIfAbsent(key, () => []).add(tx);
+    }
+    return grouped;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,22 +112,20 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
       ),
       body: Column(
         children: [
-          // 카테고리 헤더
           _buildCategoryHeader(),
-
-          // 정렬 옵션
           _buildSortOptions(),
-
-          // 거래 내역 리스트
           Expanded(
-            child: _buildTransactionList(),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text('데이터를 불러올 수 없습니다'))
+                    : _buildTransactionList(),
           ),
         ],
       ),
     );
   }
 
-  // 카테고리 헤더
   Widget _buildCategoryHeader() {
     return Container(
       width: double.infinity,
@@ -122,7 +133,6 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 카테고리명 + 퍼센트
           Row(
             children: [
               Text(
@@ -144,10 +154,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
-          // 금액
           Text(
             _formatCurrencyFull(widget.amount),
             style: TextStyle(
@@ -156,10 +163,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // 지난달 대비
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -192,7 +196,6 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
     );
   }
 
-  // 정렬 옵션
   Widget _buildSortOptions() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -214,7 +217,9 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -225,65 +230,27 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
     );
   }
 
-  // 거래 내역 리스트
   Widget _buildTransactionList() {
-    // 정렬 적용
-    List<MapEntry<String, List<Map<String, dynamic>>>> sortedEntries;
-    
-    if (selectedSort == '고액순') {
-      // 모든 거래를 하나의 리스트로 합치고 금액순으로 정렬
-      final allTransactions = <Map<String, dynamic>>[];
-      transactions.forEach((date, items) {
-        for (var item in items) {
-          allTransactions.add({...item, 'date': date});
-        }
-      });
-      
-      // 금액 절댓값 기준으로 내림차순 정렬
-      allTransactions.sort((a, b) {
-        final amountA = (a['amount'] as int).abs();
-        final amountB = (b['amount'] as int).abs();
-        return amountB.compareTo(amountA);
-      });
-      
-      // 날짜별로 다시 그룹화
-      final Map<String, List<Map<String, dynamic>>> regrouped = {};
-      for (var item in allTransactions) {
-        final date = item['date'] as String;
-        if (!regrouped.containsKey(date)) {
-          regrouped[date] = [];
-        }
-        final itemCopy = Map<String, dynamic>.from(item);
-        itemCopy.remove('date');
-        regrouped[date]!.add(itemCopy);
-      }
-      
-      sortedEntries = regrouped.entries.toList();
-    } else {
-      // 최신순 (기본)
-      sortedEntries = transactions.entries.toList();
+    final grouped = _groupedTransactions;
+
+    if (grouped.isEmpty) {
+      return const Center(child: Text('거래 내역이 없습니다'));
     }
-    
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      children: sortedEntries.map((entry) {
+      children: grouped.entries.map((entry) {
         return _buildDateGroup(entry.key, entry.value);
       }).toList(),
     );
   }
 
-  // 날짜별 그룹
-  Widget _buildDateGroup(String date, List<Map<String, dynamic>> items) {
-    // 해당 날짜의 총 금액 계산
-    final totalAmount = items.fold<int>(
-      0,
-      (sum, item) => sum + (item['amount'] as int).abs(),
-    );
+  Widget _buildDateGroup(String date, List<CategoryTransaction> items) {
+    final totalAmount = items.fold<int>(0, (sum, tx) => sum + tx.amount);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 날짜 헤더
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
@@ -307,27 +274,25 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
             ],
           ),
         ),
-
-        // 거래 항목들
-        ...items.map((transaction) => _buildTransactionItem(transaction)),
-
+        ...items.map((tx) => _buildTransactionItem(tx)),
         const SizedBox(height: 8),
       ],
     );
   }
 
-  // 거래 항목
-  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
+  Widget _buildTransactionItem(CategoryTransaction tx) {
+    final timeStr = DateFormat('HH:mm').format(tx.spentAt);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TransactionDetailPage(
-              merchantName: transaction['name'] as String,
+              merchantName: tx.merchantName,
               categoryIcon: widget.categoryIcon,
-              amount: transaction['amount'] as int,
-              paymentMethod: transaction['detail'] as String,
+              amount: -tx.amount,
+              paymentMethod: tx.cardName,
               color: widget.color,
             ),
           ),
@@ -342,79 +307,73 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
-        children: [
-          // 아이콘
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: widget.color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                widget.categoryIcon,
-                style: const TextStyle(fontSize: 20),
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: widget.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  widget.categoryIcon,
+                  style: const TextStyle(fontSize: 20),
+                ),
               ),
             ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // 거래 정보
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.merchantName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    tx.cardName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  transaction['name'] as String,
+                  _formatCurrencyFull(-tx.amount),
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  transaction['detail'] as String,
+                  timeStr,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ),
-
-          // 금액 및 결제수단
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                _formatCurrencyFull(transaction['amount'] as int),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                transaction['paymentMethod'] as String,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
