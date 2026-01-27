@@ -659,8 +659,8 @@ class _CardWalletSectionState extends State<CardWalletSection> {
       builder: (context, constraints) {
         final screenWidth = MediaQuery.of(context).size.width;
         final cardWidth = screenWidth - 80;
-        final fullCardHeight = cardWidth * 1.5;
-        final visibleHeight = constraints.maxHeight;
+        final fullCardHeight = cardWidth * 1.4; // 카드 높이 비율 조정
+        final visibleHeight = constraints.maxHeight + 20; // 더 많이 보이도록
         
         return GestureDetector(
           onTapUp: (details) {
@@ -908,9 +908,9 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     final sub = card['sub'] as String? ?? '';
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth - 48; // 좌우 패딩 제외
-    // 세로 카드 비율 (가로:세로 = 1:1.585, 일반 카드를 세로로 세움)
-    final cardHeight = cardWidth * 1.585;
+    final cardWidth = screenWidth - 80; // 스택 뷰와 동일
+    // 세로 카드 비율 조정
+    final cardHeight = cardWidth * 1.4;
 
     return Container(
       key: key,
@@ -935,7 +935,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -944,24 +944,24 @@ class _CardWalletSectionState extends State<CardWalletSection> {
               name,
               style: TextStyle(
                 color: textColor,
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               sub,
               style: TextStyle(
                 color: textColor.withOpacity(0.8),
-                fontSize: 13,
+                fontSize: 12,
               ),
             ),
             const Spacer(),
             // EMV 칩 (세로 방향)
             Container(
-              width: 45,
-              height: 55,
+              width: 40,
+              height: 48,
               decoration: BoxDecoration(
                 color: chipColor,
                 borderRadius: BorderRadius.circular(6),
@@ -970,18 +970,18 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                 painter: ChipPatternPainter(chipColor),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             // 카드 번호
             Text(
               '**** **** **** ****',
               style: TextStyle(
                 color: textColor,
-                fontSize: 18,
-                letterSpacing: 3,
+                fontSize: 16,
+                letterSpacing: 2.5,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             // 유효기간
             Row(
               children: [
@@ -989,16 +989,16 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                   'VALID\nTHRU',
                   style: TextStyle(
                     color: textColor.withOpacity(0.7),
-                    fontSize: 8,
+                    fontSize: 7,
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   '12/28',
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
