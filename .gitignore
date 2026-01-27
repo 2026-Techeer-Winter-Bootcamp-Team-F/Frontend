@@ -104,10 +104,6 @@ app.*.map.json
 *.pem
 *.p12
 
-# Font files (download separately)
-assets/fonts/*.otf
-assets/fonts/*.ttf
-
 # Temporary files
 *.tmp
 *.temp
