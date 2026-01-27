@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/screens/login/signup_complete_page.dart';
+import 'package:my_app/screens/bank/card_login_page.dart';
 
 class BankSelectionPage extends StatefulWidget {
   final String name;
@@ -11,12 +11,12 @@ class BankSelectionPage extends StatefulWidget {
 
 class _BankSelectionPageState extends State<BankSelectionPage> {
   final List<_BankItem> banks = [
-    _BankItem(name: '신한카드', color: Colors.blue),
-    _BankItem(name: 'BC카드', color: Colors.red),
-    _BankItem(name: '국민카드', color: Colors.brown),
-    _BankItem(name: '현대카드', color: Colors.black),
-    _BankItem(name: '하나카드', color: Colors.teal),
-    _BankItem(name: '롯데카드', color: Colors.redAccent),
+    _BankItem(name: '신한카드', orgCode: '0306', color: Colors.blue),
+    _BankItem(name: 'BC카드', orgCode: '0305', color: Colors.red),
+    _BankItem(name: '국민카드', orgCode: '0301', color: Colors.brown),
+    _BankItem(name: '현대카드', orgCode: '0302', color: Colors.black),
+    _BankItem(name: '하나카드', orgCode: '0313', color: Colors.teal),
+    _BankItem(name: '롯데카드', orgCode: '0311', color: Colors.redAccent),
   ];
 
   int? _selectedIndex;
@@ -27,21 +27,28 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
 
   void _onConnect() {
     if (_selectedIndex == null) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => SignupCompletePage(name: widget.name)),
+    final selected = banks[_selectedIndex!];
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CardLoginPage(
+          name: widget.name,
+          bankName: selected.name,
+          organization: selected.orgCode,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
               const Center(child: FlutterLogo(size: 72)),
               const SizedBox(height: 24),
               const Text('은행을 선택해주세요.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -108,6 +115,7 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
 
 class _BankItem {
   final String name;
+  final String orgCode;
   final Color color;
-  _BankItem({required this.name, required this.color});
+  _BankItem({required this.name, required this.orgCode, required this.color});
 }

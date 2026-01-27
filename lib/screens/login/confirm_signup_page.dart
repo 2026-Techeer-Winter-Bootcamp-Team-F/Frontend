@@ -93,13 +93,13 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
               const Text(
                 '휴대폰 번호를 입력해주세요.',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
