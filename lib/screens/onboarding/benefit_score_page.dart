@@ -1,289 +1,733 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:my_app/config/theme.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+
+// --- Gemini API 설정 ---
+const String _apiKey = ""; // 여기에 API 키를 입력하세요
+
+Future<String> callGeminiAPI(String prompt) async {
+  if (_apiKey.isEmpty) return "API 키가 설정되지 않았습니다.";
+
+  const String url =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+
+  try {
+    final response = await http.post(
+      Uri.parse("$url?key=$_apiKey"),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "contents": [
+          {
+            "parts": [
+              {"text": prompt}
+            ]
+          }
+        ]
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['candidates']?[0]['content']?['parts']?[0]['text'] ??
+          "분석 결과를 가져올 수 없습니다.";
+    } else {
+      return "오류 발생: ${response.statusCode}";
+    }
+  } catch (e) {
+    return "네트워크 오류가 발생했습니다.";
+  }
+}
 
 class BenefitScorePage extends StatefulWidget {
-  final int score; // 0..100
-  final int received;
-  final int missed;
-
-  const BenefitScorePage({
-    super.key,
-    this.score = 85,
-    this.received = 15240,
-    this.missed = 3215,
-  });
+  const BenefitScorePage({super.key});
 
   @override
   State<BenefitScorePage> createState() => _BenefitScorePageState();
 }
 
-class _BenefitScorePageState extends State<BenefitScorePage>
+class _BenefitScorePageState extends State<BenefitScorePage> {
+  bool _isDarkMode = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: _isDarkMode
+          ? ThemeData(
+              brightness: Brightness.dark,
+              fontFamily: 'Pretendard',
+              scaffoldBackgroundColor: Colors.black,
+              colorScheme: const ColorScheme.dark(
+                primary: Color(0xFF2563EB),
+                secondary: Color(0xFF3B82F6),
+                surface: Color(0xFF1C1C1E),
+                onSurface: Colors.white,
+              ),
+              useMaterial3: true,
+            )
+          : ThemeData(
+              brightness: Brightness.light,
+              fontFamily: 'Pretendard',
+              scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+              colorScheme: const ColorScheme.light(
+                primary: Color(0xFF2563EB),
+                secondary: Color(0xFF3B82F6),
+                surface: Colors.white,
+                onSurface: Color(0xFF1E293B),
+              ),
+              useMaterial3: true,
+            ),
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 32),
+              const SpendingReportSection(),
+              const SizedBox(height: 40),
+              const BenefitSummarySection(),
+              const SizedBox(height: 40),
+              // 카드 섹션 (2/3만 보이게)
+              const Expanded(child: CardWalletSection()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- 1. Spending Report (지출 리포트) ---
+class SpendingReportSection extends StatefulWidget {
+  const SpendingReportSection({super.key});
+
+  @override
+  State<SpendingReportSection> createState() => _SpendingReportSectionState();
+}
+
+class _SpendingReportSectionState extends State<SpendingReportSection>
     with SingleTickerProviderStateMixin {
-  late AnimationController _cardAnimationController;
-  late Animation<double> _cardAnimation;
-  bool _isBlueCardFront = false; // true면 파란 카드가 앞, false면 흰 카드가 앞
-  bool _isAnimating = false; // 애니메이션 진행 중 플래그
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _cardAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+    _controller = AnimationController(
       vsync: this,
-    );
-    _cardAnimation = CurvedAnimation(
-      parent: _cardAnimationController,
-      curve: Curves.easeInOutCubic,
-    );
-
-    // 애니메이션 상태 감지
-    _cardAnimationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          _isBlueCardFront = true;
-          _isAnimating = false;
-        });
-      } else if (status == AnimationStatus.dismissed) {
-        setState(() {
-          _isBlueCardFront = false;
-          _isAnimating = false;
-        });
-      }
-    });
+      duration: const Duration(seconds: 4),
+    )..repeat();
   }
 
   @override
   void dispose() {
-    _cardAnimationController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-void _onWhiteCardTap() {
-  if (_isAnimating) return;
-
-  // 파란 카드가 어느 정도라도 앞으로 나와 있으면(= value > 0) 언제든 되돌리기 허용
-  if (_cardAnimationController.value > 0.0) {
-    setState(() => _isAnimating = true);
-    _cardAnimationController.reverse();
-  }
-}
-
-void _onBlueCardTap() {
-  if (_isAnimating) return;
-
-  // 아직 완전히 앞으로 안 왔으면(= value < 1) 언제든 앞으로 보내기 허용
-  if (_cardAnimationController.value < 1.0) {
-    setState(() => _isAnimating = true);
-    _cardAnimationController.forward();
-  }
-}
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${widget.score}',
-                      style: TextStyle(
-                        fontSize: 70,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        height: 1.0,
-                      ),
-                    ),
-                    Text(
-                      '/100',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        height: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('나의 혜택 점수',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-                const SizedBox(height: 8),
-                Text(
-                  '용진님이 사용하시는 카드 혜택의 85%를 챙기고 있어요',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _statCard(
-                        '받은 혜택',
-                        widget.received,
-                        accent: AppColors.primary,
-                        percentLabel: '+12%',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _statCard(
-                        '놓친 혜택',
-                        widget.missed,
-                        accent: Theme.of(context).colorScheme.onSurface,
-                        isWarning: true,
-                        note: '잠재 혜택',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 0),
-                  child: _buildBottomCard(),
-                ),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
-  Widget _statCard(
-    String title,
-    int amount, {
-    Color? accent,
-    String? note,
-    String? percentLabel,
-    bool isWarning = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.4),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, -1),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 8),
+          // Content
           Row(
             children: [
-              Text(
-                _formatWon(amount),
-                style: TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.w800,
-                  color: accent ?? Theme.of(context).colorScheme.onSurface,
+              // Wave Chart
+              SizedBox(
+                width: 150,
+                height: 150,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 배경 원
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark
+                            ? const Color(0xFF2C2C2E)
+                            : Colors.grey[200],
+                      ),
+                    ),
+                    // Wave Animation (클리핑된 원)
+                    SizedBox(
+                      width: 150,
+                      height: 150,
+                      child: ClipOval(
+                        child: AnimatedBuilder(
+                          animation: _controller,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              painter: WavePainter(
+                                _controller.value,
+                                primaryColor,
+                                0.63, // 63%
+                              ),
+                              size: const Size(150, 150),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    // 테두리 원
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF3A3A3C) : Colors.grey[400]!,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    // 텍스트 (가장 위에)
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "TARGET",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withOpacity(0.8),
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "63%",
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1.0,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 32),
+              // Categories
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildCategoryRow(
+                      "Food",
+                      "45%",
+                      Colors.blue[600]!,
+                      isDark,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryRow(
+                      "Shopping",
+                      "30%",
+                      Colors.indigo[400]!,
+                      isDark,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (percentLabel != null) ...[
-                Icon(Icons.trending_up,
-                    size: 14, color: accent ?? Colors.blue),
-                const SizedBox(width: 6),
-                Text(percentLabel,
-                    style: TextStyle(fontSize: 12, color: accent ?? Colors.blue)),
-              ] else if (isWarning) ...[
-                const Icon(Icons.warning_amber_rounded,
-                    size: 14, color: Colors.redAccent),
-                const SizedBox(width: 6),
-                Text(note ?? '잠재 혜택',
-                    style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
-              ] else if (note != null) ...[
-                Text(note,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ],
-            ],
-          ),
         ],
       ),
     );
   }
 
-  String _formatWon(int value) {
-    final s = value.toString();
-    final out =
-        s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '₩$out';
+  Widget _buildCategoryRow(
+    String label,
+    String percent,
+    Color color,
+    bool isDark,
+  ) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              percent,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 6,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[900] : Colors.grey[200],
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: double.parse(percent.replaceAll('%', '')) / 100,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+// Wave Painter for the water effect
+class WavePainter extends CustomPainter {
+  final double animationValue;
+  final Color color;
+  final double percentage;
+
+  WavePainter(this.animationValue, this.color, this.percentage);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path();
+
+    final y = size.height * (1 - percentage);
+    path.moveTo(0, y);
+
+    // Sine wave calculation
+    for (double i = 0.0; i <= size.width; i++) {
+      path.lineTo(
+        i,
+        y +
+            math.sin((i / size.width * 2 * math.pi) + (animationValue * 2 * math.pi)) *
+                5,
+      );
+    }
+
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    // Second lighter wave
+    final paint2 = Paint()..color = color.withOpacity(0.5);
+    final path2 = Path();
+    path2.moveTo(0, y);
+    for (double i = 0.0; i <= size.width; i++) {
+      path2.lineTo(
+        i,
+        y +
+            math.sin((i / size.width * 2 * math.pi) +
+                    (animationValue * 2 * math.pi) +
+                    2) * // Phase shift
+                5,
+      );
+    }
+    path2.lineTo(size.width, size.height);
+    path2.lineTo(0, size.height);
+    path2.close();
+    canvas.drawPath(path2, paint2);
   }
 
-  // 하단에 보여줄 큰 카드 컴포넌트 (스택된 스타일)
-  Widget _buildBottomCard() {
-    return AnimatedBuilder(
-      animation: _cardAnimation,
-      builder: (context, child) {
-        final progress = _cardAnimation.value;
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
 
-        return Center(
-          child: SizedBox(
-            width: 311,
-            height: 387,
-            child: Stack(
-              clipBehavior: Clip.none,
+// --- 2. Benefit Summary (혜택 요약) ---
+class BenefitSummarySection extends StatelessWidget {
+  const BenefitSummarySection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          // 받은 혜택
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // progress < 0.5: 파란 카드(아래), 흰 카드(위)
-                // progress >= 0.5: 흰 카드(아래), 파란 카드(위)
-                if (progress < 0.5) ...[
-                  _buildBlueCard(progress),
-                  _buildWhiteCard(progress),
-                ] else ...[
-                  _buildWhiteCard(progress),
-                  _buildBlueCard(progress),
-                ],
+                Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.blue[400],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '받은 혜택',
+                      style: TextStyle(
+                        color: subTextColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '₩12,500',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 구분선
+          Container(
+            width: 1,
+            height: 40,
+            color: isDark ? Colors.grey[700] : Colors.grey[300],
+          ),
+          // 놓친 혜택
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: subTextColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '놓친 혜택',
+                      style: TextStyle(
+                        color: subTextColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '₩2,100',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 정보 아이콘
+          GestureDetector(
+            onTap: () {
+              // 정보 표시
+            },
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+                ),
+              ),
+              child: Icon(
+                Icons.info_outline,
+                size: 16,
+                color: isDark ? Colors.grey[500] : Colors.grey[500],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-                // ✅ (핵심 수정) "왼쪽 흰 카드 탭 영역"을 Stack의 맨 위로 올림
-                // 파란 카드가 앞일 때만, 왼쪽에 살짝 보이는 흰 카드 영역을 탭하면 reverse 되도록
-                if (_isBlueCardFront)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    width: 70, // ← 흰 카드가 왼쪽에 보이게 남겨둔 폭과 비슷하게
-                    height: 387,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: _onWhiteCardTap,
-                      child: const SizedBox.expand(),
+// --- 3. Card Wallet (카드 지갑) ---
+class CardWalletSection extends StatefulWidget {
+  const CardWalletSection({super.key});
+
+  @override
+  State<CardWalletSection> createState() => _CardWalletSectionState();
+}
+
+class _CardWalletSectionState extends State<CardWalletSection> {
+  int _currentIndex = 0;
+  bool _isGridView = false; // 그리드 뷰 토글
+  
+  final List<Map<String, dynamic>> _cards = [
+    {
+      "id": 1,
+      "name": "KB KOOKMIN",
+      "sub": "청춘대로 | 톡톡",
+      "bgColor": const Color(0xFF6B7A8F), // 파란-회색 계열
+      "accentColor": Colors.white,
+      "textColor": Colors.white,
+      "chipColor": const Color(0xFFC0C0C0), // 은색 칩
+    },
+    {
+      "id": 2,
+      "name": "BC CARD",
+      "sub": "VALID THRU",
+      "bgColor": const Color(0xFFE8E8E8), // 회색 계열
+      "accentColor": const Color(0xFFDC143C), // 빨간색 BC 로고
+      "textColor": const Color(0xFF333333),
+      "chipColor": const Color(0xFFC0C0C0),
+    },
+    {
+      "id": 3,
+      "name": "ShinhanCard",
+      "sub": "Deep Making",
+      "bgColor": const Color(0xFF8B4C9F), // 보라색 계열
+      "accentColor": Colors.white,
+      "textColor": Colors.white,
+      "chipColor": const Color(0xFFFFD700), // 금색 칩
+    },
+    {
+      "id": 4,
+      "name": "KEB Hana Card",
+      "sub": "toss",
+      "bgColor": const Color(0xFF4A90E2), // 파란색 계열
+      "accentColor": Colors.white,
+      "textColor": Colors.white,
+      "chipColor": const Color(0xFFC0C0C0),
+    },
+  ];
+
+  void _goToPrevious() {
+    if (_currentIndex > 0) {
+      setState(() {
+        _currentIndex--;
+      });
+    }
+  }
+
+  void _goToNext() {
+    if (_currentIndex < _cards.length - 1) {
+      setState(() {
+        _currentIndex++;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "My Wallet",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  // 그리드/스택 뷰 토글 버튼
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isGridView = !_isGridView;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: _isGridView 
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                            : Colors.grey[800],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _isGridView ? Icons.view_agenda : Icons.grid_view_rounded,
+                        size: 16,
+                        color: _isGridView 
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey[400],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // 인디케이터 dots (스택 뷰일 때만 표시)
+                  if (!_isGridView)
+                    ...List.generate(
+                      _cards.length,
+                      (index) => GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentIndex = index;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.only(left: 4),
+                          width: _currentIndex == index ? 20 : 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: _currentIndex == index
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 그리드 뷰 또는 스택 뷰
+        Expanded(
+          child: _isGridView ? _buildGridView() : _buildStackView(),
+        ),
+      ],
+    );
+  }
+
+  // 스택 뷰 (겹쳐진 카드)
+  Widget _buildStackView() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final cardWidth = screenWidth - 80;
+        final fullCardHeight = cardWidth * 1.5;
+        final visibleHeight = constraints.maxHeight;
+        
+        return GestureDetector(
+          onTapUp: (details) {
+            final tapX = details.localPosition.dx;
+            if (tapX < screenWidth / 3) {
+              _goToPrevious();
+            } else {
+              _goToNext();
+            }
+          },
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity != null) {
+              if (details.primaryVelocity! > 0) {
+                _goToPrevious();
+              } else if (details.primaryVelocity! < 0) {
+                _goToNext();
+              }
+            }
+          },
+          child: ClipRect(
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                for (int i = _cards.length - 1; i >= 0; i--)
+                  if (i != _currentIndex)
+                    Positioned(
+                      left: 24 + (i - _currentIndex).abs() * 8.0,
+                      top: 0,
+                      child: Transform.translate(
+                        offset: Offset(
+                          i > _currentIndex ? (i - _currentIndex) * 12.0 : 0,
+                          0,
+                        ),
+                        child: Opacity(
+                          opacity: i > _currentIndex ? 0.7 : 0.0,
+                          child: SizedBox(
+                            width: cardWidth,
+                            height: visibleHeight,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: OverflowBox(
+                                alignment: Alignment.topCenter,
+                                maxHeight: fullCardHeight,
+                                child: _buildVerticalCreditCard(
+                                  context,
+                                  _cards[i],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ),
+              Positioned(
+                left: 24,
+                top: 0,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                  child: SizedBox(
+                    key: ValueKey<int>(_currentIndex),
+                    width: cardWidth,
+                    height: visibleHeight,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: OverflowBox(
+                        alignment: Alignment.topCenter,
+                        maxHeight: fullCardHeight,
+                        child: _buildVerticalCreditCard(
+                          context,
+                          _cards[_currentIndex],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               ],
             ),
           ),
@@ -292,229 +736,545 @@ void _onBlueCardTap() {
     );
   }
 
-  Widget _buildWhiteCard(double progress) {
-    final isWhiteCardTappable = !_isAnimating;
-
-    return Positioned(
-      left: progress * -245,
-      top: 0,
-      child: IgnorePointer(
-        ignoring: !isWhiteCardTappable,
-        child: GestureDetector(
-          onTap: _onWhiteCardTap,
-          child: Transform.scale(
-            scale: 1.0 - (progress * 0.05),
-            child: _buildCard(
-              color: Colors.white,
-              width: 285,
-              height: 377,
-              topOffset: 0,
-            ),
-          ),
+  // 그리드 뷰 (전체 카드 목록)
+  Widget _buildGridView() {
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        physics: const BouncingScrollPhysics(
+          decelerationRate: ScrollDecelerationRate.fast,
         ),
+        cacheExtent: 500, // 미리 렌더링할 영역
+        itemCount: _cards.length,
+        itemBuilder: (context, index) {
+          final card = _cards[index];
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _currentIndex = index;
+                _isGridView = false;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(bottom: 16),
+              child: _buildHorizontalCreditCard(context, card),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildBlueCard(double progress) {
-    final isBlueCardTappable = !_isAnimating;
-
-    return Positioned(
-      left: 26 - (progress * 26),
-      top: 10 - (progress * 10),
-      child: IgnorePointer(
-        ignoring: !isBlueCardTappable,
-        child: GestureDetector(
-          onTap: _onBlueCardTap,
-          child: Transform.scale(
-            scale: 0.95 + (progress * 0.05),
-            child: _buildCard(
-              color: AppColors.primary,
-              width: 311,
-              height: 365 + (progress * 12),
-              topOffset: 0,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard({
-    required Color color,
-    required double width,
-    required double height,
-    required double topOffset,
-  }) {
-    final isWhiteCard = color == Colors.white;
+  // 가로 카드 (그리드 뷰용)
+  Widget _buildHorizontalCreditCard(
+    BuildContext context,
+    Map<String, dynamic> card,
+  ) {
+    final bgColor = card['bgColor'] as Color? ?? Colors.grey[300]!;
+    final textColor = card['textColor'] as Color? ?? Colors.white;
+    final chipColor = card['chipColor'] as Color? ?? const Color(0xFFC0C0C0);
+    final name = card['name'] as String? ?? 'CARD';
+    final sub = card['sub'] as String? ?? '';
 
     return Container(
-      width: width,
-      height: height,
-      clipBehavior: Clip.hardEdge,
+      height: 180,
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            bgColor,
+            Color.lerp(bgColor, Colors.black, 0.15) ?? bgColor,
+          ],
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.04),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: _buildCardContent(isWhiteCard: isWhiteCard),
-    );
-  }
-
-  Widget _buildCardContent({required bool isWhiteCard}) {
-    final textColor = isWhiteCard ? Colors.black : Colors.white;
-    final subtitleColor = isWhiteCard ? Colors.black54 : Colors.white70;
-    final cardImageUrl = isWhiteCard
-        ? 'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBOADT2.gif'
-        : 'https://www.shinhancard.com/pconts/images/contents/card/plate/cdCreditBA7AQ7.gif';
-
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 50, 20, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Transform.rotate(
-                    angle: isWhiteCard ? 0 : math.pi,
-                    child: Image.network(
-                      cardImageUrl,
-                      width: 160,
-                      height: 101,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          width: 160,
-                          height: 101,
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        print('Image load error: $error');
-                        return Container(
-                          width: 160,
-                          height: 101,
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.credit_card,
-                                color: Colors.grey, size: 36),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        isWhiteCard ? '신한은행 LG전자 The 구독케어' : '국민은행 Simple+',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          height: 1.3,
-                          color: textColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: isWhiteCard ? Colors.black26 : Colors.white38,
-                      size: 20,
+                    const SizedBox(height: 2),
+                    Text(
+                      sub,
+                      style: TextStyle(
+                        color: textColor.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  isWhiteCard ? '본인 5699' : '본인 6842',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: subtitleColor,
-                    fontWeight: FontWeight.w400,
+                // EMV 칩
+                Container(
+                  width: 40,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: chipColor,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: CustomPaint(
+                    painter: ChipPatternPainter(chipColor),
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-        Container(
-          height: 1,
-          color: isWhiteCard ? const Color(0xFFF0F0F0) : Colors.white24,
-        ),
-        Expanded(
-          flex: 1,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            const Spacer(),
+            Text(
+              '**** **** **** ****',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 16,
+                letterSpacing: 2,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
+                Text(
+                  'VALID THRU',
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.6),
+                    fontSize: 8,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '12/28',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 세로 카드 (스택 뷰용)
+  Widget _buildVerticalCreditCard(
+    BuildContext context,
+    Map<String, dynamic> card, {
+    Key? key,
+  }) {
+    final bgColor = card['bgColor'] as Color? ?? Colors.grey[300]!;
+    final accentColor = card['accentColor'] as Color? ?? Colors.blue;
+    final textColor = card['textColor'] as Color? ?? Colors.white;
+    final chipColor = card['chipColor'] as Color? ?? const Color(0xFFC0C0C0);
+    final name = card['name'] as String? ?? 'CARD';
+    final sub = card['sub'] as String? ?? '';
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth - 48; // 좌우 패딩 제외
+    // 세로 카드 비율 (가로:세로 = 1:1.585, 일반 카드를 세로로 세움)
+    final cardHeight = cardWidth * 1.585;
+
+    return Container(
+      key: key,
+      width: cardWidth,
+      height: cardHeight,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            bgColor,
+            Color.lerp(bgColor, Colors.black, 0.15) ?? bgColor,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 카드 이름
+            Text(
+              name,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              sub,
+              style: TextStyle(
+                color: textColor.withOpacity(0.8),
+                fontSize: 13,
+              ),
+            ),
+            const Spacer(),
+            // EMV 칩 (세로 방향)
+            Container(
+              width: 45,
+              height: 55,
+              decoration: BoxDecoration(
+                color: chipColor,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: CustomPaint(
+                painter: ChipPatternPainter(chipColor),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // 카드 번호
+            Text(
+              '**** **** **** ****',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 18,
+                letterSpacing: 3,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // 유효기간
+            Row(
+              children: [
+                Text(
+                  'VALID\nTHRU',
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.7),
+                    fontSize: 8,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '12/28',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            // BC 카드 로고 (해당하는 경우)
+            if (name.contains('BC'))
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '1월 이용금액',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: subtitleColor,
-                          fontWeight: FontWeight.w400,
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          shape: BoxShape.circle,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          isWhiteCard ? '579,790원' : '121,900원',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                            color: textColor,
-                          ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'BC',
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: isWhiteCard ? Colors.black26 : Colors.white38,
-                  size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreditCard(
+    BuildContext context,
+    Map<String, dynamic> card,
+    bool isTop, {
+    Key? key,
+  }) {
+    // 카드 색상 정보 가져오기
+    final bgColor = card['bgColor'] as Color? ?? Colors.grey[300]!;
+    final accentColor = card['accentColor'] as Color? ?? Colors.blue;
+    final textColor = card['textColor'] as Color? ?? Colors.white;
+    final chipColor = card['chipColor'] as Color? ?? const Color(0xFFC0C0C0);
+    final name = card['name'] as String? ?? 'CARD';
+    final sub = card['sub'] as String? ?? '';
+    
+    // 사용 가능한 높이의 약 1/3로 제한 (하단 네비게이션 바 고려)
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.3;
+    final cardHeight = math.min(availableHeight, 240.0);
+    
+    // 카드 비율 계산 (일반적인 카드 비율은 85.60mm x 53.98mm, 약 1.585:1)
+    final cardWidth = MediaQuery.of(context).size.width - 48; // 좌우 패딩 제외
+    final aspectRatio = 1.585; // 카드 비율
+    final calculatedHeight = cardWidth / aspectRatio;
+    final finalHeight = math.min(cardHeight, calculatedHeight);
+
+    return Container(
+      key: key,
+      height: finalHeight,
+      width: cardWidth,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            bgColor,
+            bgColor.withOpacity(0.8),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 그라데이션 오버레이
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          // 카드 내용
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 상단: 카드 이름과 칩
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          if (sub.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              sub,
+                              style: TextStyle(
+                                color: textColor.withOpacity(0.8),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    // EMV 칩
+                    Container(
+                      width: 48,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: chipColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: chipColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: CustomPaint(
+                        painter: ChipPatternPainter(chipColor),
+                      ),
+                    ),
+                  ],
+                ),
+                // 하단: 카드 번호 (선택적)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "**** **** ****",
+                      style: TextStyle(
+                        color: textColor.withOpacity(0.6),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    if (card['id'] == 2) // BC 카드인 경우
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            "BC",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// EMV 칩 패턴을 그리는 CustomPainter
+class ChipPatternPainter extends CustomPainter {
+  final Color chipColor;
+
+  ChipPatternPainter(this.chipColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = chipColor.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    // 칩 내부 패턴 그리기
+    final rectWidth = size.width * 0.15;
+    final rectHeight = size.height * 0.2;
+    final spacing = size.width * 0.1;
+
+    for (double x = spacing; x < size.width - spacing; x += rectWidth + spacing * 0.5) {
+      for (double y = spacing; y < size.height - spacing; y += rectHeight + spacing * 0.5) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, y, rectWidth, rectHeight),
+            const Radius.circular(2),
+          ),
+          paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// --- Bottom Navigation ---
+class CustomBottomNav extends StatelessWidget {
+  const CustomBottomNav({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.only(top: 16, bottom: 32),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF000000).withOpacity(0.9)
+            : Colors.white.withOpacity(0.95),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? Colors.white10 : Colors.grey[200]!,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(context, Icons.home_filled, "Home", true),
+          _buildNavItem(context, Icons.credit_card, "Cards", false),
+          _buildNavItem(context, Icons.play_circle_outline, "Subs", false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    bool isActive,
+  ) {
+    final color = isActive ? Theme.of(context).colorScheme.primary : Colors.grey;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 26),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
