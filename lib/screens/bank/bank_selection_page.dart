@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/login/signup_complete_page.dart';
 
 class BankSelectionPage extends StatefulWidget {
@@ -91,7 +92,7 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
                   onPressed: _selectedIndex != null ? _onConnect : null,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
-                    backgroundColor: const Color(0xFF1787FF),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),

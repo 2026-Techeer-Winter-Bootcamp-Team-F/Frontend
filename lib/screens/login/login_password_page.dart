@@ -44,7 +44,7 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
     final bool isValidPassword = _passwordRegex.hasMatch(_pwController.text.trim());
     final canProceed = isValidPassword;
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+      appBar: AppBar(elevation: 0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -74,7 +74,7 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
               ),
 
               const SizedBox(height: 18),
-              const Align(alignment: Alignment.centerLeft, child: Text('전화번호', style: TextStyle(fontSize: 12, color: Colors.grey))),
+              Align(alignment: Alignment.centerLeft, child: Text('전화번호', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant))),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -87,7 +87,7 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
                     icon: Container(
                       decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF0F0F0)),
                       padding: const EdgeInsets.all(6),
-                      child: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                      child: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ),
                 ],
