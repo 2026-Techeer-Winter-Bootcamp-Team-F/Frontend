@@ -23,4 +23,11 @@ class ApiConfig {
 
   // Subscriptions
   static const String subscriptions = '/api/v1/subscriptions';
+
+  // Chat - 채팅방 기반 (카드 추천)
+  static const String chatMakeRoom = '/api/v1/chat/make_room/';
+  static const String chatSendMessage = '/api/v1/chat/send_message/';
+
+  // Chat - AI 직접 대화 (금융 상담)
+  static const String chat = '/api/v1/chat/';
 }
