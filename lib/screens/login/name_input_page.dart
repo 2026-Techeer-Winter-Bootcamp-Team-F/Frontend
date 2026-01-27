@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/screens/login/verification_code_page.dart';
+import 'package:my_app/screens/login/password_page.dart';
 
 class NameInputPage extends StatefulWidget {
   const NameInputPage({super.key});
@@ -13,15 +13,18 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
   final TextEditingController _frontController = TextEditingController();
   final TextEditingController _backController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  
+  final TextEditingController _emailController = TextEditingController();
+
   late AnimationController _animationController;
   late Animation<double> _fieldsSlideAnimation;
   late Animation<double> _newFieldFadeAnimation;
-  
+
   bool _showSsnField = false;
   bool _showPhoneField = false;
+  bool _showEmailField = false;
   bool _nameConfirmed = false;
   bool _ssnConfirmed = false;
+  bool _phoneConfirmed = false;
   String? _selectedCarrier;
 
   bool get _canProceedName => _nameController.text.trim().isNotEmpty;
@@ -30,6 +33,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
   bool get _canConfirmSsn => _frontValid && _backValid;
   bool get _phoneValid => RegExp(r'^\d{10,11}$').hasMatch(_phoneController.text.trim());
   bool get _canConfirmPhone => _phoneValid && _selectedCarrier != null;
+  bool get _emailValid => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_emailController.text.trim());
 
   final List<String> _carriers = [
     'SKT',
@@ -75,18 +79,19 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
     _frontController.dispose();
     _backController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
   void _onNameConfirm() {
     if (!_canProceedName || _nameConfirmed) return;
-    
+
     setState(() {
       _nameConfirmed = true;
       _showSsnField = true;
     });
-    
+
     _animationController.forward();
   }
 
@@ -97,11 +102,24 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
 
   void _onPhoneConfirm() {
     if (!_canConfirmPhone) return;
+    setState(() {
+      _phoneConfirmed = true;
+      _showEmailField = true;
+    });
+    _animationController.reset();
+    _animationController.forward();
+  }
+
+  void _onEmailConfirm() {
+    if (!_emailValid) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => VerificationCodePage(
+        builder: (_) => PasswordPage(
           phone: _phoneController.text.trim(),
           name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          ssnFront: _frontController.text,
+          ssnBackFirst: _backController.text,
         ),
       ),
     );
@@ -262,15 +280,18 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     String title = '이름을 입력해주세요.';
-    if (_ssnConfirmed) {
+    if (_phoneConfirmed) {
+      title = '이메일을 입력해주세요.';
+    } else if (_ssnConfirmed) {
       title = '휴대폰 번호를 입력해주세요.';
     } else if (_nameConfirmed) {
       title = '주민등록번호를 입력해주세요.';
     }
-    
+
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -280,30 +301,29 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
                   Text(
                     title,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
-                  
-                  // 전화번호 입력 필드 (애니메이션)
-                  if (_showPhoneField) ...[
+
+                  // 이메일 입력 필드
+                  if (_showEmailField) ...[
                     Opacity(
                       opacity: _newFieldFadeAnimation.value,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '휴대폰 번호',
+                            '이메일',
                             style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                           const SizedBox(height: 4),
                           TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.number,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
-                              hintText: '01012345678',
+                              hintText: 'example@email.com',
                               enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.grey.shade300),
                               ),
@@ -318,7 +338,55 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                       ),
                     ),
                   ],
-                  
+
+                  // 전화번호 입력 필드 (애니메이션)
+                  if (_showPhoneField) ...[
+                    _phoneConfirmed
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '휴대폰 번호',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _phoneController.text,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        )
+                      : Opacity(
+                          opacity: _newFieldFadeAnimation.value,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '휴대폰 번호',
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                              ),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: '01012345678',
+                                  enabledBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                                  ),
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ),
+                        ),
+                  ],
+
                   // 통신사 (선택됨)
                   if (_ssnConfirmed && _selectedCarrier != null) ...[
                     Transform.translate(
@@ -346,12 +414,12 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                       ),
                     ),
                   ],
-                  
+
                   // 주민등록번호 입력 필드 또는 표시
                   if (_showSsnField) ...[
                     Transform.translate(
                       offset: Offset(0, _ssnConfirmed ? _fieldsSlideAnimation.value : 0),
-                      child: _ssnConfirmed 
+                      child: _ssnConfirmed
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -386,10 +454,10 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                           ),
                     ),
                   ],
-                  
+
                   // 이름 입력 필드 (이동 애니메이션)
                   Transform.translate(
-                    offset: Offset(0, (_nameConfirmed ? _fieldsSlideAnimation.value : 0) + 
+                    offset: Offset(0, (_nameConfirmed ? _fieldsSlideAnimation.value : 0) +
                                       (_ssnConfirmed ? _fieldsSlideAnimation.value : 0)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,16 +502,18 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                       ],
                     ),
                   ),
-                  
+
                   const Spacer(),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _ssnConfirmed
-                          ? (_canConfirmPhone ? _onPhoneConfirm : null)
-                          : _nameConfirmed
-                              ? (_canConfirmSsn ? _onSsnConfirm : null)
-                              : (_canProceedName ? _onNameConfirm : null),
+                      onPressed: _phoneConfirmed
+                          ? (_emailValid ? _onEmailConfirm : null)
+                          : _ssnConfirmed
+                              ? (_canConfirmPhone ? _onPhoneConfirm : null)
+                              : _nameConfirmed
+                                  ? (_canConfirmSsn ? _onSsnConfirm : null)
+                                  : (_canProceedName ? _onNameConfirm : null),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

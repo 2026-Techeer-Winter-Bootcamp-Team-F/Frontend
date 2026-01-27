@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/bank/bank_selection_page.dart';
+import 'package:my_app/services/user_service.dart';
 
 class PasswordPage extends StatefulWidget {
   final String phone;
   final String name;
-  const PasswordPage({super.key, required this.phone, required this.name});
+  final String email;
+  final String ssnFront;
+  final String ssnBackFirst;
+  const PasswordPage({
+    super.key,
+    required this.phone,
+    required this.name,
+    required this.email,
+    required this.ssnFront,
+    required this.ssnBackFirst,
+  });
 
   @override
   State<PasswordPage> createState() => _PasswordPageState();
@@ -18,12 +29,14 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
   String? _pwError;
   String? _confirmError;
   bool _showConfirmField = false;
+  bool _isLoading = false;
 
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
   final RegExp _pwRule = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
+  final UserService _userService = UserService();
 
   @override
   void initState() {
@@ -101,11 +114,35 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
     _animationController.forward();
   }
 
-  void _onComplete() {
-    if (!_canComplete) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => BankSelectionPage(name: widget.name)),
-    );
+  Future<void> _onComplete() async {
+    if (!_canComplete || _isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final century = (widget.ssnBackFirst == '3' || widget.ssnBackFirst == '4') ? '20' : '19';
+      final birthDate = '$century${widget.ssnFront}';
+
+      await _userService.signup(
+        phone: widget.phone,
+        password: _pwController.text,
+        name: widget.name,
+        email: widget.email,
+        birthDate: birthDate,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => BankSelectionPage(name: widget.name)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('회원가입 실패: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   InputDecoration _buildDecoration({
@@ -226,14 +263,22 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _showConfirmField 
-                          ? (_canComplete ? _onComplete : null)
-                          : (_canProceedInitial ? _onNext : null),
+                      onPressed: _isLoading
+                          ? null
+                          : _showConfirmField
+                              ? (_canComplete ? _onComplete : null)
+                              : (_canProceedInitial ? _onNext : null),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('확인'),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('확인'),
                     ),
                   ),
                 ],

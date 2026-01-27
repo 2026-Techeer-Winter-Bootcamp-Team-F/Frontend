@@ -54,13 +54,13 @@ class _PasswordConfirmPageState extends State<PasswordConfirmPage> {
     final canProceed = (_confirmController.text.isNotEmpty && _errorText == null && _pwRule.hasMatch(_confirmController.text) && _confirmController.text == widget.password);
 
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
               const Text(
                 '최소 8자리 이상\n비밀번호를 재확인해주세요.',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),

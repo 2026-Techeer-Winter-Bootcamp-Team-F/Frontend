@@ -172,13 +172,13 @@ class _SsnInputPageState extends State<SsnInputPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
               const Text(
                 '주민등록번호를 입력해주세요.',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
