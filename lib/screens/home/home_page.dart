@@ -1173,14 +1173,64 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final safeIndex = selectedCategoryIndex < categoryData.length ? selectedCategoryIndex : 0;
-    final selectedEntry = categoryData.entries.toList()[safeIndex];
+    const int maxChartSlices = 5;
+    final allEntries = categoryData.entries.toList();
+    final topCount = allEntries.length < maxChartSlices ? allEntries.length : maxChartSlices;
+    final otherEntries = allEntries.length > maxChartSlices
+        ? allEntries.sublist(maxChartSlices)
+        : <MapEntry<String, Map<String, dynamic>>>[];
+    final hasOthers = otherEntries.isNotEmpty;
+    final otherPercent = otherEntries.fold<int>(0, (sum, e) => sum + (e.value['percent'] as int));
+    final otherAmount = otherEntries.fold<int>(0, (sum, e) => sum + (e.value['amount'] as int));
+
+    // selectedCategoryIndex: -1 = 기타 집계, 0+ = 개별 카테고리
+    final safeIndex = selectedCategoryIndex >= 0 && selectedCategoryIndex < allEntries.length
+        ? selectedCategoryIndex
+        : 0;
+    final isOtherAggregate = selectedCategoryIndex == -1;
 
     // 상단 문구는 항상 최대 금액 카테고리로 표시
-    final maxAmountCategory = categoryData.entries.reduce((a, b) =>
+    final maxAmountCategory = allEntries.reduce((a, b) =>
       (a.value['amount'] as int) > (b.value['amount'] as int) ? a : b
     ).key;
-    
+
+    // 도넛 차트 섹션 구성 (상위 5 + 기타)
+    final chartSections = <PieChartSectionData>[];
+    for (var i = 0; i < topCount; i++) {
+      final data = allEntries[i].value;
+      final isSelected = !isOtherAggregate && safeIndex == i;
+      chartSections.add(PieChartSectionData(
+        color: data['color'] as Color,
+        value: (data['percent'] as int).toDouble(),
+        title: '',
+        radius: isSelected ? 35 : 30,
+      ));
+    }
+    if (hasOthers) {
+      final isSelected = isOtherAggregate || safeIndex >= maxChartSlices;
+      chartSections.add(PieChartSectionData(
+        color: const Color(0xFFBDBDBD),
+        value: otherPercent.toDouble(),
+        title: '',
+        radius: isSelected ? 35 : 30,
+      ));
+    }
+
+    // 중앙 표시 데이터
+    final String centerIcon;
+    final String centerPercent;
+    final String centerName;
+    if (isOtherAggregate) {
+      centerIcon = '···';
+      centerPercent = '$otherPercent%';
+      centerName = '기타';
+    } else {
+      final entry = allEntries[safeIndex];
+      centerIcon = entry.value['icon'] as String;
+      centerPercent = '${entry.value['percent']}%';
+      centerName = entry.key;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -1212,9 +1262,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 도넛 차트
           SizedBox(
             height: 200,
@@ -1230,25 +1280,16 @@ class _HomePageState extends State<HomePage> {
                         if (event is FlTapUpEvent && pieTouchResponse != null && pieTouchResponse.touchedSection != null) {
                           setState(() {
                             final touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                            if (touchedIndex >= 0 && touchedIndex < categoryData.length) {
+                            if (touchedIndex >= 0 && touchedIndex < topCount) {
                               selectedCategoryIndex = touchedIndex;
+                            } else if (touchedIndex == topCount && hasOthers) {
+                              selectedCategoryIndex = -1; // 기타 집계
                             }
                           });
                         }
                       },
                     ),
-                    sections: categoryData.entries.toList().asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final data = entry.value.value;
-                      final isSelected = index == safeIndex;
-
-                      return PieChartSectionData(
-                        color: data['color'] as Color,
-                        value: (data['percent'] as int).toDouble(),
-                        title: '',
-                        radius: isSelected ? 35 : 30,
-                      );
-                    }).toList(),
+                    sections: chartSections,
                   ),
                 ),
                 Center(
@@ -1256,12 +1297,12 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        selectedEntry.value['icon'] as String,
+                        centerIcon,
                         style: const TextStyle(fontSize: 32),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${selectedEntry.value['percent']}%',
+                        centerPercent,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1270,7 +1311,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       Text(
-                        selectedEntry.key,
+                        centerName,
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1283,13 +1324,14 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
-          // 카테고리 목록
-          ...categoryData.entries.toList().asMap().entries.map((entry) {
+
+          // 카테고리 목록 (전체 표시)
+          ...allEntries.asMap().entries.map((entry) {
             final index = entry.key;
             final data = entry.value;
+            final isSelected = !isOtherAggregate && index == safeIndex;
             return _buildCategoryItem(
               data.value['icon'] as String,
               data.key,
@@ -1297,7 +1339,7 @@ class _HomePageState extends State<HomePage> {
               data.value['amount'] as int,
               data.value['change'] as int,
               data.value['color'] as Color,
-              isSelected: index == safeIndex,
+              isSelected: isSelected,
               onTap: () {
                 setState(() {
                   selectedCategoryIndex = index;
@@ -1305,9 +1347,9 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }),
-          
+
           const SizedBox(height: 16),
-          
+
           TextButton(
             onPressed: () {
               Navigator.push(
