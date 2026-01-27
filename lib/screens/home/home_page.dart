@@ -908,7 +908,8 @@ class _HomePageState extends State<HomePage> {
               children: _weeklyBarData.isEmpty
                   ? [const Center(child: Text('데이터 없음'))]
                   : _weeklyBarData.asMap().entries.map((entry) {
-                      final maxAmount = _weeklyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final rawMax = _weeklyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final maxAmount = rawMax > 0 ? rawMax : 1;
                       return _buildBarChart(
                         entry.value.key,
                         entry.value.value,
@@ -1022,7 +1023,8 @@ class _HomePageState extends State<HomePage> {
               children: _monthlyBarData.isEmpty
                   ? [const Center(child: Text('데이터 없음'))]
                   : _monthlyBarData.asMap().entries.map((entry) {
-                      final maxAmount = _monthlyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final rawMax = _monthlyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final maxAmount = rawMax > 0 ? rawMax : 1;
                       return _buildMonthlyBar(
                         entry.value.key,
                         entry.value.value,
@@ -1049,7 +1051,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMonthlyBar(String label, int amount, int maxAmount, {bool isCurrentMonth = false}) {
-    final height = (amount / maxAmount * 120);
+    final height = maxAmount > 0 ? (amount / maxAmount * 120) : 0.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1631,11 +1633,12 @@ class LineChartPainter extends CustomPainter {
     if (thisMonthData.isEmpty && lastMonthData.isEmpty) return;
 
     // 최대값 계산 (스케일링을 위해)
-    final maxValue = lastMonthData.isNotEmpty
-        ? lastMonthData.reduce((a, b) => a > b ? a : b)
-        : (thisMonthData.isNotEmpty
-            ? thisMonthData.reduce((a, b) => a > b ? a : b)
-            : 1.0);
+    double maxValue = 1.0;
+    final allData = [...thisMonthData, ...lastMonthData];
+    if (allData.isNotEmpty) {
+      final computed = allData.reduce((a, b) => a > b ? a : b);
+      if (computed > 0) maxValue = computed;
+    }
     final padding = 10.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
