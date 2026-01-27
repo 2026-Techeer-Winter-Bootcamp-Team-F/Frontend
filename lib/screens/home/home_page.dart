@@ -15,9 +15,8 @@ class _HomePageState extends State<HomePage> {
   // 현재 선택된 월
   DateTime selectedMonth = DateTime.now();
   
-  // 상단 스크롤 페이지 인덱스 (누적/주간/월간)
+  // 상단 스크롤 페이지 인덱스 (누적/일간/주간/월간)
   int topPageIndex = 0;
-  final PageController topPageController = PageController();
   
   // 하단 스크롤 페이지 인덱스 (카테고리/지난달 비교)
   int bottomPageIndex = 0;
@@ -127,7 +126,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    topPageController.dispose();
     bottomPageController.dispose();
     super.dispose();
   }
@@ -220,7 +218,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 상단 섹션 (누적/주간/월간 스크롤)
+  // 상단 섹션 (누적/일간/주간/월간 탭 전환)
   Widget _buildTopSection() {
     return Column(
       children: [
@@ -245,39 +243,26 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 16),
-        
-        // 스크롤 가능한 페이지
-        SizedBox(
-          height: topPageIndex == 1
-              ? null
-              : (topPageIndex == 0 ? 360 : 320),
-          child: topPageIndex == 1
-            ? _buildDailyView()
-            : SizedBox(
-                height: 320,
-                child: PageView(
-                  controller: topPageController,
-                  onPageChanged: (pageIndex) {
-                    setState(() {
-                      if (pageIndex == 0) {
-                        topPageIndex = 0;
-                      } else if (pageIndex == 1) {
-                        topPageIndex = 2;
-                      } else if (pageIndex == 2) {
-                        topPageIndex = 3;
-                      }
-                    });
-                  },
-                  children: [
-                    _buildAccumulatedView(),
-                    _buildWeeklyView(),
-                    _buildMonthlyView(),
-                  ],
-                ),
-              ),
-        ),
+
+        // 현재 선택된 탭에 해당하는 뷰 표시
+        _buildCurrentTopView(),
       ],
     );
+  }
+
+  Widget _buildCurrentTopView() {
+    switch (topPageIndex) {
+      case 0:
+        return _buildAccumulatedView();
+      case 1:
+        return _buildDailyView();
+      case 2:
+        return _buildWeeklyView();
+      case 3:
+        return _buildMonthlyView();
+      default:
+        return _buildAccumulatedView();
+    }
   }
 
   Widget _buildIndicator(String label, int index) {
@@ -287,21 +272,6 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           topPageIndex = index;
         });
-        if (index != 1 && topPageController.hasClients) {
-          int pageIndex;
-          if (index == 0) {
-            pageIndex = 0;
-          } else if (index == 2) {
-            pageIndex = 1;
-          } else {
-            pageIndex = 2;
-          }
-          topPageController.animateToPage(
-            pageIndex,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        }
       },
       child: Container(
         height: 47.6,
@@ -318,50 +288,6 @@ class _HomePageState extends State<HomePage> {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
             fontFamily: 'Pretendard',
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSegmentTab(String label, int index) {
-    final isSelected = topPageIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            topPageIndex = index;
-          });
-          topPageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(100),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
-              fontFamily: 'Pretendard',
-            ),
           ),
         ),
       ),

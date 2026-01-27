@@ -6,10 +6,10 @@ class CardAnalysisPage extends StatelessWidget {
   const CardAnalysisPage({super.key});
 
   static final List<WalletCard> _cards = [
-    WalletCard(imagePath: 'assets/cards/card1.png', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
-    WalletCard(imagePath: 'assets/cards/card2.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
-    WalletCard(imagePath: 'assets/cards/card3.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
-    WalletCard(imagePath: 'assets/cards/card4.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
+    WalletCard(imagePath: 'assets/images/mywallet_shinhan_card.jpeg', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
+    WalletCard(imagePath: 'assets/images/mywallet_toss_card.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
+    WalletCard(imagePath: 'assets/images/mywallet_bc_card.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
+    WalletCard(imagePath: 'assets/images/mywallet_kookmin_card.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
   ];
 
   @override
@@ -89,7 +89,7 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 27133,
       'items': [
         {
-          'image': 'assets/cards/card1.png',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
           'title': 'LIKIT FUN+',
           'subtitle': '연회비: 1만 5천 원',
           'percent': '210%',
@@ -106,7 +106,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card2.png',
+          'image': 'assets/images/mywallet_toss_card.png',
           'title': 'BC카드',
           'subtitle': '연회비: 20만 원',
           'percent': '110%',
@@ -122,7 +122,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card3.png',
+          'image': 'assets/images/mywallet_bc_card.png',
           'title': '롯데카드',
           'subtitle': '연회비: 20만 원',
           'percent': '230%',
@@ -137,7 +137,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card4.png',
+          'image': 'assets/images/mywallet_kookmin_card.png',
           'title': 'Mr.Life',
           'subtitle': '연회비: 20만 원',
           'percent': '190%',
@@ -158,7 +158,7 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 7816,
       'items': [
         {
-          'image': 'assets/cards/card1.png',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
           'title': '현대카드',
           'subtitle': '연회비: 20만 원',
           'percent': 'ROI',
@@ -174,7 +174,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card2.png',
+          'image': 'assets/images/mywallet_toss_card.png',
           'title': 'BC카드',
           'subtitle': '연회비: 20만 원',
           'percent': '110%',
@@ -189,7 +189,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card3.png',
+          'image': 'assets/images/mywallet_bc_card.png',
           'title': '롯데카드',
           'subtitle': '연회비: 20만 원',
           'percent': '95%',
@@ -204,7 +204,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card4.png',
+          'image': 'assets/images/mywallet_kookmin_card.png',
           'title': '신한카드',
           'subtitle': '연회비: 20만 원',
           'percent': '130%',
@@ -226,7 +226,7 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 4500,
       'items': [
         {
-          'image': 'assets/cards/card2.png',
+          'image': 'assets/images/mywallet_toss_card.png',
           'title': '이마트카드',
           'subtitle': '연회비: 10만 원',
           'percent': '150%',
@@ -241,7 +241,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card3.png',
+          'image': 'assets/images/mywallet_bc_card.png',
           'title': '롯데마트카드',
           'subtitle': '연회비: 12만 원',
           'percent': '140%',
@@ -256,7 +256,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card4.png',
+          'image': 'assets/images/mywallet_kookmin_card.png',
           'title': '홈플러스카드',
           'subtitle': '연회비: 8만 원',
           'percent': '125%',
@@ -271,7 +271,7 @@ class CardAnalysisPage extends StatelessWidget {
           ],
         },
         {
-          'image': 'assets/cards/card1.png',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
           'title': '쿠팡카드',
           'subtitle': '연회비: 0원',
           'percent': '115%',
