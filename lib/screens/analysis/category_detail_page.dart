@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/analysis/category_transaction_page.dart';
 
 class CategoryDetailPage extends StatefulWidget {
@@ -43,7 +44,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       'amount': 345409,
       'change': -835139,
       'percent': 26,
-      'color': Color(0xFF1560FF),
+      'color': AppColors.primary,
     },
     {
       'name': '보험·대출·기타금융',
@@ -130,21 +131,15 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           '카테고리별 지출',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -189,7 +184,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
                 selectedMonth = DateTime(
@@ -201,13 +196,14 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           ),
           Text(
             '${selectedMonth.month}월',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
                 selectedMonth = DateTime(
@@ -270,14 +266,14 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                   });
                 }
               },
-              backgroundColor: Colors.white,
-              selectedColor: Colors.black,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              selectedColor: Theme.of(context).colorScheme.primary,
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
               ),
               side: BorderSide(
-                color: isSelected ? Colors.black : Colors.grey[300]!,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
@@ -303,10 +299,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           Text(
             _formatCurrencyFull(totalSpending),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF394A63),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
@@ -318,14 +314,14 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
             text: TextSpan(
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               children: [
                 const TextSpan(text: '지난달 같은 기간보다 '),
                 TextSpan(
                   text: _formatCurrencyFull(lastMonthDifference.abs()),
                   style: const TextStyle(
-                    color: Color(0xFF1560FF),
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -385,9 +381,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       const SizedBox(height: 6),
                       Text(
                         '${selectedCategory['percent']}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -395,7 +392,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                         selectedCategory['name'] as String,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -446,8 +443,8 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         ? '지난달과 같아요'
         : '${change > 0 ? '+' : ''}${_formatCurrencyFull(change)}';
     final changeColor = change == 0
-        ? Colors.grey
-        : (change > 0 ? const Color(0xFFFF5252) : const Color(0xFF1560FF));
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : (change > 0 ? const Color(0xFFFF5252) : AppColors.primary);
     
     return GestureDetector(
       onTap: () {
@@ -470,7 +467,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.grey[50],
+          color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: isSelected ? Border.all(color: color, width: 2) : null,
           boxShadow: isSelected
@@ -503,7 +500,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                          color: isSelected ? Colors.black : Colors.grey[800],
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -511,7 +508,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                         '$percent%',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -532,11 +529,11 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Colors.grey[800],
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, color: Colors.black26),
+            Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -548,22 +545,24 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      color: Colors.grey[50],
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '김용진 님은',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const Text(
+          Text(
             '20대 평균보다',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           
@@ -601,7 +600,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -620,9 +619,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           const SizedBox(height: 12),
           Text(
             name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -688,25 +688,26 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               children: [
                 Text(
                   '쇼핑에 ${_formatCurrencyFull(345409)} 지출하셨네요!',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black54,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '용진님의 카드를 분석해봤어요!',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
+          Icon(
             Icons.chevron_right,
-            color: Colors.black54,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ],
       ),

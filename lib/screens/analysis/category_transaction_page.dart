@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 import 'transaction_detail_page.dart';
 
 class CategoryTransactionPage extends StatefulWidget {
@@ -84,21 +85,15 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           '카테고리별 지출',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -132,9 +127,10 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
             children: [
               Text(
                 widget.categoryName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 8),
@@ -143,7 +139,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -154,9 +150,10 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
           // 금액
           Text(
             _formatCurrencyFull(widget.amount),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
@@ -166,14 +163,14 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: RichText(
               text: TextSpan(
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 children: [
                   const TextSpan(text: '지난달 같은 기간보다 '),
@@ -181,7 +178,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                     text: _formatCurrencyFull(widget.change),
                     style: TextStyle(
                       color: widget.change < 0
-                          ? const Color(0xFF1560FF)
+                          ? AppColors.primary
                           : const Color(0xFFFF5252),
                       fontWeight: FontWeight.w600,
                     ),
@@ -217,7 +214,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? Colors.black : Colors.grey[500],
+                    color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -296,7 +293,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                 date,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -304,7 +301,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                 '${_formatCurrencyFull(-totalAmount)} · ${items.length}건',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -340,9 +337,9 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
         children: [
@@ -371,9 +368,10 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
               children: [
                 Text(
                   transaction['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -383,7 +381,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                   transaction['detail'] as String,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -398,9 +396,10 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
             children: [
               Text(
                 _formatCurrencyFull(transaction['amount'] as int),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -408,7 +407,7 @@ class _CategoryTransactionPageState extends State<CategoryTransactionPage> {
                 transaction['paymentMethod'] as String,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
