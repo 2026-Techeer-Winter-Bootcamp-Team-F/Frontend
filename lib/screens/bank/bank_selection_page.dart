@@ -61,7 +61,7 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
                     crossAxisCount: 3,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.15,
+                    childAspectRatio: 1.0,
                   ),
                   itemBuilder: (context, index) {
                     final b = banks[index];
@@ -75,17 +75,18 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: selected ? Colors.blue : Colors.transparent, width: 1.5),
                         ),
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             CircleAvatar(
-                              radius: 22,
+                              radius: 20,
                               backgroundColor: b.color,
-                              child: Text(b.name[0], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: Text(b.name[0], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                             ),
-                            const SizedBox(height: 8),
-                            Text(b.name, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(height: 6),
+                            Text(b.name, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
