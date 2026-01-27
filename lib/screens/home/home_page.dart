@@ -384,14 +384,17 @@ class _HomePageState extends State<HomePage> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(100),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildIndicator('누적', 0),
-                _buildIndicator('일간', 1),
-                _buildIndicator('주간', 2),
-                _buildIndicator('월간', 3),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildIndicator('누적', 0),
+                  _buildIndicator('일간', 1),
+                  _buildIndicator('주간', 2),
+                  _buildIndicator('월간', 3),
+                ],
+              ),
             ),
           ),
         ),
@@ -428,7 +431,7 @@ class _HomePageState extends State<HomePage> {
       },
       child: Container(
         height: 47.6,
-        padding: const EdgeInsets.symmetric(horizontal: 34),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
@@ -1408,8 +1411,10 @@ class _HomePageState extends State<HomePage> {
 
   // 지난달 비교 뷰
   Widget _buildComparisonView() {
-    final topCategory = categoryData.entries.first;
-    
+    final topCategoryName = categoryData.isNotEmpty
+        ? categoryData.entries.first.key
+        : '전체';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -1430,7 +1435,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const TextSpan(text: '지난달 이맘때 대비\n'),
                   TextSpan(
-                    text: '${topCategory.key} 지출이 줄었어요',
+                    text: '$topCategoryName 지출이 줄었어요',
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontFamily: 'Pretendard',
@@ -1619,8 +1624,14 @@ class LineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (thisMonthData.isEmpty && lastMonthData.isEmpty) return;
+
     // 최대값 계산 (스케일링을 위해)
-    final maxValue = lastMonthData.reduce((a, b) => a > b ? a : b);
+    final maxValue = lastMonthData.isNotEmpty
+        ? lastMonthData.reduce((a, b) => a > b ? a : b)
+        : (thisMonthData.isNotEmpty
+            ? thisMonthData.reduce((a, b) => a > b ? a : b)
+            : 1.0);
     final padding = 10.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
