@@ -11,8 +11,8 @@ class SubscriptionPage extends StatelessWidget {
     _SubscriptionItem(name: '제미나이', amount: 3000, daysLeft: 10, color: Color(0xFF2D9CDB), icon: Icons.star),
     _SubscriptionItem(name: '네이버플러스', amount: 4000, daysLeft: 15, color: Color(0xFF03C75A), icon: Icons.check_circle),
     _SubscriptionItem(name: '듀오링고', amount: 12500, daysLeft: 20, color: Color(0xFF72D22F), icon: Icons.school),
-    _SubscriptionItem(name: '챗GPT플러스', amount: 33500, daysLeft: 17, color: Color(0xFF000000), icon: Icons.smart_toy),
-    _SubscriptionItem(name: '알바몬', amount: 5000, daysLeft: 13, color: Color(0xFF8A4FFF), icon: Icons.local_offer),
+    _SubscriptionItem(name: '챗지피티', amount: 33500, daysLeft: 17, color: Color(0xFF000000), icon: Icons.smart_toy),
+    _SubscriptionItem(name: '말해보카', amount: 5000, daysLeft: 13, color: Color(0xFF8A4FFF), icon: Icons.local_offer),
     _SubscriptionItem(name: '쿠팡이츠', amount: 7500, daysLeft: 20, color: Color(0xFFFF8A00), icon: Icons.delivery_dining),
   ];
 
@@ -196,13 +196,8 @@ class SubscriptionCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                item.name,
+                '${item.name} | ${_formatAmount(item.amount)}',
                 style: const TextStyle(fontSize: 13, color: Color(0xFF2F3A45), fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatAmount(item.amount),
-                style: const TextStyle(fontSize: 12, color: Colors.black45, fontWeight: FontWeight.w600),
               ),
             ],
           ),
