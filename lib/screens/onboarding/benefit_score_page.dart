@@ -42,7 +42,8 @@ Future<String> callGeminiAPI(String prompt) async {
 }
 
 class BenefitScorePage extends StatefulWidget {
-  const BenefitScorePage({super.key});
+  final String name;
+  const BenefitScorePage({super.key, this.name = ''});
 
   @override
   State<BenefitScorePage> createState() => _BenefitScorePageState();
@@ -83,6 +84,20 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
         body: SafeArea(
           child: Column(
             children: [
+              if (widget.name.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${widget.name}님',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 32),
               const SpendingReportSection(),
               const SizedBox(height: 40),

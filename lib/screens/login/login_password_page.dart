@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/login/signup_complete_page.dart';
+import 'package:my_app/services/user_service.dart';
 
 class LoginPasswordPage extends StatefulWidget {
   final String phone;
@@ -11,7 +12,9 @@ class LoginPasswordPage extends StatefulWidget {
 
 class _LoginPasswordPageState extends State<LoginPasswordPage> {
   final TextEditingController _pwController = TextEditingController();
+  final UserService _userService = UserService();
   bool _obscure = true;
+  bool _isLoading = false;
   String? _error;
   final RegExp _passwordRegex = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
@@ -21,7 +24,7 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
     super.dispose();
   }
 
-  void _onConfirm() {
+  Future<void> _onConfirm() async {
     final text = _pwController.text.trim();
     if (text.isEmpty) {
       setState(() => _error = '비밀번호를 입력해주세요.');
@@ -32,10 +35,28 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
       return;
     }
 
-    // user_store 삭제로 인해, 여기서는 입력된 전화번호를 이름 자리로 사용합니다.
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => SignupCompletePage(name: widget.phone)),
-    );
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _userService.login(
+        phone: widget.phone,
+        password: text,
+      );
+
+      if (!mounted) return;
+
+      final name = result['name'] as String? ?? widget.phone;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => SignupCompletePage(name: name)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '로그인 실패: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -96,9 +117,15 @@ class _LoginPasswordPageState extends State<LoginPasswordPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: canProceed ? _onConfirm : null,
+                  onPressed: (canProceed && !_isLoading) ? _onConfirm : null,
                   style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-                  child: const Text('확인'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('확인'),
                 ),
               ),
             ],
