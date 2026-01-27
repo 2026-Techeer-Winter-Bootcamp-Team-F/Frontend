@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
+import 'package:my_app/screens/cards/recommended_card_detail_page.dart';
 
 class CardAnalysisPage extends StatelessWidget {
   const CardAnalysisPage({super.key});
@@ -58,14 +59,14 @@ class CardAnalysisPage extends StatelessWidget {
                 const SizedBox(height: 28),
 
                 // Header text like the screenshot (left-aligned)
-                const Text(
+                Text(
                   '이 카드는 어때요?',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
-                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 18),
 
@@ -87,30 +88,203 @@ class CardAnalysisPage extends StatelessWidget {
       'category': '택시',
       'total': 27133,
       'items': [
-        {'image': 'assets/cards/card1.png', 'title': '현대카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
-        {'image': 'assets/cards/card2.png', 'title': 'BC카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
-        {'image': 'assets/cards/card3.png', 'title': '롯데카드', 'subtitle': '연회비: 20만 원', 'percent': '230%'},
-        {'image': 'assets/cards/card4.png', 'title': 'Mr.Life', 'subtitle': '연회비: 20만 원', 'percent': '190%'},
+        {
+          'image': 'assets/cards/card1.png',
+          'title': 'LIKIT FUN+',
+          'subtitle': '연회비: 1만 5천 원',
+          'percent': '210%',
+          'mainBenefitLines': [
+            '스타벅스 최대 60%, 영화 50% 할인',
+            '대중교통, 통신비 10%, 배달의민족 5% 할인',
+          ],
+          'benefits': [
+            {'category': '커피', 'desc': '스타벅스 최대 60% 할인'},
+            {'category': '문화', 'desc': '롯데시네마, CGV 50% 할인'},
+            {'category': '교통', 'desc': '대중교통 10% 할인'},
+            {'category': '통신', 'desc': '통신비 10% 할인'},
+            {'category': '외식', 'desc': '배달의민족, 요기요 5% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card2.png',
+          'title': 'BC카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': '110%',
+          'mainBenefitLines': [
+            '택시·대리운전 최대 15% 할인',
+            '주유 10%, 음식 배달 7% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
+            {'category': '주유', 'desc': '주유 결제 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 7% 할인'},
+            {'category': '외식', 'desc': '배달앱 7% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card3.png',
+          'title': '롯데카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': '230%',
+          'mainBenefitLines': [
+            '택시 20%, 쇼핑 5% 할인',
+            '영화·콘서트 30% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '택시 결제 20% 할인'},
+            {'category': '쇼핑', 'desc': '백화점·대형마트 5% 할인'},
+            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card4.png',
+          'title': 'Mr.Life',
+          'subtitle': '연회비: 20만 원',
+          'percent': '190%',
+          'mainBenefitLines': [
+            '생활비·통신 10% 할인',
+            '카페·외식 5~10% 할인',
+          ],
+          'benefits': [
+            {'category': '통신', 'desc': '통신요금 10% 할인'},
+            {'category': '커피', 'desc': '카페 10% 할인'},
+            {'category': '외식', 'desc': '배달·외식 5% 할인'},
+          ],
+        },
       ],
     },
     {
       'category': '교통',
       'total': 7816,
       'items': [
-        {'image': 'assets/cards/card1.png', 'title': '현대카드', 'subtitle': '연회비: 20만 원', 'percent': 'ROI'},
-        {'image': 'assets/cards/card2.png', 'title': 'BC카드', 'subtitle': '연회비: 20만 원', 'percent': '110%'},
-        {'image': 'assets/cards/card3.png', 'title': '롯데카드', 'subtitle': '연회비: 20만 원', 'percent': '95%'},
-        {'image': 'assets/cards/card4.png', 'title': '신한카드', 'subtitle': '연회비: 20만 원', 'percent': '130%'},
+        {
+          'image': 'assets/cards/card1.png',
+          'title': '현대카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': 'ROI',
+          'mainBenefitLines': [
+            '대중교통 20%, 주유 15% 할인',
+            '통신비 10%, 영화 50% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '대중교통 20% 할인'},
+            {'category': '주유', 'desc': '주유 15% 할인'},
+            {'category': '통신', 'desc': '통신요금 10% 할인'},
+            {'category': '문화', 'desc': '영화 50% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card2.png',
+          'title': 'BC카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': '110%',
+          'mainBenefitLines': [
+            '택시·대리운전 최대 15% 할인',
+            '주유 10%, 음식 배달 7% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
+            {'category': '주유', 'desc': '주유 결제 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 7% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card3.png',
+          'title': '롯데카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': '95%',
+          'mainBenefitLines': [
+            '택시 20%, 쇼핑 5% 할인',
+            '영화·콘서트 30% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '택시 20% 할인'},
+            {'category': '쇼핑', 'desc': '백화점·마트 5% 할인'},
+            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card4.png',
+          'title': '신한카드',
+          'subtitle': '연회비: 20만 원',
+          'percent': '130%',
+          'mainBenefitLines': [
+            '대중교통 15%, 주유 10% 할인',
+            '편의점·카페 5% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '대중교통 15% 할인'},
+            {'category': '주유', 'desc': '주유 10% 할인'},
+            {'category': '편의점', 'desc': '편의점 5% 할인'},
+            {'category': '커피', 'desc': '카페 5% 할인'},
+          ],
+        },
       ],
     },
     {
       'category': '마트',
       'total': 4500,
       'items': [
-        {'image': 'assets/cards/card2.png', 'title': '이마트카드', 'subtitle': '연회비: 10만 원', 'percent': '150%'},
-        {'image': 'assets/cards/card3.png', 'title': '롯데마트카드', 'subtitle': '연회비: 12만 원', 'percent': '140%'},
-        {'image': 'assets/cards/card4.png', 'title': '홈플러스카드', 'subtitle': '연회비: 8만 원', 'percent': '125%'},
-        {'image': 'assets/cards/card1.png', 'title': '쿠팡카드', 'subtitle': '연회비: 0원', 'percent': '115%'},
+        {
+          'image': 'assets/cards/card2.png',
+          'title': '이마트카드',
+          'subtitle': '연회비: 10만 원',
+          'percent': '150%',
+          'mainBenefitLines': [
+            '이마트·트레이더스 5% 할인',
+            '주유 10%, 교통 5% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '이마트·트레이더스 5% 할인'},
+            {'category': '주유', 'desc': '이마트 주유 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 5% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card3.png',
+          'title': '롯데마트카드',
+          'subtitle': '연회비: 12만 원',
+          'percent': '140%',
+          'mainBenefitLines': [
+            '롯데마트 5%, 영화 30% 할인',
+            '주유·주차 10% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '롯데마트 5% 할인'},
+            {'category': '문화', 'desc': '롯데시네마 30% 할인'},
+            {'category': '주유', 'desc': '주유 10% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card4.png',
+          'title': '홈플러스카드',
+          'subtitle': '연회비: 8만 원',
+          'percent': '125%',
+          'mainBenefitLines': [
+            '홈플러스 5%, 주유 7% 할인',
+            '생활서비스 10% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '홈플러스 5% 할인'},
+            {'category': '주유', 'desc': '주유 7% 할인'},
+            {'category': '생활', 'desc': '세탁·이사 10% 할인'},
+          ],
+        },
+        {
+          'image': 'assets/cards/card1.png',
+          'title': '쿠팡카드',
+          'subtitle': '연회비: 0원',
+          'percent': '115%',
+          'mainBenefitLines': [
+            '쿠팡 5% 할인, 로켓배송 추가 혜택',
+            '주유 7%, 대중교통 5% 할인',
+          ],
+          'benefits': [
+            {'category': '쇼핑', 'desc': '쿠팡 5% 할인'},
+            {'category': '주유', 'desc': '주유 7% 할인'},
+            {'category': '교통', 'desc': '대중교통 5% 할인'},
+          ],
+        },
       ],
     },
   ];
@@ -123,8 +297,8 @@ class CardAnalysisPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(section['category'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            Text('총 ${_formatWon(section['total'] as int)} 썼어요', style: const TextStyle(color: Colors.black54)),
+            Text(section['category'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            Text('총 ${_formatWon(section['total'] as int)} 썼어요', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
         const SizedBox(height: 12),
@@ -234,11 +408,36 @@ class _RecommendationCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const _RecommendationCard({required this.data});
 
+  void _openDetail(BuildContext context) {
+    final main = (data['mainBenefitLines'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
+    final ben = (data['benefits'] as List?)?.map((e) {
+      final m = e as Map;
+      return <String, String>{
+        'category': (m['category'] ?? '').toString(),
+        'desc': (m['desc'] ?? '').toString(),
+      };
+    }).toList() ?? <Map<String, String>>[];
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecommendedCardDetailPage(
+          imagePath: data['image'] as String,
+          cardName: data['title'] as String,
+          subtitle: data['subtitle'] as String,
+          mainBenefitLines: main,
+          benefits: ben,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: () => _openDetail(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
       ),
@@ -256,8 +455,8 @@ class _RecommendationCard extends StatelessWidget {
                 data['image'] as String,
                 fit: BoxFit.cover,
                 errorBuilder: (c, e, s) => Container(
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.credit_card, size: 28, color: Colors.black26),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(Icons.credit_card, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -265,7 +464,7 @@ class _RecommendationCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             data['title'] as String,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -275,7 +474,7 @@ class _RecommendationCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   data['subtitle'] as String,
-                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -283,7 +482,7 @@ class _RecommendationCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 data['percent'] as String,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black87),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -291,7 +490,7 @@ class _RecommendationCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

@@ -75,7 +75,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+      appBar: AppBar(elevation: 0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -103,13 +103,13 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(_formatTimer(), style: const TextStyle(color: Colors.grey)),
+                  Text(_formatTimer(), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _seconds == 0 ? _onResend : null,
-                child: Text(_seconds == 0 ? '인증번호 재전송' : '인증번호가 안와요', style: TextStyle(color: _seconds == 0 ? theme.primaryColor : Colors.grey)),
+                child: Text(_seconds == 0 ? '인증번호 재전송' : '인증번호가 안와요', style: TextStyle(color: _seconds == 0 ? theme.primaryColor : Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
               const Spacer(),
               SizedBox(

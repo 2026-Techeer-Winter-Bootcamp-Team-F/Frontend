@@ -14,9 +14,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
@@ -27,20 +25,20 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 '전화번호를 입력해주세요.',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 '휴대전화번호',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               TextField(
@@ -63,7 +61,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                     borderSide: BorderSide(color: Colors.blue, width: 2),
                   ),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.cancel, color: Colors.grey, size: 20),
+                    icon: Icon(Icons.cancel, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                     onPressed: _controller.clear,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),

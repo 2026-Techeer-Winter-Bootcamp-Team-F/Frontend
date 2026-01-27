@@ -42,7 +42,7 @@ class _SsnInputPageState extends State<SsnInputPage> {
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: false,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -186,20 +186,20 @@ class _SsnInputPageState extends State<SsnInputPage> {
               const SizedBox(height: 18),
               Text(
                 '주민등록번호',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   _buildFrontField(theme),
                   const SizedBox(width: 8),
-                  const Text('-', style: TextStyle(fontSize: 18, color: Colors.black)),
+                  Text('-', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
                   const SizedBox(width: 8),
                   _buildBackInputAndMask(theme),
                 ],
               ),
               const SizedBox(height: 18),
-              Text('이름: ${widget.name}', style: const TextStyle(color: Colors.grey)),
+              Text('이름: ${widget.name}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const Spacer(),
               SizedBox(
                 width: double.infinity,

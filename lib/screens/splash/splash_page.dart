@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/login/phone_login_page.dart';
 import 'package:my_app/screens/login/name_input_page.dart';
 
@@ -81,7 +82,6 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -106,7 +106,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                   children: const [
                                     Icon(
                                       Icons.check_circle_rounded,
-                                      color: Color(0xFF2962FF),
+                                      color: AppColors.primary,
                                       size: 120,
                                     ),
                                     SizedBox(height: 16),
@@ -115,7 +115,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2962FF),
+                                        color: AppColors.primary,
                                       ),
                                     ),
                                   ],
@@ -142,7 +142,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2962FF),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -169,9 +169,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            backgroundColor: Theme.of(context).colorScheme.surface,
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            side: BorderSide(color: Theme.of(context).colorScheme.outline),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),

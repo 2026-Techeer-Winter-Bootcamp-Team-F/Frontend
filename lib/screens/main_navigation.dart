@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/home/home_page.dart';
 import 'package:my_app/screens/onboarding/benefit_score_page.dart';
 // '소비' 탭은 기존 `HomePage`로 이동했으므로 ExpenseAnalysisPage import는 더 이상 필요하지 않습니다.
@@ -164,7 +165,7 @@ class _ChatbotFloatingState extends State<ChatbotFloating> {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF1560FF),
+            color: AppColors.primary,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.14), blurRadius: 10, offset: const Offset(0, 4)),
@@ -232,9 +233,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
         alignment: Alignment.bottomCenter,
         child: Container(
           height: height,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8F8FB),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: Stack(
             children: [
@@ -265,7 +266,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                             child: Text(
                               'BeneFit',
                               style: TextStyle(
-                                color: Color(0xFF1560FF),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,
                                 letterSpacing: -0.5,
@@ -276,13 +277,13 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                         ),
                         const SizedBox(width: 16),
                         // Title
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             '베네핏(BeneFit)',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E1E23),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -307,7 +308,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                   Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
@@ -321,22 +322,22 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
+                                        Text(
                                           '안녕하세요! BeneFit(베네핏)입니다 :)',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
-                                            color: Color(0xFF1E1E23),
+                                            color: Theme.of(context).colorScheme.onSurface,
                                             height: 1.4,
                                           ),
                                         ),
                                         const SizedBox(height: 1),
-                                        const Text(
+                                        Text(
                                           '궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
-                                            color: Color(0xFF1E1E23),
+                                            color: Theme.of(context).colorScheme.onSurface,
                                             height: 1.4,
                                           ),
                                         ),
@@ -349,7 +350,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
                                             },
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF1560FF),
+                                              backgroundColor: AppColors.primary,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(26),
                                               ),
@@ -381,7 +382,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                     left: 20,
                                     top: -6,
                                     child: CustomPaint(
-                                      painter: _BubbleTailPainter(),
+                                      painter: _BubbleTailPainter(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                                       size: const Size(16, 12),
                                     ),
                                   ),
@@ -391,19 +392,19 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                               // Bottom label: chat bot in use
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
+                                children: [
                                   Icon(
                                     Icons.access_time,
                                     size: 14,
-                                    color: Color(0xFFB0B0B0),
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
-                                  SizedBox(width: 6),
+                                  const SizedBox(width: 6),
                                   Text(
                                     '챗봇 이용중',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400,
-                                      color: Color(0xFFB0B0B0),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -422,9 +423,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                 controller: _searchCtrl,
                                 decoration: InputDecoration(
                                   hintText: '채팅 검색',
-                                  prefixIcon: const Icon(Icons.search),
+                                  prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   filled: true,
-                                  fillColor: const Color(0xFFF4F6F8),
+                                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
@@ -450,7 +451,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF6F7F8),
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Row(
@@ -461,13 +462,13 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                                  Text(c.title, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
                                                   const SizedBox(height: 6),
-                                                  Text(c.lastMessage, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                                                  Text(c.lastMessage, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                                                 ],
                                               ),
                                             ),
-                                            Text(c.time, style: const TextStyle(color: Colors.black45, fontSize: 12)),
+                                            Text(c.time, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                                           ],
                                         ),
                                       ),
@@ -486,7 +487,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1560FF),
+                                    backgroundColor: AppColors.primary,
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                                   ),
@@ -518,9 +519,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.home, color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
+                                Icon(Icons.home, color: _selectedIndex == 0 ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant, size: 22),
                                 const SizedBox(height: 6),
-                                Text('홈', style: TextStyle(color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey)),
+                                Text('홈', style: TextStyle(color: _selectedIndex == 0 ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
                               ],
                             ),
                           ),
@@ -531,9 +532,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.chat_bubble, color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
+                                Icon(Icons.chat_bubble, color: _selectedIndex == 1 ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant, size: 22),
                                 const SizedBox(height: 6),
-                                Text('대화', style: TextStyle(color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey)),
+                                Text('대화', style: TextStyle(color: _selectedIndex == 1 ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
                               ],
                             ),
                           ),
@@ -563,10 +564,10 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                         ),
                       ],
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Icon(
                         Icons.close,
-                        color: Color(0xFF808080),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                     ),
@@ -594,7 +595,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _buildNavItem({required int index, required IconData icon, required String label}) {
     final bool selected = _currentIndex == index;
-    final color = selected ? const Color(0xFF1560FF) : Colors.grey.shade400;
+    final color = selected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant;
 
     // Use larger icon when selected for emphasis
     final iconSize = selected ? 26.0 : 22.0;
@@ -615,7 +616,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 Container(
                   width: selectedCircleSize,
                   height: selectedCircleSize,
-                  decoration: const BoxDecoration(color: Color(0xFF1560FF), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                   child: Center(child: Icon(icon, color: Colors.white, size: iconSize)),
                 )
               else
@@ -652,8 +653,8 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: Container(
         width: 440,
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey.shade100)),
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         height: 74,
@@ -673,10 +674,13 @@ class _MainNavigationState extends State<MainNavigation> {
 
 // Custom painter for speech bubble tail
 class _BubbleTailPainter extends CustomPainter {
+  const _BubbleTailPainter({required this.color});
+  final Color color;
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = color
       ..style = PaintingStyle.fill;
 
     // Draw triangle pointing up to the left

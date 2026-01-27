@@ -45,7 +45,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 18),
-              const Text('전화번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('전화번호', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               TextField(
                 controller: _phoneController,
@@ -66,7 +66,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                           icon: Container(
                             decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF0F0F0)),
                             padding: const EdgeInsets.all(6),
-                            child: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                            child: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                           onPressed: () => setState(() => _phoneController.clear()),
                         ),

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 
 class BenefitScorePage extends StatefulWidget {
   final int score; // 0..100
@@ -81,7 +82,6 @@ void _onBlueCardTap() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -94,34 +94,34 @@ void _onBlueCardTap() {
                   children: [
                     Text(
                       '${widget.score}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 70,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.0,
                       ),
                     ),
                     Text(
                       '/100',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.0,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text('나의 혜택 점수',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                Text('나의 혜택 점수',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '용진님이 사용하시는 카드 혜택의 85%를 챙기고 있어요',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black54,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -132,7 +132,7 @@ void _onBlueCardTap() {
                       child: _statCard(
                         '받은 혜택',
                         widget.received,
-                        accent: const Color(0xFF1560FF),
+                        accent: AppColors.primary,
                         percentLabel: '+12%',
                       ),
                     ),
@@ -141,7 +141,7 @@ void _onBlueCardTap() {
                       child: _statCard(
                         '놓친 혜택',
                         widget.missed,
-                        accent: Colors.black,
+                        accent: Theme.of(context).colorScheme.onSurface,
                         isWarning: true,
                         note: '잠재 혜택',
                       ),
@@ -173,24 +173,33 @@ void _onBlueCardTap() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.4),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.04),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 12,
-            offset: const Offset(0, 6),
-          )
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, -1),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black54)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -199,7 +208,7 @@ void _onBlueCardTap() {
                 style: TextStyle(
                   fontSize: 25,
                   fontWeight: FontWeight.w800,
-                  color: accent ?? Colors.black,
+                  color: accent ?? Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -221,7 +230,7 @@ void _onBlueCardTap() {
                     style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
               ] else if (note != null) ...[
                 Text(note,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ],
           ),
@@ -320,7 +329,7 @@ void _onBlueCardTap() {
           child: Transform.scale(
             scale: 0.95 + (progress * 0.05),
             child: _buildCard(
-              color: const Color(0xFF1560FF),
+              color: AppColors.primary,
               width: 311,
               height: 365 + (progress * 12),
               topOffset: 0,

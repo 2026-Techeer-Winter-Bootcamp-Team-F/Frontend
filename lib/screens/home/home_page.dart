@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-// 'package:my_app/config/theme.dart'은 현재 이 파일에서 사용되지 않아 제거했습니다.
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/analysis/category_detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -76,13 +76,13 @@ class _HomePageState extends State<HomePage> {
         name: '쇼핑내역 → 내 KB국민계좌',
         amount: 9481,
         icon: Icons.shopping_bag,
-        color: const Color(0xFF1560FF),
+        color: AppColors.primary,
       ),
       _TransactionItem(
         name: '네이버페이 충전 | 토스뱅크 → 네이버페이 머니',
         amount: -10000,
         icon: Icons.account_balance_wallet,
-        color: const Color(0xFF1560FF),
+        color: AppColors.primary,
       ),
       _TransactionItem(
         name: 'ABLY',
@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   final Map<String, Map<String, dynamic>> categoryData = {
-    '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': Color(0xFF1560FF)},
+    '쇼핑': {'amount': 317918, 'change': -235312, 'percent': 49, 'icon': '🛍️', 'color': AppColors.primary},
     '이체': {'amount': 142562, 'change': -146449, 'percent': 22, 'icon': '🏦', 'color': Color(0xFF2196F3)},
     '생활': {'amount': 83351, 'change': 37551, 'percent': 13, 'icon': '🏠', 'color': Color(0xFFFF9800)},
     '식비': {'amount': 48812, 'change': -15388, 'percent': 8, 'icon': '🍴', 'color': Color(0xFFFFEB3B)},
@@ -137,7 +137,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -186,7 +185,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
                 selectedMonth = DateTime(
@@ -198,14 +197,15 @@ class _HomePageState extends State<HomePage> {
           ),
           Text(
             '${selectedMonth.month}월',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               fontFamily: 'Pretendard',
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
                 selectedMonth = DateTime(
@@ -230,8 +230,8 @@ class _HomePageState extends State<HomePage> {
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(100),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(100),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -308,7 +308,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 34),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Text(
@@ -316,7 +316,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? const Color(0xFF1E1E23) : const Color(0xFFBBBBBB),
+            color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
             fontFamily: 'Pretendard',
           ),
         ),
@@ -341,12 +341,12 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF1E1E23).withOpacity(0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -359,7 +359,7 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF1E1E23) : const Color(0xFF999999),
+              color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'Pretendard',
             ),
           ),
@@ -390,7 +390,7 @@ class _HomePageState extends State<HomePage> {
                     day,
                     style: TextStyle(
                       fontSize: 13,
-                      color: day == '일' ? Colors.red : (day == '토' ? Colors.blue : Colors.grey[700]),
+                      color: day == '일' ? Colors.red : (day == '토' ? Colors.blue : Theme.of(context).colorScheme.onSurfaceVariant),
                       fontWeight: FontWeight.w500,
                       fontFamily: 'Pretendard',
                     ),
@@ -453,7 +453,7 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                color: isToday ? Colors.blue : const Color(0xFF1E1E23),
+                                color: isToday ? Colors.blue : Theme.of(context).colorScheme.onSurface,
                                 fontFamily: 'Pretendard',
                               ),
                             ),
@@ -523,10 +523,11 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               '${selectedDate!.day}일 ($weekdayName)',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Pretendard',
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             Text(
@@ -534,7 +535,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: totalExpense < 0 ? const Color(0xFF1E1E23) : const Color(0xFF1560FF),
+                color: totalExpense < 0 ? Theme.of(context).colorScheme.onSurface : AppColors.primary,
                 fontFamily: 'Pretendard',
               ),
             ),
@@ -550,7 +551,7 @@ class _HomePageState extends State<HomePage> {
               child: Text(
                 '거래 내역이 없습니다',
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
                   fontFamily: 'Pretendard',
                 ),
@@ -579,9 +580,9 @@ class _HomePageState extends State<HomePage> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.03),
@@ -596,10 +597,10 @@ class _HomePageState extends State<HomePage> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: tx.color.withOpacity(0.12),
+                        color: (tx.color.value == 0xFF1E1E23 ? Theme.of(context).colorScheme.onSurface : tx.color).withOpacity(0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(tx.icon, color: tx.color, size: 22),
+                      child: Icon(tx.icon, color: tx.color.value == 0xFF1E1E23 ? Theme.of(context).colorScheme.onSurface : tx.color, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -608,11 +609,11 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             tx.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               fontFamily: 'Pretendard',
-                              color: Color(0xFF1E1E23),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -623,7 +624,7 @@ class _HomePageState extends State<HomePage> {
                               tx.subtitle!,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontFamily: 'Pretendard',
                               ),
                             ),
@@ -637,7 +638,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: tx.amount < 0 ? const Color(0xFF1E1E23) : const Color(0xFF1560FF),
+                        color: tx.amount < 0 ? Theme.of(context).colorScheme.onSurface : AppColors.primary,
                         fontFamily: 'Pretendard',
                       ),
                     ),
@@ -669,9 +670,9 @@ class _HomePageState extends State<HomePage> {
             alignment: Alignment.centerLeft,
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF1E1E23),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   height: 1.5,
                   fontFamily: 'Pretendard',
@@ -681,7 +682,7 @@ class _HomePageState extends State<HomePage> {
                   TextSpan(
                     text: _formatCurrency(difference),
                     style: const TextStyle(
-                      color: Color(0xFF1560FF),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Pretendard',
                     ),
@@ -699,7 +700,7 @@ class _HomePageState extends State<HomePage> {
             height: 180,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: CustomPaint(
@@ -708,6 +709,7 @@ class _HomePageState extends State<HomePage> {
                 thisMonthData: thisMonthDailyData,
                 lastMonthData: lastMonthDailyData,
                 currentDay: 19, // 1월 19일까지 데이터
+                labelColor: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -719,7 +721,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Column(
               children: [
-                _buildMonthData('1월 19일까지', thisMonthTotal, const Color(0xFF1560FF), isCurrent: true),
+                _buildMonthData('1월 19일까지', thisMonthTotal, AppColors.primary, isCurrent: true),
                 const SizedBox(height: 8),
                 _buildMonthData('12월 19일까지', lastMonthSameDay, const Color(0xFFB3D9FF), isCurrent: false),
               ],
@@ -747,7 +749,7 @@ class _HomePageState extends State<HomePage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[700],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               fontFamily: 'Pretendard',
             ),
@@ -758,7 +760,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
-            color: const Color(0xFF1E1E23),
+            color: Theme.of(context).colorScheme.onSurface,
             fontFamily: 'Pretendard',
           ),
         ),
@@ -777,9 +779,9 @@ class _HomePageState extends State<HomePage> {
             alignment: Alignment.centerLeft,
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF1E1E23),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   height: 1.5,
                   fontFamily: 'Pretendard',
@@ -789,7 +791,7 @@ class _HomePageState extends State<HomePage> {
                   TextSpan(
                     text: _formatCurrency(weeklyAverage),
                     style: const TextStyle(
-                      color: Color(0xFF1560FF),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Pretendard',
                     ),
@@ -807,7 +809,7 @@ class _HomePageState extends State<HomePage> {
             height: 200,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -829,7 +831,7 @@ class _HomePageState extends State<HomePage> {
             '지난 4주 평균  ${_formatCurrencyFull(weeklyAverage)}',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'Pretendard',
             ),
           ),
@@ -850,7 +852,7 @@ class _HomePageState extends State<HomePage> {
               '${(amount / 10000).toStringAsFixed(0)}만',
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontFamily: 'Pretendard',
               ),
             ),
@@ -859,7 +861,7 @@ class _HomePageState extends State<HomePage> {
           width: 40,
           height: height.toDouble(),
             decoration: BoxDecoration(
-            color: isToday ? const Color(0xFF1560FF) : const Color(0xFFEAF3FF),
+            color: isToday ? AppColors.primary : Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -868,7 +870,7 @@ class _HomePageState extends State<HomePage> {
           label,
           style: TextStyle(
             fontSize: 10,
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontFamily: 'Pretendard',
           ),
         ),
@@ -887,9 +889,9 @@ class _HomePageState extends State<HomePage> {
             alignment: Alignment.centerLeft,
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF1E1E23),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   height: 1.5,
                   fontFamily: 'Pretendard',
@@ -899,7 +901,7 @@ class _HomePageState extends State<HomePage> {
                   TextSpan(
                     text: _formatCurrency(monthlyAverage),
                     style: const TextStyle(
-                      color: Color(0xFF1560FF),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Pretendard',
                     ),
@@ -917,7 +919,7 @@ class _HomePageState extends State<HomePage> {
             height: 200,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -939,7 +941,7 @@ class _HomePageState extends State<HomePage> {
             '지난 4개월 평균  ${_formatCurrencyFull(754776)}',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'Pretendard',
             ),
           ),
@@ -960,7 +962,7 @@ class _HomePageState extends State<HomePage> {
               '${(amount / 10000).toStringAsFixed(0)}만',
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontFamily: 'Pretendard',
               ),
             ),
@@ -969,7 +971,7 @@ class _HomePageState extends State<HomePage> {
           width: 40,
           height: height,
           decoration: BoxDecoration(
-            color: isCurrentMonth ? const Color(0xFF1560FF) : const Color(0xFFEAF3FF),
+            color: isCurrentMonth ? AppColors.primary : Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -978,7 +980,7 @@ class _HomePageState extends State<HomePage> {
           label,
           style: TextStyle(
             fontSize: 10,
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontFamily: 'Pretendard',
           ),
         ),
@@ -995,7 +997,7 @@ class _HomePageState extends State<HomePage> {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(100),
           ),
           child: Row(
@@ -1026,7 +1028,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 28),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Text(
@@ -1035,7 +1037,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? const Color(0xFF1E1E23) : const Color(0xFFBBBBBB),
+            color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
             fontFamily: 'Pretendard',
           ),
         ),
@@ -1081,9 +1083,9 @@ class _HomePageState extends State<HomePage> {
             child: RichText(
               textAlign: TextAlign.left,
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF1E1E23),
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.5,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Pretendard',
@@ -1093,7 +1095,7 @@ class _HomePageState extends State<HomePage> {
                     text: maxAmountCategory,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1560FF),
+                      color: AppColors.primary,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -1152,17 +1154,18 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 4),
                       Text(
                         '${selectedEntry.value['percent']}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Pretendard',
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         selectedEntry.key,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontFamily: 'Pretendard',
                         ),
                       ),
@@ -1206,7 +1209,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
-            child: const Text('더보기 >'),
+            child: Text('더보기 >', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -1259,6 +1262,7 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 14,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           fontFamily: 'Pretendard',
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1266,7 +1270,7 @@ class _HomePageState extends State<HomePage> {
                         '$percent%',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontFamily: 'Pretendard',
                         ),
                       ),
@@ -1277,7 +1281,7 @@ class _HomePageState extends State<HomePage> {
                     _formatCurrencyFull(amount),
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -1288,7 +1292,7 @@ class _HomePageState extends State<HomePage> {
               '${isPositive ? '+' : ''}${_formatCurrencyFull(change)}',
                 style: TextStyle(
                 fontSize: 12,
-                color: isPositive ? const Color(0xFFFF5252) : const Color(0xFF1560FF),
+                color: isPositive ? const Color(0xFFFF5252) : AppColors.primary,
                 fontWeight: FontWeight.w500,
                 fontFamily: 'Pretendard',
               ),
@@ -1313,9 +1317,9 @@ class _HomePageState extends State<HomePage> {
             child: RichText(
               textAlign: TextAlign.left,
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF1E1E23),
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.5,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Pretendard',
@@ -1325,7 +1329,7 @@ class _HomePageState extends State<HomePage> {
                   TextSpan(
                     text: '${topCategory.key} 지출이 줄었어요',
                     style: const TextStyle(
-                      color: Color(0xFF1560FF),
+                      color: AppColors.primary,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -1389,7 +1393,7 @@ class _HomePageState extends State<HomePage> {
               width: 16,
               height: lastMonthHeight,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1412,7 +1416,7 @@ class _HomePageState extends State<HomePage> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'Pretendard',
             ),
           ),
@@ -1428,9 +1432,9 @@ class _HomePageState extends State<HomePage> {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isChange ? Colors.transparent : (label.contains('1월') ? Color(0xFF1560FF) : Colors.grey),
+            color: isChange ? Colors.transparent : (label.contains('1월') ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant),
             shape: BoxShape.circle,
-            border: isChange ? Border.all(color: Colors.grey, width: 1) : null,
+            border: isChange ? Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1) : null,
           ),
         ),
         const SizedBox(width: 8),
@@ -1439,17 +1443,18 @@ class _HomePageState extends State<HomePage> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: 'Pretendard',
             ),
           ),
         ),
         Text(
           percent,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             fontFamily: 'Pretendard',
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(width: 16),
@@ -1461,7 +1466,7 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isChange && amount.startsWith('-') ? const Color(0xFF1560FF) : const Color(0xFF1E1E23),
+              color: isChange && amount.startsWith('-') ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
               fontFamily: 'Pretendard',
             ),
           ),
@@ -1513,10 +1518,13 @@ class LineChartPainter extends CustomPainter {
   final List<double> lastMonthData;
   final int currentDay;
 
+  final Color labelColor;
+
   LineChartPainter({
     required this.thisMonthData,
     required this.lastMonthData,
     required this.currentDay,
+    required this.labelColor,
   });
 
   @override
@@ -1549,14 +1557,14 @@ class LineChartPainter extends CustomPainter {
       chartWidth,
       chartHeight,
       padding,
-      const Color(0xFF1560FF),
-      const Color(0xFF1560FF).withOpacity(0.15),
+      AppColors.primary,
+      AppColors.primary.withOpacity(0.15),
       currentDay,
       true,
     );
 
     // 날짜 레이블 그리기
-    _drawLabels(canvas, size, chartWidth, padding);
+    _drawLabels(canvas, size, chartWidth, padding, labelColor);
   }
 
   void _drawMonthLine(
@@ -1642,17 +1650,17 @@ class LineChartPainter extends CustomPainter {
 
       // 네온 글로우 효과 (여러 겹의 원으로 구현)
       final glowPaint1 = Paint()
-        ..color = const Color(0xFF1560FF).withOpacity(0.15)
+        ..color = AppColors.primary.withOpacity(0.15)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
       
       final glowPaint2 = Paint()
-        ..color = const Color(0xFF1560FF).withOpacity(0.25)
+        ..color = AppColors.primary.withOpacity(0.25)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
       
       final glowPaint3 = Paint()
-        ..color = const Color(0xFF1560FF).withOpacity(0.4)
+        ..color = AppColors.primary.withOpacity(0.4)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
@@ -1668,7 +1676,7 @@ class LineChartPainter extends CustomPainter {
       
       // 중심 원
       final circlePaint = Paint()
-        ..color = const Color(0xFF1560FF)
+        ..color = AppColors.primary
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(Offset(lastPointX, lastPointY), 6, borderPaint);
@@ -1676,14 +1684,14 @@ class LineChartPainter extends CustomPainter {
     }
   }
 
-  void _drawLabels(Canvas canvas, Size size, double chartWidth, double padding) {
+  void _drawLabels(Canvas canvas, Size size, double chartWidth, double padding, Color labelColor) {
     final textPainter = TextPainter(
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     );
 
     final labelStyle = TextStyle(
-      color: Colors.grey[600],
+      color: labelColor,
       fontSize: 11,
       fontFamily: 'Pretendard',
     );
@@ -1713,6 +1721,7 @@ class LineChartPainter extends CustomPainter {
   bool shouldRepaint(covariant LineChartPainter oldDelegate) {
     return oldDelegate.thisMonthData != thisMonthData ||
         oldDelegate.lastMonthData != lastMonthData ||
-        oldDelegate.currentDay != currentDay;
+        oldDelegate.currentDay != currentDay ||
+        oldDelegate.labelColor != labelColor;
   }
 }
