@@ -10,7 +10,8 @@ import 'package:my_app/services/chat_service.dart';
 
 class MainNavigation extends StatefulWidget {
   final String name;
-  const MainNavigation({super.key, this.name = ''});
+  final int initialIndex;
+  const MainNavigation({super.key, this.name = '', this.initialIndex = 0});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -675,7 +676,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
 
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   late final List<Widget> _pages = [
     BenefitScorePage(name: widget.name),
@@ -683,6 +684,12 @@ class _MainNavigationState extends State<MainNavigation> {
     const CardAnalysisPage(),
     const SubscriptionPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex.clamp(0, _pages.length - 1);
+  }
 
   Widget _buildNavItem({required int index, required IconData icon, required String label}) {
     final bool selected = _currentIndex == index;

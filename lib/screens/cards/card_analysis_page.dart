@@ -1,16 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/models/card.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
 import 'package:my_app/screens/cards/recommended_card_detail_page.dart';
+import 'package:my_app/services/card_service.dart';
 
-class CardAnalysisPage extends StatelessWidget {
+class CardAnalysisPage extends StatefulWidget {
   const CardAnalysisPage({super.key});
 
-  static final List<WalletCard> _cards = [
-    WalletCard(imagePath: 'assets/images/mywallet_shinhan_card.jpeg', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
-    WalletCard(imagePath: 'assets/images/mywallet_toss_card.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
-    WalletCard(imagePath: 'assets/images/mywallet_bc_card.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
-    WalletCard(imagePath: 'assets/images/mywallet_kookmin_card.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
-  ];
+  @override
+  State<CardAnalysisPage> createState() => _CardAnalysisPageState();
+}
+
+class _CardAnalysisPageState extends State<CardAnalysisPage> {
+  static const double _cardAspectRatio = 1.586; // 85.60mm x 53.98mm
+
+  final List<WalletCard> _cards = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCards();
+  }
+
+  Future<void> _loadCards() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+      final cardService = CardService();
+      final cards = await cardService.getMyCards();
+      if (!mounted) return;
+      setState(() {
+        _cards
+          ..clear()
+          ..addAll(cards.map(_toWalletCard));
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '카드 정보를 불러올 수 없습니다.';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,26 +70,8 @@ class CardAnalysisPage extends StatelessWidget {
                 // Wallet stack (full width inside padding)
                 SizedBox(
                   width: double.infinity,
-                  height: 520,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: List.generate(_cards.length, (i) {
-                      final card = _cards[i];
-                      // Keep all visible cards the same scale/size.
-                      final offset = i * 40.0; // tighten overlap so more cards are visible
-                      final scale = 1.0;
-                      return Positioned(
-                        top: offset,
-                        left: 0,
-                        right: 0,
-                        child: Transform.scale(
-                          scale: scale,
-                          alignment: Alignment.topCenter,
-                          child: _buildCard(context, card, i == _cards.length - 1),
-                        ),
-                      );
-                    }),
-                  ),
+                  height: _walletSectionHeight(context),
+                  child: _buildWalletContent(context),
                 ),
 
                 const SizedBox(height: 28),
@@ -80,6 +98,144 @@ class CardAnalysisPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildWalletContent(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error ?? '카드 정보를 불러올 수 없습니다.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loadCards,
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_cards.isEmpty) {
+      return const Center(
+        child: Text(
+          '등록된 카드가 없습니다.',
+          style: TextStyle(fontSize: 14),
+        ),
+      );
+    }
+    if (_cards.length == 1) {
+      return Center(
+        child: _buildSingleCard(context, _cards.first),
+      );
+    }
+    return _buildWalletStack(context);
+  }
+
+  double _walletSectionHeight(BuildContext context) {
+    final availableWidth =
+        MediaQuery.of(context).size.width - 40 - 12; // padding + card margin
+    final cardHeight = availableWidth > 0
+        ? availableWidth / _cardAspectRatio
+        : 200.0;
+    if (_isLoading || _error != null || _cards.isEmpty) {
+      return cardHeight.clamp(200.0, 320.0);
+    }
+
+    final step = _stackOffsetStep();
+    final stackedHeight = cardHeight + step * (_cards.length - 1);
+    return stackedHeight.clamp(220.0, 520.0);
+  }
+
+  Widget _buildSingleCard(BuildContext context, WalletCard card) {
+    return SizedBox(
+      width: double.infinity,
+      child: _buildCard(context, card, true),
+    );
+  }
+
+  Widget _buildWalletStack(BuildContext context) {
+    final step = _stackOffsetStep();
+    return Stack(
+      clipBehavior: Clip.none,
+      children: List.generate(_cards.length, (i) {
+        final card = _cards[i];
+        final offset = i * step; // tighten overlap so more cards are visible
+        const scale = 1.0;
+        return Positioned(
+          top: offset,
+          left: 0,
+          right: 0,
+          child: Transform.scale(
+            scale: scale,
+            alignment: Alignment.topCenter,
+            child: _buildCard(context, card, i == _cards.length - 1),
+          ),
+        );
+      }),
+    );
+  }
+
+  double _stackOffsetStep() {
+    if (_cards.length <= 2) {
+      return 28;
+    }
+    if (_cards.length == 3) {
+      return 34;
+    }
+    return 40;
+  }
+
+  WalletCard _toWalletCard(MyCardInfo info) {
+    final last4 = _extractLast4(info.cardNumber);
+    return WalletCard(
+      color: _companyColor(info.company),
+      label: '${_shortCompanyName(info.company)} $last4',
+      bankName: info.company,
+      maskedNumber: '**** $last4',
+      imagePath: info.cardImageUrl.isNotEmpty ? info.cardImageUrl : null,
+    );
+  }
+
+  String _extractLast4(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length < 4) {
+      return '****';
+    }
+    return digits.substring(digits.length - 4);
+  }
+
+  Color _companyColor(String company) {
+    final normalized = company.toLowerCase();
+    if (normalized.contains('신한')) return const Color(0xFFECECEC);
+    if (normalized.contains('토스')) return const Color(0xFFEFF66A);
+    if (normalized.contains('bc') || normalized.contains('비씨')) {
+      return const Color(0xFFF2F2F4);
+    }
+    if (normalized.contains('국민') || normalized.contains('kb')) {
+      return const Color(0xFFBFCFE6);
+    }
+    if (normalized.contains('하나')) return const Color(0xFF4A90E2);
+    return const Color(0xFFE0E0E0);
+  }
+
+  String _shortCompanyName(String company) {
+    if (company.contains('신한')) return '신한';
+    if (company.contains('토스')) return '토스';
+    if (company.contains('비씨') || company.contains('BC')) return '비씨';
+    if (company.contains('국민') || company.contains('KB')) return '국민';
+    if (company.contains('하나')) return '하나';
+    return company.replaceAll('카드', '');
   }
 
   // Sample recommendation data: category, totalSpent, recommended cards
@@ -326,17 +482,19 @@ class CardAnalysisPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
       child: Container(
-      height: 160,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: card.color,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
-        ],
-      ),
-      child: Stack(
-        children: [
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        child: AspectRatio(
+          aspectRatio: _cardAspectRatio,
+          child: Container(
+            decoration: BoxDecoration(
+              color: card.color,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: Stack(
+              children: [
           Positioned(
             left: 20,
             top: 20,
@@ -387,9 +545,11 @@ class CardAnalysisPage extends StatelessWidget {
                 ),
               ),
             ),
-        ],
+              ],
+            ),
+          ),
+        ),
       ),
-    ),
     );
   }
 }

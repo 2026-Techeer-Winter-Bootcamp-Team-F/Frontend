@@ -86,3 +86,30 @@ class UserCard {
     return totalBenefitReceived - monthlyAnnualFee;
   }
 }
+
+class MyCardInfo {
+  final int cardId;
+  final String cardName;
+  final String cardNumber;
+  final String cardImageUrl;
+  final String company;
+  final String cardType;
+
+  MyCardInfo({
+    required this.cardId,
+    required this.cardName,
+    required this.cardNumber,
+    required this.cardImageUrl,
+    required this.company,
+    required this.cardType,
+  });
+
+  factory MyCardInfo.fromJson(Map<String, dynamic> json) => MyCardInfo(
+        cardId: json['card_id'] ?? 0,
+        cardName: json['card_name'] ?? '',
+        cardNumber: json['card_number'] ?? '',
+        cardImageUrl: json['card_image_url'] ?? '',
+        company: json['company'] ?? '',
+        cardType: json['card_type'] ?? '',
+      );
+}
