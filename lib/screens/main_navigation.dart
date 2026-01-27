@@ -22,32 +22,182 @@ class _Conversation {
   const _Conversation({required this.id, required this.title, required this.lastMessage, required this.time});
 }
 
-class ChatbotFloating extends StatelessWidget {
+// 말풍선 CustomPainter
+class ChatBubblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    // 둥근 말풍선 그리기
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height * 0.75),
+      Radius.circular(size.width * 0.5), // 더 둥근 모서리
+    );
+    path.addRRect(rect);
+    
+    // 말풍선 꼬리 (아래쪽 작은 삼각형)
+    final tailWidth = size.width * 0.2;
+    final tailStartX = size.width * 0.2;
+    
+    path.moveTo(tailStartX, size.height * 0.75);
+    path.lineTo(tailStartX - tailWidth * 0.3, size.height);
+    path.lineTo(tailStartX + tailWidth, size.height * 0.75);
+    
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
+class ChatbotFloating extends StatefulWidget {
   final VoidCallback? onTap;
 
   const ChatbotFloating({super.key, this.onTap});
 
   @override
+  State<ChatbotFloating> createState() => _ChatbotFloatingState();
+}
+
+class _ChatbotFloatingState extends State<ChatbotFloating> {
+  double _xPosition = 0;
+  double _yPosition = 0;
+  bool _isInitialized = false;
+  bool _isHidden = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final screenSize = MediaQuery.of(context).size;
+      _xPosition = screenSize.width - 72; // 오른쪽 여백 16 + 위젯 크기 56
+      _yPosition = screenSize.height - 184; // 하단바 위
+      _isInitialized = true;
+    }
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final screenSize = MediaQuery.of(context).size;
+    final widgetSize = 56.0;
+    final threshold = 20.0; // 모서리 근처 감지 거리
+    final hideOffset = 42.0; // 숨김 시 튀어나오는 크기
+
+    setState(() {
+      // 왼쪽 가장자리 근처인지 확인
+      if (_xPosition < threshold) {
+        _xPosition = -hideOffset;
+        _isHidden = true;
+      }
+      // 오른쪽 가장자리 근처인지 확인
+      else if (_xPosition > screenSize.width - widgetSize - threshold) {
+        _xPosition = screenSize.width - (widgetSize - hideOffset);
+        _isHidden = true;
+      }
+      // 위쪽 가장자리 근처인지 확인
+      else if (_yPosition < threshold) {
+        _yPosition = -hideOffset;
+        _isHidden = true;
+      }
+      // 아래쪽 가장자리 근처인지 확인
+      else if (_yPosition > screenSize.height - widgetSize - threshold) {
+        _yPosition = screenSize.height - (widgetSize - hideOffset);
+        _isHidden = true;
+      } else {
+        _isHidden = false;
+      }
+
+      // 화면 경계 내로 제한 (완전히 숨기지 않을 때)
+      if (!_isHidden) {
+        _xPosition = _xPosition.clamp(0.0, screenSize.width - widgetSize);
+        _yPosition = _yPosition.clamp(0.0, screenSize.height - widgetSize);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1560FF),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.14), blurRadius: 10, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: const Center(
-          child: Icon(Icons.question_mark, color: Colors.white, size: 28),
+    if (!_isInitialized) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: _xPosition,
+      top: _yPosition,
+      child: GestureDetector(
+        onTap: () {
+          // 숨겨진 상태면 먼저 보이게 함
+          if (_isHidden) {
+            final screenSize = MediaQuery.of(context).size;
+            final widgetSize = 56.0;
+            setState(() {
+              // 가장 가까운 안전한 위치로 복귀
+              if (_xPosition < 0) {
+                _xPosition = 16;
+              } else if (_xPosition > screenSize.width - widgetSize) {
+                _xPosition = screenSize.width - widgetSize - 16;
+              }
+              if (_yPosition < 0) {
+                _yPosition = 16;
+              } else if (_yPosition > screenSize.height - widgetSize) {
+                _yPosition = screenSize.height - widgetSize - 16;
+              }
+              _isHidden = false;
+            });
+          } else {
+            widget.onTap?.call();
+          }
+        },
+        onPanUpdate: (details) {
+          setState(() {
+            _xPosition += details.delta.dx;
+            _yPosition += details.delta.dy;
+            _isHidden = false;
+          });
+        },
+        onPanEnd: _onDragEnd,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1560FF),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.14), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 말풍선 모양
+              CustomPaint(
+                size: const Size(32, 32),
+                painter: ChatBubblePainter(),
+              ),
+              // 물음표
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2),
+                child: Text(
+                  '?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 
 class ChatbotSheet extends StatefulWidget {
   const ChatbotSheet({super.key});
@@ -83,224 +233,344 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
         child: Container(
           height: height,
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFFF8F8FB),
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-          child: Column(
+          child: Stack(
             children: [
-              // Header: avatar, title, close
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.circle, color: Colors.blue, size: 28),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('베네핏(BeneFit)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Content area: separate Home and Conversation screens using IndexedStack
-              Expanded(
-                child: IndexedStack(
-                  index: _selectedIndex,
-                  children: [
-                    // Home screen
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Message card
-                          Container(
-                            decoration: BoxDecoration(color: const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('안녕하세요! BeneFit(베네핏)입니다 :)', style: TextStyle(fontSize: 14)),
-                                const SizedBox(height: 8),
-                                const Text('궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬', style: TextStyle(fontSize: 13, color: Colors.black87)),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1560FF),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: const [
-                                        Text('문의하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                                        SizedBox(width: 8),
-                                        Icon(Icons.send, color: Colors.white, size: 18),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text('챗봇 이용중', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 12),
-                          // Home can have additional content below
-                          const SizedBox(height: 200),
-                        ],
-                      ),
-                    ),
-
-                    // Conversation screen
-                    Column(
+              Column(
+                children: [
+                  // Header: logo + title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // 검색창
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: TextField(
-                            controller: _searchCtrl,
-                            decoration: InputDecoration(
-                              hintText: '채팅 검색',
-                              prefixIcon: const Icon(Icons.search),
-                              filled: true,
-                              fillColor: const Color(0xFFF4F6F8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                        // Logo: white circle with "BeneFit" text in blue
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'BeneFit',
+                              style: TextStyle(
+                                color: Color(0xFF1560FF),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: -0.5,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            itemCount: _filteredConversations.length,
-                            itemBuilder: (context, idx) {
-                              final c = _filteredConversations[idx];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF6F7F8),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        CircleAvatar(radius: 20, backgroundColor: Colors.white, child: Icon(Icons.smart_toy, color: Colors.blue)),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                                              const SizedBox(height: 6),
-                                              Text(c.lastMessage, style: const TextStyle(color: Colors.black54, fontSize: 13)),
-                                            ],
-                                          ),
-                                        ),
-                                        Text(c.time, style: const TextStyle(color: Colors.black45, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        // 새 문의하기 버튼
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8, top: 6),
-                          child: Center(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1560FF),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('새 문의하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.send, color: Colors.white, size: 18),
-                                ],
-                              ),
+                        const SizedBox(width: 16),
+                        // Title
+                        const Expanded(
+                          child: Text(
+                            '베네핏(BeneFit)',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E1E23),
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  // Content area
+                  Expanded(
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: [
+                        // Home screen
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Message card with speech bubble tail
+                              Stack(
+                                children: [
+                                  // Main card
+                                  Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          '안녕하세요! BeneFit(베네핏)입니다 :)',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Color(0xFF1E1E23),
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 1),
+                                        const Text(
+                                          '궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: Color(0xFF1E1E23),
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF1560FF),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(26),
+                                              ),
+                                              padding: const EdgeInsets.symmetric(vertical: 16),
+                                              elevation: 0,
+                                            ),
+                                            child: const Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  '질문하기',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8),
+                                                Icon(Icons.send, color: Colors.white, size: 18),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Speech bubble tail (left side, top)
+                                  Positioned(
+                                    left: 20,
+                                    top: -6,
+                                    child: CustomPaint(
+                                      painter: _BubbleTailPainter(),
+                                      size: const Size(16, 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              // Bottom label: chat bot in use
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: Color(0xFFB0B0B0),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    '챗봇 이용중',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFFB0B0B0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 200),
+                            ],
+                          ),
+                        ),
+                        // Conversation screen
+                        Column(
+                          children: [
+                            // 검색창
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              child: TextField(
+                                controller: _searchCtrl,
+                                decoration: InputDecoration(
+                                  hintText: '채팅 검색',
+                                  prefixIcon: const Icon(Icons.search),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF4F6F8),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                itemCount: _filteredConversations.length,
+                                itemBuilder: (context, idx) {
+                                  final c = _filteredConversations[idx];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF6F7F8),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(radius: 20, backgroundColor: Colors.white, child: Icon(Icons.smart_toy, color: Colors.blue)),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                                  const SizedBox(height: 6),
+                                                  Text(c.lastMessage, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                                                ],
+                                              ),
+                                            ),
+                                            Text(c.time, style: const TextStyle(color: Colors.black45, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            // 새 문의하기 버튼
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
+                              child: Center(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1560FF),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('새 질문하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                      SizedBox(width: 8),
+                                      Icon(Icons.send, color: Colors.white, size: 18),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Bottom tab bar
+                  const Divider(height: 1),
+                  SizedBox(
+                    height: 68,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedIndex = 0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.home, color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
+                                const SizedBox(height: 6),
+                                Text('홈', style: TextStyle(color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedIndex = 1),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.chat_bubble, color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
+                                const SizedBox(height: 6),
+                                Text('대화', style: TextStyle(color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-
-              const Divider(height: 1),
-
-              // Bottom tab bar inside sheet (홈, 대화)
-              SizedBox(
-                height: 68,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _selectedIndex = 0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.home, color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
-                            const SizedBox(height: 6),
-                            Text('홈', style: TextStyle(color: _selectedIndex == 0 ? const Color(0xFF1560FF) : Colors.grey)),
-                          ],
+              // Close button (top right, Positioned)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFE8E8E8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.close,
+                        color: Color(0xFF808080),
+                        size: 20,
                       ),
                     ),
-                    Expanded(
-                      child: InkWell(
-                          onTap: () => setState(() => _selectedIndex = 1),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble, color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey, size: 22),
-                            const SizedBox(height: 6),
-                            Text('대화', style: TextStyle(color: _selectedIndex == 1 ? const Color(0xFF1560FF) : Colors.grey)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -310,6 +580,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
     );
   }
 }
+
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
@@ -325,14 +596,11 @@ class _MainNavigationState extends State<MainNavigation> {
     final bool selected = _currentIndex == index;
     final color = selected ? const Color(0xFF1560FF) : Colors.grey.shade400;
 
-    // scale factor for bottom bar (0.6 = 60%)
-    const double navScale = 0.6;
-
-    // Use larger icon when selected for emphasis (scaled)
-    final iconSize = selected ? 30.0 * navScale : 24.0 * navScale;
-    final selectedCircleSize = 44.0 * navScale;
-    final labelFontSize = 12.0 * navScale;
-    final spacing = 6.0 * navScale;
+    // Use larger icon when selected for emphasis
+    final iconSize = selected ? 26.0 : 22.0;
+    final selectedCircleSize = 36.0;
+    final labelFontSize = 11.0;
+    final spacing = 2.0;
 
     return Expanded(
       child: InkWell(
@@ -353,7 +621,7 @@ class _MainNavigationState extends State<MainNavigation> {
               else
                 Icon(icon, color: color, size: iconSize),
               SizedBox(height: spacing),
-              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: FontWeight.w400)),
             ],
           ),
         ),
@@ -371,29 +639,26 @@ class _MainNavigationState extends State<MainNavigation> {
             children: _pages,
           ),
           // Floating chatbot widget visible across all main pages
-          Positioned(
-            right: 16,
-            bottom: 110, // sits above the bottom navigation bar
-            child: ChatbotFloating(onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const ChatbotSheet(),
-              );
-            }),
-          ),
+          ChatbotFloating(onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const ChatbotSheet(),
+            );
+          }),
         ],
       ),
       bottomNavigationBar: Container(
+        width: 440,
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: Colors.grey.shade100)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        height: (90 * 0.6), // 원래 높이의 60%
+        height: 74,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _buildNavItem(index: 0, icon: Icons.home, label: '홈'),
             _buildNavItem(index: 1, icon: Icons.pie_chart_outline, label: '소비'),
@@ -405,3 +670,26 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
+
+// Custom painter for speech bubble tail
+class _BubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    // Draw triangle pointing up to the left
+    final path = Path();
+    path.moveTo(0, 0); // Top left
+    path.lineTo(size.width, size.height); // Bottom right
+    path.lineTo(size.width - 4, 0); // Top right
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_BubbleTailPainter oldDelegate) => false;
+}
+
