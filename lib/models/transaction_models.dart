@@ -144,7 +144,66 @@ class CategorySummaryItem {
   }
 }
 
-/// 9. 월간 비교
+/// 9. 카테고리별 거래 상세
+class CategoryDetail {
+  final String categoryName;
+  final String emoji;
+  final String color;
+  final int totalAmount;
+  final int transactionCount;
+  final List<CategoryTransaction> transactions;
+
+  CategoryDetail({
+    required this.categoryName,
+    required this.emoji,
+    required this.color,
+    required this.totalAmount,
+    required this.transactionCount,
+    required this.transactions,
+  });
+
+  factory CategoryDetail.fromJson(Map<String, dynamic> json) {
+    return CategoryDetail(
+      categoryName: json['category_name'] as String,
+      emoji: json['emoji'] as String,
+      color: json['color'] as String,
+      totalAmount: (json['total_amount'] as num).toInt(),
+      transactionCount: (json['transaction_count'] as num).toInt(),
+      transactions: (json['transactions'] as List)
+          .map((e) => CategoryTransaction.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+/// 10. 카테고리 개별 거래
+class CategoryTransaction {
+  final int expenseId;
+  final String merchantName;
+  final int amount;
+  final DateTime spentAt;
+  final String cardName;
+
+  CategoryTransaction({
+    required this.expenseId,
+    required this.merchantName,
+    required this.amount,
+    required this.spentAt,
+    required this.cardName,
+  });
+
+  factory CategoryTransaction.fromJson(Map<String, dynamic> json) {
+    return CategoryTransaction(
+      expenseId: (json['expense_id'] as num).toInt(),
+      merchantName: json['merchant_name'] as String,
+      amount: (json['amount'] as num).toInt(),
+      spentAt: DateTime.parse(json['spent_at'] as String),
+      cardName: json['card_name'] as String,
+    );
+  }
+}
+
+/// 11. 월간 비교
 class MonthComparison {
   final int thisMonthTotal;
   final int lastMonthSameDay;

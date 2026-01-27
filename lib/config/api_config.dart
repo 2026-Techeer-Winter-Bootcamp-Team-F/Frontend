@@ -32,6 +32,7 @@ class ApiConfig {
   static const String transactionsMonthlyAverage = '/api/v1/transactions/monthly-average';
   static const String transactionsCategorySummary = '/api/v1/transactions/category-summary';
   static const String transactionsMonthComparison = '/api/v1/transactions/month-comparison';
+  static const String transactionsCategoryDetail = '/api/v1/transactions/category-detail';
 
   // Chat - 채팅방 기반 (카드 추천)
   static const String chatMakeRoom = '/api/v1/chat/make_room/';

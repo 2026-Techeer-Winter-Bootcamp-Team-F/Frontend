@@ -345,7 +345,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           Text(
-            '${selectedMonth.month}월',
+            '${selectedMonth.year % 100}년 ${selectedMonth.month}월',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -768,14 +768,14 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const TextSpan(text: '지난달 같은 기간보다\n'),
                   TextSpan(
-                    text: _formatCurrency(difference),
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    text: _formatCurrency(difference.abs()),
+                    style: TextStyle(
+                      color: difference >= 0 ? AppColors.primary : const Color(0xFFFF5252),
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Pretendard',
                     ),
                   ),
-                  const TextSpan(text: ' 덜 썼어요'),
+                  TextSpan(text: difference >= 0 ? ' 덜 썼어요' : ' 더 썼어요'),
                 ],
               ),
             ),
@@ -908,7 +908,8 @@ class _HomePageState extends State<HomePage> {
               children: _weeklyBarData.isEmpty
                   ? [const Center(child: Text('데이터 없음'))]
                   : _weeklyBarData.asMap().entries.map((entry) {
-                      final maxAmount = _weeklyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final rawMax = _weeklyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final maxAmount = rawMax > 0 ? rawMax : 1;
                       return _buildBarChart(
                         entry.value.key,
                         entry.value.value,
@@ -1022,7 +1023,8 @@ class _HomePageState extends State<HomePage> {
               children: _monthlyBarData.isEmpty
                   ? [const Center(child: Text('데이터 없음'))]
                   : _monthlyBarData.asMap().entries.map((entry) {
-                      final maxAmount = _monthlyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final rawMax = _monthlyBarData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+                      final maxAmount = rawMax > 0 ? rawMax : 1;
                       return _buildMonthlyBar(
                         entry.value.key,
                         entry.value.value,
@@ -1049,7 +1051,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMonthlyBar(String label, int amount, int maxAmount, {bool isCurrentMonth = false}) {
-    final height = (amount / maxAmount * 120);
+    final height = maxAmount > 0 ? (amount / maxAmount * 120) : 0.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1171,14 +1173,64 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final safeIndex = selectedCategoryIndex < categoryData.length ? selectedCategoryIndex : 0;
-    final selectedEntry = categoryData.entries.toList()[safeIndex];
+    const int maxChartSlices = 5;
+    final allEntries = categoryData.entries.toList();
+    final topCount = allEntries.length < maxChartSlices ? allEntries.length : maxChartSlices;
+    final otherEntries = allEntries.length > maxChartSlices
+        ? allEntries.sublist(maxChartSlices)
+        : <MapEntry<String, Map<String, dynamic>>>[];
+    final hasOthers = otherEntries.isNotEmpty;
+    final otherPercent = otherEntries.fold<int>(0, (sum, e) => sum + (e.value['percent'] as int));
+    final otherAmount = otherEntries.fold<int>(0, (sum, e) => sum + (e.value['amount'] as int));
+
+    // selectedCategoryIndex: -1 = 기타 집계, 0+ = 개별 카테고리
+    final safeIndex = selectedCategoryIndex >= 0 && selectedCategoryIndex < allEntries.length
+        ? selectedCategoryIndex
+        : 0;
+    final isOtherAggregate = selectedCategoryIndex == -1;
 
     // 상단 문구는 항상 최대 금액 카테고리로 표시
-    final maxAmountCategory = categoryData.entries.reduce((a, b) =>
+    final maxAmountCategory = allEntries.reduce((a, b) =>
       (a.value['amount'] as int) > (b.value['amount'] as int) ? a : b
     ).key;
-    
+
+    // 도넛 차트 섹션 구성 (상위 5 + 기타)
+    final chartSections = <PieChartSectionData>[];
+    for (var i = 0; i < topCount; i++) {
+      final data = allEntries[i].value;
+      final isSelected = !isOtherAggregate && safeIndex == i;
+      chartSections.add(PieChartSectionData(
+        color: data['color'] as Color,
+        value: (data['percent'] as int).toDouble(),
+        title: '',
+        radius: isSelected ? 35 : 30,
+      ));
+    }
+    if (hasOthers) {
+      final isSelected = isOtherAggregate || safeIndex >= maxChartSlices;
+      chartSections.add(PieChartSectionData(
+        color: const Color(0xFFBDBDBD),
+        value: otherPercent.toDouble(),
+        title: '',
+        radius: isSelected ? 35 : 30,
+      ));
+    }
+
+    // 중앙 표시 데이터
+    final String centerIcon;
+    final String centerPercent;
+    final String centerName;
+    if (isOtherAggregate) {
+      centerIcon = '···';
+      centerPercent = '$otherPercent%';
+      centerName = '기타';
+    } else {
+      final entry = allEntries[safeIndex];
+      centerIcon = entry.value['icon'] as String;
+      centerPercent = '${entry.value['percent']}%';
+      centerName = entry.key;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -1210,9 +1262,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 도넛 차트
           SizedBox(
             height: 200,
@@ -1228,25 +1280,16 @@ class _HomePageState extends State<HomePage> {
                         if (event is FlTapUpEvent && pieTouchResponse != null && pieTouchResponse.touchedSection != null) {
                           setState(() {
                             final touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                            if (touchedIndex >= 0 && touchedIndex < categoryData.length) {
+                            if (touchedIndex >= 0 && touchedIndex < topCount) {
                               selectedCategoryIndex = touchedIndex;
+                            } else if (touchedIndex == topCount && hasOthers) {
+                              selectedCategoryIndex = -1; // 기타 집계
                             }
                           });
                         }
                       },
                     ),
-                    sections: categoryData.entries.toList().asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final data = entry.value.value;
-                      final isSelected = index == safeIndex;
-
-                      return PieChartSectionData(
-                        color: data['color'] as Color,
-                        value: (data['percent'] as int).toDouble(),
-                        title: '',
-                        radius: isSelected ? 35 : 30,
-                      );
-                    }).toList(),
+                    sections: chartSections,
                   ),
                 ),
                 Center(
@@ -1254,12 +1297,12 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        selectedEntry.value['icon'] as String,
+                        centerIcon,
                         style: const TextStyle(fontSize: 32),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${selectedEntry.value['percent']}%',
+                        centerPercent,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1268,7 +1311,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       Text(
-                        selectedEntry.key,
+                        centerName,
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1281,13 +1324,14 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
-          // 카테고리 목록
-          ...categoryData.entries.toList().asMap().entries.map((entry) {
+
+          // 카테고리 목록 (전체 표시)
+          ...allEntries.asMap().entries.map((entry) {
             final index = entry.key;
             final data = entry.value;
+            final isSelected = !isOtherAggregate && index == safeIndex;
             return _buildCategoryItem(
               data.value['icon'] as String,
               data.key,
@@ -1295,7 +1339,7 @@ class _HomePageState extends State<HomePage> {
               data.value['amount'] as int,
               data.value['change'] as int,
               data.value['color'] as Color,
-              isSelected: index == safeIndex,
+              isSelected: isSelected,
               onTap: () {
                 setState(() {
                   selectedCategoryIndex = index;
@@ -1303,9 +1347,9 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }),
-          
+
           const SizedBox(height: 16),
-          
+
           TextButton(
             onPressed: () {
               Navigator.push(
@@ -1631,11 +1675,12 @@ class LineChartPainter extends CustomPainter {
     if (thisMonthData.isEmpty && lastMonthData.isEmpty) return;
 
     // 최대값 계산 (스케일링을 위해)
-    final maxValue = lastMonthData.isNotEmpty
-        ? lastMonthData.reduce((a, b) => a > b ? a : b)
-        : (thisMonthData.isNotEmpty
-            ? thisMonthData.reduce((a, b) => a > b ? a : b)
-            : 1.0);
+    double maxValue = 1.0;
+    final allData = [...thisMonthData, ...lastMonthData];
+    if (allData.isNotEmpty) {
+      final computed = allData.reduce((a, b) => a > b ? a : b);
+      if (computed > 0) maxValue = computed;
+    }
     final padding = 10.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;

@@ -68,6 +68,17 @@ class TransactionService {
         .toList();
   }
 
+  /// 카테고리별 거래 상세
+  Future<CategoryDetail> getCategoryDetail(int year, int month, String categoryName) async {
+    final params = _monthParams(year, month);
+    params['category_name'] = categoryName;
+    final data = await _api.get(
+      ApiConfig.transactionsCategoryDetail,
+      queryParams: params,
+    );
+    return CategoryDetail.fromJson(data);
+  }
+
   /// 월간 비교
   Future<MonthComparison> getMonthComparison(int year, int month) async {
     final data = await _api.get(
