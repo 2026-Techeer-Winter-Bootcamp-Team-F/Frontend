@@ -66,7 +66,7 @@ class _PasswordConfirmPageState extends State<PasswordConfirmPage> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 18),
-              const Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               TextField(
                 controller: _confirmController,

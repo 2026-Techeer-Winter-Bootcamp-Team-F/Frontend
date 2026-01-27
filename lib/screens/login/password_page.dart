@@ -168,7 +168,7 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+      appBar: AppBar(elevation: 0),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -191,7 +191,7 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text('비밀번호 재확인', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                           const SizedBox(height: 6),
                           TextField(
                             controller: _confirmController,
@@ -229,7 +229,7 @@ class _PasswordPageState extends State<PasswordPage> with SingleTickerProviderSt
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('비밀번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('비밀번호', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _pwController,

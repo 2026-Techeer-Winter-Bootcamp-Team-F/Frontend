@@ -129,7 +129,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: false,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -316,7 +316,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                         children: [
                           Text(
                             '이메일',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                           const SizedBox(height: 4),
                           TextField(
@@ -396,7 +396,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                         children: [
                           Text(
                             '통신사',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -406,7 +406,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                               const Spacer(),
-                              Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+                              Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -425,7 +425,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                             children: [
                               Text(
                                 '주민등록번호',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                               ),
                               const SizedBox(height: 4),
                               _maskedSsnRow(),
@@ -437,14 +437,14 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                             children: [
                               Text(
                                 '주민등록번호',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
                                   _buildFrontField(theme),
                                   const SizedBox(width: 8),
-                                  const Text('-', style: TextStyle(fontSize: 18, color: Colors.black)),
+                                  Text('-', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface)),
                                   const SizedBox(width: 8),
                                   _buildBackInputAndMask(theme),
                                 ],
@@ -464,7 +464,7 @@ class _NameInputPageState extends State<NameInputPage> with SingleTickerProvider
                       children: [
                         Text(
                           '이름',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                         ),
                         _nameConfirmed
                           ? Column(

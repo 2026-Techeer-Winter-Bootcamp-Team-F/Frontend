@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/login/verification_code_page.dart';
 
 class ConfirmSignupPage extends StatefulWidget {
@@ -112,21 +113,21 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 18),
-              const Text('통신사', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('통신사', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                initialValue: _carrier,
+                value: _carrier,
                 items: _carriers.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                 onChanged: (v) => setState(() => _carrier = v ?? _carrier),
                 decoration: _fieldDecoration(theme),
                 icon: const Icon(Icons.arrow_drop_down),
               ),
               const SizedBox(height: 18),
-              const Text('주민등록번호', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('주민등록번호', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               _maskedSsnRow(),
               const SizedBox(height: 18),
-              const Text('이름', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('이름', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               Text(widget.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const Spacer(),
@@ -135,7 +136,7 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
                 child: ElevatedButton(
                   onPressed: _canProceed ? _onComplete : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1787FF),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(56),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -152,10 +153,10 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text('내 명의의 휴대폰이 아닙니다', style: TextStyle(color: Colors.grey)),
-                      SizedBox(width: 6),
-                      Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                    children: [
+                      Text('내 명의의 휴대폰이 아닙니다', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      const SizedBox(width: 6),
+                      Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                     ],
                   ),
                 ),

@@ -36,7 +36,7 @@ class _SignupCompletePageState extends State<SignupCompletePage> {
               const SizedBox(height: 40),
               const Center(child: FlutterLogo(size: 80)),
               const SizedBox(height: 40),
-              const Text('로그인 완료!', style: TextStyle(color: Colors.grey)),
+              Text('로그인 완료!', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 12),
               Text.rich(
                 TextSpan(

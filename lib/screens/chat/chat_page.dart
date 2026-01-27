@@ -254,7 +254,7 @@ class _ChatPageState extends State<ChatPage> {
               decoration: BoxDecoration(
                 color: message.isUser
                     ? AppColors.primary
-                    : AppColors.cardBackground,
+                    : Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -274,7 +274,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Text(
                 message.text,
                 style: TextStyle(
-                  color: message.isUser ? Colors.white : AppColors.textPrimary,
+                  color: message.isUser ? Colors.white : Theme.of(context).colorScheme.onSurface,
                   fontSize: 14,
                   height: 1.5,
                 ),
@@ -286,9 +286,9 @@ class _ChatPageState extends State<ChatPage> {
             Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black26,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
               ),
               child: const Icon(
                 Icons.person,
@@ -339,7 +339,7 @@ class _ChatPageState extends State<ChatPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),

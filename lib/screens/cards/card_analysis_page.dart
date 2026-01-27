@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import 'wallet_card.dart';
+import 'package:my_app/screens/cards/card_detail_page.dart';
+import 'package:my_app/screens/cards/recommended_card_detail_page.dart';
 
 class CardAnalysisPage extends StatelessWidget {
-  static final List<WalletCard> _cards = [];
   const CardAnalysisPage({super.key});
+
+  static final List<WalletCard> _cards = [
+    WalletCard(imagePath: 'assets/images/mywallet_shinhan_card.jpeg', color: Color(0xFFECECEC), label: '신한 5699', bankName: '신한카드', maskedNumber: '**** 5699'),
+    WalletCard(imagePath: 'assets/images/mywallet_toss_card.png', color: Color(0xFFEFF66A), label: '토스 5289', bankName: '토스뱅크', maskedNumber: '**** 5289'),
+    WalletCard(imagePath: 'assets/images/mywallet_bc_card.png', color: Color(0xFFF2F2F4), label: '비씨 7892', bankName: '비씨카드', maskedNumber: '**** 7892'),
+    WalletCard(imagePath: 'assets/images/mywallet_kookmin_card.png', color: Color(0xFFBFCFE6), label: '국민 2095', bankName: 'KB국민카드', maskedNumber: '**** 2095'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Title intentionally left blank per UI request
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         centerTitle: true,
-        title: const Text(
-          '내 지갑',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -27,206 +31,48 @@ class CardAnalysisPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 카드 뭉치를 가로선 위에 배치
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8), // 가로선과 간격 최소화
-                  child: Center(
-                    child: SizedBox(
-                      width: 370,
-                      height: 600,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          // 카드 높이 210, 40% 겹침: 126씩 증가
-                          // 신한카드(맨 위)
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.asset(
-                                    'assets/images/mywallet_shinhan_card.jpeg',
-                                    width: 350,
-                                    height: 210,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 16,
-                                  top: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Text(
-                                      '신한 5699',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Toss카드
-                          Positioned(
-                            left: 0,
-                            top: 126,
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.asset(
-                                    'assets/images/mywallet_toss_card.png',
-                                    width: 350,
-                                    height: 210,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 16,
-                                  top: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Text(
-                                      '토스 5289',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // BC카드
-                          Positioned(
-                            left: 0,
-                            top: 252,
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.asset(
-                                    'assets/images/recommend_bc.jpg',
-                                    width: 350,
-                                    height: 210,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 16,
-                                  top: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Text(
-                                      '비씨 7892',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // 국민카드
-                          Positioned(
-                            left: 0,
-                            top: 378,
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.asset(
-                                    'assets/images/mywallet_kookmin_card.png',
-                                    width: 350,
-                                    height: 210,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 16,
-                                  top: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Text(
-                                      '국민 2095',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                // Wallet stack (full width inside padding)
+                SizedBox(
+                  width: double.infinity,
+                  height: 520,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: List.generate(_cards.length, (i) {
+                      final card = _cards[i];
+                      // Keep all visible cards the same scale/size.
+                      final offset = i * 40.0; // tighten overlap so more cards are visible
+                      final scale = 1.0;
+                      return Positioned(
+                        top: offset,
+                        left: 0,
+                        right: 0,
+                        child: Transform.scale(
+                          scale: scale,
+                          alignment: Alignment.topCenter,
+                          child: _buildCard(context, card, i == _cards.length - 1),
+                        ),
+                      );
+                    }),
                   ),
                 ),
-                const SizedBox(height: 24),
-                // 가로선 Divider 추가
-                Divider(thickness: 1, height: 24, color: Color(0xFFE0E0E0)),
-                const Text(
+
+                const SizedBox(height: 28),
+
+                // Header text like the screenshot (left-aligned)
+                Text(
                   '이 카드는 어때요?',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
-                  style: TextStyle(fontSize: 11, color: Colors.black54),
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  maxLines: 1,
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 18),
+
                 // Recommendation sections
                 Column(
-                  children: _recommendations
-                      .map(
-                        (section) =>
-                            _buildRecommendationSection(context, section),
-                      )
-                      .toList(),
+                  children: _recommendations.map((section) => _buildRecommendationSection(context, section)).toList(),
                 ),
               ],
             ),
@@ -243,29 +89,67 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 27133,
       'items': [
         {
-          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
-          'title': '현대카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '112%',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
+          'title': 'LIKIT FUN+',
+          'subtitle': '연회비: 1만 5천 원',
+          'percent': '210%',
+          'mainBenefitLines': [
+            '스타벅스 최대 60%, 영화 50% 할인',
+            '대중교통, 통신비 10%, 배달의민족 5% 할인',
+          ],
+          'benefits': [
+            {'category': '커피', 'desc': '스타벅스 최대 60% 할인'},
+            {'category': '문화', 'desc': '롯데시네마, CGV 50% 할인'},
+            {'category': '교통', 'desc': '대중교통 10% 할인'},
+            {'category': '통신', 'desc': '통신비 10% 할인'},
+            {'category': '외식', 'desc': '배달의민족, 요기요 5% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_bc.jpg',
+          'image': 'assets/images/mywallet_toss_card.png',
           'title': 'BC카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '123%',
+          'percent': '110%',
+          'mainBenefitLines': [
+            '택시·대리운전 최대 15% 할인',
+            '주유 10%, 음식 배달 7% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
+            {'category': '주유', 'desc': '주유 결제 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 7% 할인'},
+            {'category': '외식', 'desc': '배달앱 7% 할인'},
+          ],
         },
         {
-          'image':
-              'https://image.lottecard.co.kr/UploadFiles/ecenterPath/cdInfo/ecenterCdInfoP11881-A11881_nm1.png',
+          'image': 'assets/images/mywallet_bc_card.png',
           'title': '롯데카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '145%',
+          'percent': '230%',
+          'mainBenefitLines': [
+            '택시 20%, 쇼핑 5% 할인',
+            '영화·콘서트 30% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '택시 결제 20% 할인'},
+            {'category': '쇼핑', 'desc': '백화점·대형마트 5% 할인'},
+            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_life.jpeg',
+          'image': 'assets/images/mywallet_kookmin_card.png',
           'title': 'Mr.Life',
           'subtitle': '연회비: 20만 원',
-          'percent': '178%',
+          'percent': '190%',
+          'mainBenefitLines': [
+            '생활비·통신 10% 할인',
+            '카페·외식 5~10% 할인',
+          ],
+          'benefits': [
+            {'category': '통신', 'desc': '통신요금 10% 할인'},
+            {'category': '커피', 'desc': '카페 10% 할인'},
+            {'category': '외식', 'desc': '배달·외식 5% 할인'},
+          ],
         },
       ],
     },
@@ -274,29 +158,66 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 7816,
       'items': [
         {
-          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
           'title': '현대카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '115%',
+          'percent': 'ROI',
+          'mainBenefitLines': [
+            '대중교통 20%, 주유 15% 할인',
+            '통신비 10%, 영화 50% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '대중교통 20% 할인'},
+            {'category': '주유', 'desc': '주유 15% 할인'},
+            {'category': '통신', 'desc': '통신요금 10% 할인'},
+            {'category': '문화', 'desc': '영화 50% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_bc.jpg',
+          'image': 'assets/images/mywallet_toss_card.png',
           'title': 'BC카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '134%',
+          'percent': '110%',
+          'mainBenefitLines': [
+            '택시·대리운전 최대 15% 할인',
+            '주유 10%, 음식 배달 7% 할인',
+          ],
+          'benefits': [
+            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
+            {'category': '주유', 'desc': '주유 결제 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 7% 할인'},
+          ],
         },
         {
-          'image':
-              'https://image.lottecard.co.kr/UploadFiles/ecenterPath/cdInfo/ecenterCdInfoP11881-A11881_nm1.png',
+          'image': 'assets/images/mywallet_bc_card.png',
           'title': '롯데카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '142%',
+          'percent': '95%',
+          'mainBenefitLines': [
+            '택시 20%, 쇼핑 5% 할인',
+            '영화·콘서트 30% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '택시 20% 할인'},
+            {'category': '쇼핑', 'desc': '백화점·마트 5% 할인'},
+            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_life.jpeg',
-          'title': 'Mr.Life',
+          'image': 'assets/images/mywallet_kookmin_card.png',
+          'title': '신한카드',
           'subtitle': '연회비: 20만 원',
-          'percent': '151%',
+          'percent': '130%',
+          'mainBenefitLines': [
+            '대중교통 15%, 주유 10% 할인',
+            '편의점·카페 5% 할인',
+          ],
+          'benefits': [
+            {'category': '교통', 'desc': '대중교통 15% 할인'},
+            {'category': '주유', 'desc': '주유 10% 할인'},
+            {'category': '편의점', 'desc': '편의점 5% 할인'},
+            {'category': '커피', 'desc': '카페 5% 할인'},
+          ],
         },
       ],
     },
@@ -305,38 +226,70 @@ class CardAnalysisPage extends StatelessWidget {
       'total': 4500,
       'items': [
         {
-          'image': 'https://img.hyundaicard.com/img/com/card/card_AMGLE2.png',
-          'title': '현대카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '121%',
+          'image': 'assets/images/mywallet_toss_card.png',
+          'title': '이마트카드',
+          'subtitle': '연회비: 10만 원',
+          'percent': '150%',
+          'mainBenefitLines': [
+            '이마트·트레이더스 5% 할인',
+            '주유 10%, 교통 5% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '이마트·트레이더스 5% 할인'},
+            {'category': '주유', 'desc': '이마트 주유 10% 할인'},
+            {'category': '교통', 'desc': '대중교통 5% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_bc.jpg',
-          'title': 'BC카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '137%',
+          'image': 'assets/images/mywallet_bc_card.png',
+          'title': '롯데마트카드',
+          'subtitle': '연회비: 12만 원',
+          'percent': '140%',
+          'mainBenefitLines': [
+            '롯데마트 5%, 영화 30% 할인',
+            '주유·주차 10% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '롯데마트 5% 할인'},
+            {'category': '문화', 'desc': '롯데시네마 30% 할인'},
+            {'category': '주유', 'desc': '주유 10% 할인'},
+          ],
         },
         {
-          'image':
-              'https://image.lottecard.co.kr/UploadFiles/ecenterPath/cdInfo/ecenterCdInfoP11881-A11881_nm1.png',
-          'title': '롯데카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '153%',
+          'image': 'assets/images/mywallet_kookmin_card.png',
+          'title': '홈플러스카드',
+          'subtitle': '연회비: 8만 원',
+          'percent': '125%',
+          'mainBenefitLines': [
+            '홈플러스 5%, 주유 7% 할인',
+            '생활서비스 10% 할인',
+          ],
+          'benefits': [
+            {'category': '마트', 'desc': '홈플러스 5% 할인'},
+            {'category': '주유', 'desc': '주유 7% 할인'},
+            {'category': '생활', 'desc': '세탁·이사 10% 할인'},
+          ],
         },
         {
-          'image': 'assets/images/recommend_life.jpeg',
-          'title': 'Mr.Life',
-          'subtitle': '연회비: 20만 원',
-          'percent': '164%',
+          'image': 'assets/images/mywallet_shinhan_card.jpeg',
+          'title': '쿠팡카드',
+          'subtitle': '연회비: 0원',
+          'percent': '115%',
+          'mainBenefitLines': [
+            '쿠팡 5% 할인, 로켓배송 추가 혜택',
+            '주유 7%, 대중교통 5% 할인',
+          ],
+          'benefits': [
+            {'category': '쇼핑', 'desc': '쿠팡 5% 할인'},
+            {'category': '주유', 'desc': '주유 7% 할인'},
+            {'category': '교통', 'desc': '대중교통 5% 할인'},
+          ],
         },
       ],
     },
   ];
 
-  Widget _buildRecommendationSection(
-    BuildContext context,
-    Map<String, dynamic> section,
-  ) {
+  Widget _buildRecommendationSection(BuildContext context, Map<String, dynamic> section) {
     final items = section['items'] as List<dynamic>;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,30 +297,19 @@ class CardAnalysisPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              section['category'] ?? '',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              '총 ${_formatWon(section['total'] ?? 0)} 썼어요',
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
-            ),
+            Text(section['category'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            Text('총 ${_formatWon(section['total'] as int)} 썼어요', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: items
-              .map(
-                (it) => SizedBox(
-                  width: MediaQuery.of(context).size.width / 2 - 32,
-                  child: _SquareRecommendationCard(
-                    data: it as Map<String, dynamic>,
-                  ),
-                ),
-              )
-              .toList(),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          childAspectRatio: 1.15,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: items.map((it) => _RecommendationCard(data: it as Map<String, dynamic>)).toList(),
         ),
         const SizedBox(height: 28),
       ],
@@ -379,88 +321,176 @@ class CardAnalysisPage extends StatelessWidget {
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
     return '$out원';
   }
+
+  Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+      child: Container(
+      height: 160,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: card.color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 20,
+            top: 20,
+            child: Container(
+              width: 48,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          // optional badge on top-right
+          Positioned(
+            right: 18,
+            top: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(card.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            bottom: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(card.bankName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+                const SizedBox(height: 6),
+                Text(card.maskedNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
+            ),
+          ),
+          if (!isBottom)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.02)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+    );
+  }
 }
 
-class _SquareRecommendationCard extends StatelessWidget {
+class WalletCard {
+  final Color color;
+  final String label;
+  final String bankName;
+  final String maskedNumber;
+  final String? imagePath;
+
+  const WalletCard({this.imagePath, required this.color, required this.label, this.bankName = '카드', this.maskedNumber = ''});
+}
+
+class _RecommendationCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  const _SquareRecommendationCard({required this.data});
+  const _RecommendationCard({required this.data});
+
+  void _openDetail(BuildContext context) {
+    final main = (data['mainBenefitLines'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
+    final ben = (data['benefits'] as List?)?.map((e) {
+      final m = e as Map;
+      return <String, String>{
+        'category': (m['category'] ?? '').toString(),
+        'desc': (m['desc'] ?? '').toString(),
+      };
+    }).toList() ?? <Map<String, String>>[];
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecommendedCardDetailPage(
+          imagePath: data['image'] as String,
+          cardName: data['title'] as String,
+          subtitle: data['subtitle'] as String,
+          mainBenefitLines: main,
+          benefits: ben,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: () => _openDetail(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              data['image'] as String,
-              width: 103,
-              height: 65,
-              fit: BoxFit.contain,
-              errorBuilder: (c, e, s) => Container(
-                color: Colors.grey.shade200,
-                width: 103,
-                height: 65,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.error_outline,
-                      size: 32,
-                      color: Colors.redAccent,
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '이미지 오류',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+            child: SizedBox(
+              height: 80,
+              width: double.infinity,
+              child: Image.asset(
+                data['image'] as String,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(Icons.credit_card, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
-            '${data['title']} | ${data['subtitle']}',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF2F3A45),
-            ),
+            data['title'] as String,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.left,
           ),
-          const SizedBox(height: 10),
-          Text(
-            data['percent'] as String,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: Colors.black87,
-            ),
-            textAlign: TextAlign.left,
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  data['subtitle'] as String,
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                data['percent'] as String,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ],
       ),
-    );
+    ));
   }
 }
+
