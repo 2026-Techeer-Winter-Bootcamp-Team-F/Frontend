@@ -768,14 +768,14 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const TextSpan(text: '지난달 같은 기간보다\n'),
                   TextSpan(
-                    text: _formatCurrency(difference),
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    text: _formatCurrency(difference.abs()),
+                    style: TextStyle(
+                      color: difference >= 0 ? AppColors.primary : const Color(0xFFFF5252),
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Pretendard',
                     ),
                   ),
-                  const TextSpan(text: ' 덜 썼어요'),
+                  TextSpan(text: difference >= 0 ? ' 덜 썼어요' : ' 더 썼어요'),
                 ],
               ),
             ),
