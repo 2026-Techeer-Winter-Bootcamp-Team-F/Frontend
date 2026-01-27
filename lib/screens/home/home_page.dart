@@ -345,7 +345,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           Text(
-            '${selectedMonth.month}월',
+            '${selectedMonth.year % 100}년 ${selectedMonth.month}월',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
