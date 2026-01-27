@@ -24,6 +24,15 @@ class ApiConfig {
   // Subscriptions
   static const String subscriptions = '/api/v1/subscriptions';
 
+  // Transactions (Home)
+  static const String transactionsAccumulated = '/api/v1/transactions/accumulated';
+  static const String transactionsDailySummary = '/api/v1/transactions/daily-summary';
+  static const String transactionsDailyDetail = '/api/v1/transactions/daily-detail';
+  static const String transactionsWeeklyAverage = '/api/v1/transactions/weekly-average';
+  static const String transactionsMonthlyAverage = '/api/v1/transactions/monthly-average';
+  static const String transactionsCategorySummary = '/api/v1/transactions/category-summary';
+  static const String transactionsMonthComparison = '/api/v1/transactions/month-comparison';
+
   // Chat - 채팅방 기반 (카드 추천)
   static const String chatMakeRoom = '/api/v1/chat/make_room/';
   static const String chatSendMessage = '/api/v1/chat/send_message/';

@@ -1,118 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/models/transaction_models.dart';
+import 'package:my_app/services/transaction_service.dart';
 import 'package:my_app/screens/analysis/category_transaction_page.dart';
 
 class CategoryDetailPage extends StatefulWidget {
-  const CategoryDetailPage({super.key});
+  final DateTime? initialMonth;
+
+  const CategoryDetailPage({super.key, this.initialMonth});
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
 }
 
 class _CategoryDetailPageState extends State<CategoryDetailPage> {
-  // 선택된 월
-  DateTime selectedMonth = DateTime(2026, 2);
-  
-  // 선택된 카테고리 필터
+  final TransactionService _service = TransactionService();
+
+  late DateTime selectedMonth;
   String selectedFilter = '전체';
-  
-  // 선택된 차트 카테고리
   int selectedCategoryIndex = 0;
-  
-  // 카테고리 필터 목록 (금액 높은 순으로 동적 생성)
+
+  bool _isLoading = true;
+  String? _error;
+
+  // API data
+  List<CategorySummaryItem> _categoryList = [];
+  int _totalSpending = 0;
+  int _lastMonthDifference = 0;
+
+  // Convenience getters
+  List<Map<String, dynamic>> get categoryData {
+    return _categoryList.map((cat) => {
+      'name': cat.name,
+      'icon': cat.emoji,
+      'amount': cat.amount,
+      'change': cat.change,
+      'percent': cat.percent,
+      'color': cat.colorValue,
+    }).toList();
+  }
+
   List<String> get categoryFilters {
     final filters = ['전체'];
-    // 카테고리 데이터를 금액순으로 정렬
-    final sortedCategories = List<Map<String, dynamic>>.from(categoryData)
+    final sorted = List<Map<String, dynamic>>.from(categoryData)
       ..sort((a, b) => (b['amount'] as int).compareTo(a['amount'] as int));
-    
-    // 정렬된 카테고리 이름 추가
-    filters.addAll(sortedCategories.map((data) => data['name'] as String));
+    filters.addAll(sorted.map((d) => d['name'] as String));
     return filters;
   }
-  
-  // 총 지출 데이터
-  final int totalSpending = 1199783;
-  final int lastMonthDifference = -712939;
-  
-  // 카테고리별 지출 데이터
-  final List<Map<String, dynamic>> categoryData = [
-    {
-      'name': '쇼핑',
-      'icon': '🛍️',
-      'amount': 345409,
-      'change': -835139,
-      'percent': 26,
-      'color': AppColors.primary,
-    },
-    {
-      'name': '보험·대출·기타금융',
-      'icon': '💳',
-      'amount': 281790,
-      'change': 281790,
-      'percent': 22,
-      'color': Color(0xFF00BFA5),
-    },
-    {
-      'name': '식비',
-      'icon': '🍴',
-      'amount': 246500,
-      'change': -66100,
-      'percent': 19,
-      'color': Color(0xFFFFEB3B),
-    },
-    {
-      'name': '교통',
-      'icon': '🚌',
-      'amount': 142182,
-      'change': -515,
-      'percent': 11,
-      'color': Color(0xFF2196F3),
-    },
-    {
-      'name': '의료·건강·피트니스',
-      'icon': '💊',
-      'amount': 30000,
-      'change': 30000,
-      'percent': 2,
-      'color': Color(0xFF00BCD4),
-    },
-    {
-      'name': '주거·통신',
-      'icon': '🏠',
-      'amount': 20900,
-      'change': 0,
-      'percent': 2,
-      'color': Color(0xFF03A9F4),
-    },
-    {
-      'name': '생활',
-      'icon': '🛒',
-      'amount': 12840,
-      'change': -14900,
-      'percent': 1,
-      'color': Color(0xFFFF9800),
-    },
-    {
-      'name': '카페·간식',
-      'icon': '☕',
-      'amount': 5500,
-      'change': -26500,
-      'percent': 0,
-      'color': Color(0xFF795548),
-    },
-    {
-      'name': '기타 지출',
-      'icon': '➖',
-      'amount': -105088,
-      'change': -105088,
-      'percent': 0,
-      'color': Color(0xFF9E9E9E),
-    },
-  ];
-  
-  // 나이 대비 비교 데이터
+
+  @override
+  void initState() {
+    super.initState();
+    selectedMonth = widget.initialMonth ?? DateTime.now();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      selectedCategoryIndex = 0;
+    });
+
+    try {
+      final year = selectedMonth.year;
+      final month = selectedMonth.month;
+
+      final results = await Future.wait([
+        _service.getCategorySummary(year, month),
+        _service.getAccumulated(year, month),
+        _service.getMonthComparison(year, month),
+      ]);
+
+      final categories = results[0] as List<CategorySummaryItem>;
+      final accumulated = results[1] as AccumulatedData;
+      final comparison = results[2] as MonthComparison;
+
+      setState(() {
+        _categoryList = categories;
+        _totalSpending = accumulated.total;
+        _lastMonthDifference = comparison.thisMonthTotal - comparison.lastMonthSameDay;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 나이 대비 비교 데이터 (API 없음, 하드코딩 유지)
   final List<Map<String, dynamic>> ageComparisonData = [
     {
       'name': '쇼핑',
@@ -146,37 +125,35 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 월 선택기
             _buildMonthSelector(),
-            
             const SizedBox(height: 16),
-            
-            // 카테고리 필터
-            _buildCategoryFilters(),
-            
-            const SizedBox(height: 24),
-            
-            // 총 지출 및 카테고리 섹션
-            _buildSpendingSection(),
-            
-            const SizedBox(height: 32),
-            
-            // 나이 대비 비교 섹션
-            _buildAgeComparisonSection(),
-            
-            const SizedBox(height: 24),
-            
-            // 카드 분석 배너
-            _buildCardAnalysisBanner(),
-            
-            const SizedBox(height: 100), // 하단 네비게이션 공간
+
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 100),
+                child: Center(child: Text('데이터를 불러올 수 없습니다')),
+              )
+            else ...[
+              _buildCategoryFilters(),
+              const SizedBox(height: 24),
+              _buildSpendingSection(),
+              const SizedBox(height: 32),
+              _buildAgeComparisonSection(),
+              const SizedBox(height: 24),
+              _buildCardAnalysisBanner(),
+              const SizedBox(height: 100),
+            ],
           ],
         ),
       ),
     );
   }
 
-  // 월 선택기
   Widget _buildMonthSelector() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -187,11 +164,9 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
             icon: Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
-                selectedMonth = DateTime(
-                  selectedMonth.year,
-                  selectedMonth.month - 1,
-                );
+                selectedMonth = DateTime(selectedMonth.year, selectedMonth.month - 1);
               });
+              _fetchData();
             },
           ),
           Text(
@@ -206,11 +181,9 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
             icon: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               setState(() {
-                selectedMonth = DateTime(
-                  selectedMonth.year,
-                  selectedMonth.month + 1,
-                );
+                selectedMonth = DateTime(selectedMonth.year, selectedMonth.month + 1);
               });
+              _fetchData();
             },
           ),
         ],
@@ -218,7 +191,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 카테고리 필터
   Widget _buildCategoryFilters() {
     return SizedBox(
       height: 40,
@@ -229,20 +201,17 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         itemBuilder: (context, index) {
           final filter = categoryFilters[index];
           final isSelected = selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
               label: Text(filter),
               selected: isSelected,
               onSelected: (selected) {
-                // '전체'가 아닌 카테고리를 선택한 경우 거래 내역 페이지로 이동
                 if (filter != '전체' && selected) {
-                  // 필터명으로 카테고리 찾기
                   final categoryIndex = categoryData.indexWhere(
-                    (data) => data['name'] == filter
+                    (data) => data['name'] == filter,
                   );
-                  
                   if (categoryIndex != -1) {
                     final selectedData = categoryData[categoryIndex];
                     Navigator.push(
@@ -260,7 +229,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     );
                   }
                 } else {
-                  // '전체' 선택 시 현재 화면 유지
                   setState(() {
                     selectedFilter = filter;
                   });
@@ -283,21 +251,28 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 총 지출 및 카테고리 섹션
   Widget _buildSpendingSection() {
-    // 인덱스 범위 체크
+    if (categoryData.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: Text('카테고리 데이터가 없습니다')),
+      );
+    }
+
     if (selectedCategoryIndex >= categoryData.length) {
       selectedCategoryIndex = 0;
     }
     final selectedCategory = categoryData[selectedCategoryIndex];
-    
+
+    final diffAbs = _lastMonthDifference.abs();
+    final diffLabel = _lastMonthDifference <= 0 ? '덜 썼어요' : '더 썼어요';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          // 총 지출 금액 (centered, large)
           Text(
-            _formatCurrencyFull(totalSpending),
+            _formatCurrencyFull(_totalSpending),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 36,
@@ -305,10 +280,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // 지난달 대비 메시지 (centered)
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
@@ -319,20 +291,19 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               children: [
                 const TextSpan(text: '지난달 같은 기간보다 '),
                 TextSpan(
-                  text: _formatCurrencyFull(lastMonthDifference.abs()),
+                  text: _formatCurrencyFull(diffAbs),
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const TextSpan(text: ' 덜 썼어요'),
+                TextSpan(text: ' $diffLabel'),
               ],
             ),
           ),
-
           const SizedBox(height: 28),
 
-          // 도넛 차트 (larger)
+          // 도넛 차트
           SizedBox(
             height: 240,
             child: Stack(
@@ -403,7 +374,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           ),
 
           const SizedBox(height: 24),
-          
+
           // 카테고리 목록
           ...categoryData.asMap().entries.map((entry) {
             final index = entry.key;
@@ -428,7 +399,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 카테고리 아이템
   Widget _buildCategoryItem(
     String icon,
     String name,
@@ -445,7 +415,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     final changeColor = change == 0
         ? Theme.of(context).colorScheme.onSurfaceVariant
         : (change > 0 ? const Color(0xFFFF5252) : AppColors.primary);
-    
+
     return GestureDetector(
       onTap: () {
         if (onTap != null) onTap();
@@ -471,7 +441,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           borderRadius: BorderRadius.circular(12),
           border: isSelected ? Border.all(color: color, width: 2) : null,
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0,2))]
+              ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]
               : null,
         ),
         child: Row(
@@ -540,7 +510,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 나이 대비 비교 섹션
   Widget _buildAgeComparisonSection() {
     return Container(
       width: double.infinity,
@@ -565,9 +534,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          
           const SizedBox(height: 24),
-          
           Row(
             children: [
               Expanded(
@@ -594,7 +561,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 비교 카드
   Widget _buildComparisonCard(
       String icon, String name, int difference, bool isHigher) {
     return Container(
@@ -612,10 +578,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       ),
       child: Column(
         children: [
-          Text(
-            icon,
-            style: const TextStyle(fontSize: 48),
-          ),
+          Text(icon, style: const TextStyle(fontSize: 48)),
           const SizedBox(height: 12),
           Text(
             name,
@@ -657,8 +620,12 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  // 카드 분석 배너
   Widget _buildCardAnalysisBanner() {
+    final topCategory = categoryData.isNotEmpty ? categoryData.first : null;
+    final bannerText = topCategory != null
+        ? '${topCategory['name']}에 ${_formatCurrencyFull(topCategory['amount'] as int)} 지출하셨네요!'
+        : '지출 내역을 확인해보세요!';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(20),
@@ -687,7 +654,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '쇼핑에 ${_formatCurrencyFull(345409)} 지출하셨네요!',
+                  bannerText,
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -695,7 +662,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '용진님의 카드를 분석해봤어요!',
+                  '카드를 분석해봤어요!',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
