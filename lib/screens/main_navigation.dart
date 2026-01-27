@@ -6,6 +6,7 @@ import 'package:my_app/screens/onboarding/benefit_score_page.dart';
 import 'package:my_app/screens/cards/card_analysis_page.dart';
 import 'package:my_app/screens/subscription/subscription_page.dart';
 import 'package:my_app/screens/chat/chat_page.dart';
+import 'package:my_app/services/chat_service.dart';
 
 class MainNavigation extends StatefulWidget {
   final String name;
@@ -17,11 +18,12 @@ class MainNavigation extends StatefulWidget {
 
 class _Conversation {
   final int id;
+  final String sessionId;
   final String title;
   final String lastMessage;
   final String time;
 
-  const _Conversation({required this.id, required this.title, required this.lastMessage, required this.time});
+  const _Conversation({required this.id, required this.sessionId, required this.title, required this.lastMessage, required this.time});
 }
 
 // 말풍선 CustomPainter
@@ -211,12 +213,79 @@ class ChatbotSheet extends StatefulWidget {
 class _ChatbotSheetState extends State<ChatbotSheet> {
   int _selectedIndex = 0;
   final TextEditingController _searchCtrl = TextEditingController();
+  final ChatService _chatService = ChatService();
+  List<_Conversation> _allConversations = [];
+  bool _isLoading = true;
+  bool _isCreatingRoom = false;
 
-  final List<_Conversation> _allConversations = const [
-    _Conversation(id: 1, title: '카드 추천 문의', lastMessage: '토스카드 추천 감사합니다!', time: '1일 전'),
-    _Conversation(id: 2, title: '구독 해지 문의', lastMessage: '넷플릭스 구독 해지 방법 알려주세요', time: '3일 전'),
-    _Conversation(id: 3, title: '카페 지출 문의', lastMessage: '이번달 카페 지출이 많은 것 같아요', time: '1주 전'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadConversations();
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final sessions = await _chatService.getSavedSessions();
+      if (!mounted) return;
+
+      final conversations = <_Conversation>[];
+      for (int i = 0; i < sessions.length; i++) {
+        final s = sessions[i];
+        final updatedAt = DateTime.parse(s['updated_at'] as String);
+        conversations.add(_Conversation(
+          id: i,
+          sessionId: s['session_id'] as String,
+          title: s['title'] as String,
+          lastMessage: s['last_message'] as String? ?? '',
+          time: _formatTime(updatedAt),
+        ));
+      }
+
+      setState(() {
+        _allConversations = conversations.reversed.toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _createRoomAndNavigate() async {
+    if (_isCreatingRoom) return;
+    setState(() => _isCreatingRoom = true);
+
+    try {
+      final result = await _chatService.makeRoom();
+      final sessionId = result['session_id'] as String;
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ChatPage(sessionId: sessionId)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isCreatingRoom = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('채팅방 생성에 실패했습니다.')),
+      );
+    }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+    if (diff.inMinutes < 1) return '방금 전';
+    if (diff.inHours < 1) return '${diff.inMinutes}분 전';
+    if (diff.inDays < 1) return '${diff.inHours}시간 전';
+    if (diff.inDays < 7) return '${diff.inDays}일 전';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}주 전';
+    return '${(diff.inDays / 30).floor()}달 전';
+  }
 
   List<_Conversation> get _filteredConversations {
     final q = _searchCtrl.text.trim();
@@ -346,10 +415,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                         SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                                            },
+                                            onPressed: _isCreatingRoom ? null : _createRoomAndNavigate,
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: AppColors.primary,
                                               shape: RoundedRectangleBorder(
@@ -358,21 +424,27 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                               padding: const EdgeInsets.symmetric(vertical: 16),
                                               elevation: 0,
                                             ),
-                                            child: const Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  '질문하기',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 15,
+                                            child: _isCreatingRoom
+                                                ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                                  )
+                                                : const Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Text(
+                                                        '질문하기',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 15,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Icon(Icons.send, color: Colors.white, size: 18),
+                                                    ],
                                                   ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                Icon(Icons.send, color: Colors.white, size: 18),
-                                              ],
-                                            ),
                                           ),
                                         ),
                                       ],
@@ -437,69 +509,87 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                             ),
                             const SizedBox(height: 8),
                             Expanded(
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                itemCount: _filteredConversations.length,
-                                itemBuilder: (context, idx) {
-                                  final c = _filteredConversations[idx];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: InkWell(
-                                      onTap: () {
-                                        Navigator.of(context).pop();
-                                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(radius: 20, backgroundColor: Colors.white, child: Icon(Icons.smart_toy, color: Colors.blue)),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(c.title, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-                                                  const SizedBox(height: 6),
-                                                  Text(c.lastMessage, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                                                ],
-                                              ),
+                              child: _isLoading
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : _filteredConversations.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            '아직 대화 기록이 없어요.\n새 질문을 시작해보세요!',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              fontSize: 14,
                                             ),
-                                            Text(c.time, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-                                          ],
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                          itemCount: _filteredConversations.length,
+                                          itemBuilder: (context, idx) {
+                                            final c = _filteredConversations[idx];
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 12),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  Navigator.of(context).pop();
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(builder: (_) => ChatPage(sessionId: c.sessionId)),
+                                                  );
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      CircleAvatar(radius: 20, backgroundColor: Colors.white, child: Icon(Icons.smart_toy, color: Colors.blue)),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            Text(c.title, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+                                                            const SizedBox(height: 6),
+                                                            Text(c.lastMessage, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Text(c.time, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
                             ),
                             // 새 문의하기 버튼
                             Padding(
                               padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
                               child: Center(
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatPage()));
-                                  },
+                                  onPressed: _isCreatingRoom ? null : _createRoomAndNavigate,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                                   ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('새 질문하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                                      SizedBox(width: 8),
-                                      Icon(Icons.send, color: Colors.white, size: 18),
-                                    ],
-                                  ),
+                                  child: _isCreatingRoom
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                      : const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text('새 질문하기', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                            SizedBox(width: 8),
+                                            Icon(Icons.send, color: Colors.white, size: 18),
+                                          ],
+                                        ),
                                 ),
                               ),
                             ),

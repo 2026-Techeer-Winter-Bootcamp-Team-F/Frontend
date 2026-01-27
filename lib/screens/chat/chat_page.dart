@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
+import 'package:my_app/services/chat_service.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  final String sessionId;
+
+  const ChatPage({super.key, required this.sessionId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -11,10 +14,11 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ChatService _chatService = ChatService();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
+  bool _isFirstMessage = true;
 
-  // 추천 질문들
   final List<String> _suggestedQuestions = [
     '이번 달 커피값 얼마나 썼어?',
     '지금 쓰는 카드보다 더 좋은 거 있어?',
@@ -25,10 +29,6 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    _addWelcomeMessage();
-  }
-
-  void _addWelcomeMessage() {
     _messages.add(
       ChatMessage(
         text: '안녕하세요! BeneFit(베네핏)입니다 :)\n궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
@@ -45,81 +45,91 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isTyping) return;
 
     setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
-      );
+      _messages.add(ChatMessage(text: text, isUser: true, timestamp: DateTime.now()));
       _isTyping = true;
     });
 
     _messageController.clear();
     _scrollToBottom();
 
-    // 더미 AI 응답 (실제로는 API 호출)
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _isTyping = false;
-          _messages.add(
-            ChatMessage(
-              text: _generateDummyResponse(text),
-              isUser: false,
-              timestamp: DateTime.now(),
-            ),
-          );
-        });
-        _scrollToBottom();
-      }
-    });
+    try {
+      final response = await _chatService.sendMessage(
+        question: text,
+        sessionId: widget.sessionId,
+      );
+      if (!mounted) return;
+
+      final responseText = _formatResponse(response);
+      setState(() {
+        _isTyping = false;
+        _messages.add(ChatMessage(text: responseText, isUser: false, timestamp: DateTime.now()));
+      });
+      _scrollToBottom();
+
+      // 세션 정보 로컬 저장
+      await _chatService.saveSession(
+        sessionId: widget.sessionId,
+        title: text,
+        lastMessage: responseText.length > 50 ? '${responseText.substring(0, 50)}...' : responseText,
+      );
+      _isFirstMessage = false;
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isTyping = false;
+        _messages.add(ChatMessage(
+          text: '죄송합니다. 응답을 받지 못했습니다. 잠시 후 다시 시도해주세요.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+    }
   }
 
-  String _generateDummyResponse(String question) {
-    if (question.contains('커피') || question.contains('카페')) {
-      return '이번 달 카페 지출을 분석해봤어요.\n\n'
-          '총 카페 지출: 75,000원\n'
-          '- 스타벅스: 42,000원 (8회)\n'
-          '- 투썸플레이스: 18,000원 (4회)\n'
-          '- 기타: 15,000원 (5회)\n\n'
-          '지난달(68,000원)보다 10% 증가했어요. 스타벅스를 자주 가시네요!';
-    } else if (question.contains('카드') && (question.contains('좋은') || question.contains('추천'))) {
-      return '현재 소비 패턴을 분석한 결과, 토스카드를 추천드려요!\n\n'
-          '예상 월간 혜택: 45,000원\n'
-          '- 모든 가맹점 0.5% 적립\n'
-          '- 온라인 결제 추가 0.5%\n\n'
-          '현재 삼성카드(32,000원)보다 월 13,000원 더 받을 수 있어요. '
-          '카드 탭에서 자세한 비교를 확인해보세요!';
-    } else if (question.contains('분석') || question.contains('패턴')) {
-      return '최근 3개월 소비 패턴을 분석했어요.\n\n'
-          '주요 소비 카테고리:\n'
-          '1. 식비 (28%) - 월 평균 52만원\n'
-          '2. 쇼핑 (24%) - 월 평균 45만원\n'
-          '3. 생활 (17%) - 월 평균 32만원\n\n'
-          '특징:\n'
-          '- 주말에 외식 지출이 집중돼요\n'
-          '- 온라인 쇼핑이 80% 이상이에요\n'
-          '- 배달비가 월 4만원 정도 나가요';
-    } else if (question.contains('연회비') || question.contains('아까')) {
-      return '연회비 대비 혜택을 분석했어요.\n\n'
-          '현대카드 M이 연회비 값을 못하고 있어요.\n'
-          '- 연회비: 15,000원\n'
-          '- 받은 혜택: 8,000원 (달성률 20%)\n'
-          '- 월할 손실: -7,000원\n\n'
-          '이 카드는 M포인트 적립 특화인데, '
-          '주로 사용하시는 곳이 적립 제외 가맹점이에요. '
-          '해지를 고려해보시는 게 좋을 것 같아요.';
-    }
+  String _formatResponse(Map<String, dynamic> response) {
+    final type = response['type'];
+    if (type == 'CARD_INFO') {
+      final cards = (response['data']?['cards'] as List?) ?? [];
+      if (cards.isEmpty) return '추천할 카드를 찾지 못했어요.';
 
-    return '네, 말씀하신 내용을 확인해볼게요.\n\n'
-        '죄송하지만 현재는 데모 버전이라 실제 데이터 분석이 제한적이에요. '
-        '아래 추천 질문들을 시도해보시거나, 다른 방식으로 질문해주세요!';
+      final buffer = StringBuffer('추천 카드를 찾았어요!\n');
+      for (final card in cards) {
+        buffer.writeln();
+        buffer.writeln('${card['card_name']} (${card['company']})');
+        final fee = card['annual_fee_domestic'];
+        if (fee != null) buffer.writeln('연회비: ${_formatNumber(fee)}원');
+        final waiver = card['fee_waiver_rule'];
+        if (waiver != null) buffer.writeln('면제조건: $waiver');
+        final benefits = (card['benefits'] as List?) ?? [];
+        if (benefits.isNotEmpty) {
+          buffer.writeln('혜택:');
+          for (final b in benefits) {
+            final limit = b['benefit_limit'];
+            buffer.writeln(
+              '  - ${b['category_name']} ${b['benefit_rate']}'
+              '${limit != null ? ' (한도 ${_formatNumber(limit)}원)' : ''}',
+            );
+          }
+        }
+      }
+      return buffer.toString().trim();
+    }
+    return response['message']?.toString() ?? '응답을 처리할 수 없습니다.';
+  }
+
+  String _formatNumber(dynamic number) {
+    if (number == null) return '0';
+    final n = number is int ? number : (number as num).toInt();
+    return n.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
   }
 
   void _scrollToBottom() {
@@ -185,7 +195,6 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Column(
         children: [
-          // 채팅 메시지 목록
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -199,11 +208,7 @@ class _ChatPageState extends State<ChatPage> {
               },
             ),
           ),
-
-          // 추천 질문 (메시지가 적을 때만)
           if (_messages.length <= 2) _buildSuggestedQuestions(),
-
-          // 입력 영역
           _buildInputArea(),
         ],
       ),
@@ -214,8 +219,7 @@ class _ChatPageState extends State<ChatPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
@@ -226,22 +230,12 @@ class _ChatPageState extends State<ChatPage> {
                 shape: BoxShape.circle,
                 color: Colors.white,
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: const Center(
-                child: Text(
-                  'BeneFit',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 9,
-                    letterSpacing: -0.3,
-                  ),
+                child: Text('BeneFit',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 9, letterSpacing: -0.3),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -252,23 +246,15 @@ class _ChatPageState extends State<ChatPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: message.isUser
-                    ? AppColors.primary
-                    : Theme.of(context).colorScheme.surfaceContainerHigh,
+                color: message.isUser ? AppColors.primary : Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
-                  bottomLeft:
-                      Radius.circular(message.isUser ? 16 : 4),
-                  bottomRight:
-                      Radius.circular(message.isUser ? 4 : 16),
+                  bottomLeft: Radius.circular(message.isUser ? 16 : 4),
+                  bottomRight: Radius.circular(message.isUser ? 4 : 16),
                 ),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
                 ],
               ),
               child: Text(
@@ -290,11 +276,7 @@ class _ChatPageState extends State<ChatPage> {
                 shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.surfaceContainerHigh,
               ),
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 20),
             ),
           ],
         ],
@@ -315,22 +297,12 @@ class _ChatPageState extends State<ChatPage> {
               shape: BoxShape.circle,
               color: Colors.white,
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
               ],
             ),
             child: const Center(
-              child: Text(
-                'BeneFit',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 9,
-                  letterSpacing: -0.3,
-                ),
+              child: Text('BeneFit',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 9, letterSpacing: -0.3),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -349,11 +321,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildDot(0),
-                _buildDot(1),
-                _buildDot(2),
-              ],
+              children: [_buildDot(0), _buildDot(1), _buildDot(2)],
             ),
           ),
         ],
@@ -370,10 +338,7 @@ class _ChatPageState extends State<ChatPage> {
           margin: const EdgeInsets.symmetric(horizontal: 2),
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: AppColors.textSecondary.withOpacity(0.5),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: AppColors.textSecondary.withOpacity(0.5), shape: BoxShape.circle),
         );
       },
     );
@@ -385,13 +350,8 @@ class _ChatPageState extends State<ChatPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '이런 질문을 해보세요',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+          const Text('이런 질문을 해보세요',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -404,24 +364,14 @@ class _ChatPageState extends State<ChatPage> {
                   _sendMessage();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.5),
-                    ),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
                   ),
-                  child: Text(
-                    question,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Text(question,
+                    style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
                   ),
                 ),
               );
@@ -438,11 +388,7 @@ class _ChatPageState extends State<ChatPage> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
         ],
       ),
       child: SafeArea(
@@ -453,16 +399,10 @@ class _ChatPageState extends State<ChatPage> {
                 controller: _messageController,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
                   filled: true,
                   fillColor: AppColors.background,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
@@ -470,16 +410,10 @@ class _ChatPageState extends State<ChatPage> {
             ),
             const SizedBox(width: 8),
             Container(
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
               child: IconButton(
                 onPressed: _sendMessage,
-                icon: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.send, color: Colors.white),
               ),
             ),
           ],
@@ -494,9 +428,5 @@ class ChatMessage {
   final bool isUser;
   final DateTime timestamp;
 
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-    required this.timestamp,
-  });
+  ChatMessage({required this.text, required this.isUser, required this.timestamp});
 }
