@@ -145,6 +145,10 @@ class _CardDetailPageState extends State<CardDetailPage> {
                 _onSurfaceVariant,
               ),
               const SizedBox(height: 18),
+
+              // 3. 최근 소비 내역
+              _buildRecentSpendingHistory(),
+              const SizedBox(height: 24),
             ],
           ),
         ),
