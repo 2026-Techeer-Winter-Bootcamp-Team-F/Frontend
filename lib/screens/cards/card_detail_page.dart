@@ -44,7 +44,7 @@ class _CardDetailPageState extends State<CardDetailPage> {
   // 최근 소비 내역 더미 데이터
   static const List<Map<String, dynamic>> _recentSpendingData = [
     {'icon': Icons.shopping_cart, 'merchant': 'GS25', 'amount': 24300},
-    {'icon': Icons.local_cafe, 'merchant': '스타벅스', 'amount': 32600},
+    {'icon': Icons.local_cafe, 'merchant': '스타벅스', 'amount': 7500},
     {'icon': Icons.directions_bus, 'merchant': '지하철 버스', 'amount': 4500},
     {'icon': Icons.restaurant, 'merchant': '맘스터치', 'amount': 9600},
   ];
