@@ -57,18 +57,31 @@ class RecommendedCardDetailPage extends StatelessWidget {
                   child: SizedBox(
                     width: 132,
                     height: 209,
-                    child: Image.asset(
-                      imagePath,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: scheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.credit_card,
-                          size: 38,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
+                    child: imagePath.startsWith('http')
+                        ? Image.network(
+                            imagePath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: scheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.credit_card,
+                                size: 38,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : Image.asset(
+                            imagePath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: scheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.credit_card,
+                                size: 38,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -130,17 +143,16 @@ class RecommendedCardDetailPage extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: 56,
-                            child: Text(
-                              cat,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onSurface,
-                              ),
+                          Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
                             ),
+                            softWrap: false,
                           ),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Text(
                               desc,
