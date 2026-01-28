@@ -80,6 +80,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           textStyle: const TextStyle(
+            fontFamily: 'Pretendard',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -111,30 +112,36 @@ class AppTheme {
       ),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
         headlineMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
         titleLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
         titleMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
         bodyLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 16,
           color: AppColors.textPrimary,
         ),
         bodyMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 14,
           color: AppColors.textSecondary,
         ),
@@ -175,6 +182,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           textStyle: const TextStyle(
+            fontFamily: 'Pretendard',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -206,30 +214,36 @@ class AppTheme {
       ),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColorsDark.textPrimary,
         ),
         headlineMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColorsDark.textPrimary,
         ),
         titleLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColorsDark.textPrimary,
         ),
         titleMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColorsDark.textPrimary,
         ),
         bodyLarge: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 16,
           color: AppColorsDark.textPrimary,
         ),
         bodyMedium: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 14,
           color: AppColorsDark.textSecondary,
         ),
