@@ -105,7 +105,7 @@ class _SplashPageState extends State<SplashPage>
                                     Text(
                                       'BeneFit',
                                       style: TextStyle(
-                                        fontSize: 24,
+                                        fontSize: 36,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.primary,
                                       ),

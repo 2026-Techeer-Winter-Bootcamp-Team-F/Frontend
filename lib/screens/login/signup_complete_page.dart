@@ -34,9 +34,9 @@ class _SignupCompletePageState extends State<SignupCompletePage> {
           padding: const EdgeInsets.fromLTRB(24, 120, 24, 24),
           child: Column(
             children: [
-              const SizedBox(height: 40),
-              const Center(child: FlutterLogo(size: 80)),
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
+              Center(child: Image.asset('assets/images/logo.png', width: 200, height: 200)),
+              const SizedBox(height: 0),
               Text(
                 '로그인 완료!',
                 style: TextStyle(

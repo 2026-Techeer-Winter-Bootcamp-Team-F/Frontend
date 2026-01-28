@@ -50,8 +50,6 @@ class _BankSelectionPageState extends State<BankSelectionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(child: FlutterLogo(size: 72)),
-              const SizedBox(height: 24),
               const Text('은행을 선택해주세요.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 18),
               Expanded(
