@@ -81,7 +81,7 @@ class _ChatbotFloatingState extends State<ChatbotFloating> {
     if (!_isInitialized) {
       final screenSize = MediaQuery.of(context).size;
       _xPosition = screenSize.width - 72; // 오른쪽 여백 16 + 위젯 크기 56
-      _yPosition = screenSize.height - 184; // 하단바 위
+      _yPosition = screenSize.height - 150; // 하단바 위
       _isInitialized = true;
     }
   }
@@ -226,6 +226,47 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
   }
 
   Future<void> _loadConversations() async {
+    // 목데이터 사용 (API 연동 주석처리)
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+
+    final mockConversations = [
+      _Conversation(
+        id: 0,
+        sessionId: 'mock_session_1',
+        title: '이번 달 커피값 얼마나 썼어?',
+        lastMessage: '이번 달 커피 관련 소비를 분석해봤어요! 총 지출: 47,500원...',
+        time: '2시간 전',
+      ),
+      _Conversation(
+        id: 1,
+        sessionId: 'mock_session_2',
+        title: '카드 추천해줘',
+        lastMessage: '고객님의 소비 패턴을 분석해서 추천드릴게요! 신한카드 Deep Dream...',
+        time: '1일 전',
+      ),
+      _Conversation(
+        id: 2,
+        sessionId: 'mock_session_3',
+        title: '내 소비 패턴 분석해줘',
+        lastMessage: '고객님의 이번 달 소비 패턴이에요! 식비: 324,000원 (32%)...',
+        time: '3일 전',
+      ),
+      _Conversation(
+        id: 3,
+        sessionId: 'mock_session_4',
+        title: '연회비 아까운 카드 있어?',
+        lastMessage: '연회비 대비 혜택을 분석해봤어요! BC카드는 해지를 고려해보세요...',
+        time: '1주 전',
+      ),
+    ];
+
+    setState(() {
+      _allConversations = mockConversations;
+      _isLoading = false;
+    });
+
+    /* 기존 API 연동 코드
     try {
       final sessions = await _chatService.getSavedSessions();
       if (!mounted) return;
@@ -253,12 +294,24 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
         _isLoading = false;
       });
     }
+    */
   }
 
   Future<void> _createRoomAndNavigate() async {
     if (_isCreatingRoom) return;
     setState(() => _isCreatingRoom = true);
 
+    // 목데이터 사용 (API 연동 주석처리)
+    await Future.delayed(const Duration(milliseconds: 200));
+    final sessionId = 'mock_session_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatPage(sessionId: sessionId)),
+    );
+
+    /* 기존 API 연동 코드
     try {
       final result = await _chatService.makeRoom();
       final sessionId = result['session_id'] as String;
@@ -275,6 +328,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
         const SnackBar(content: Text('채팅방 생성에 실패했습니다.')),
       );
     }
+    */
   }
 
   String _formatTime(DateTime dateTime) {
@@ -350,7 +404,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                         // Title
                         Expanded(
                           child: Text(
-                            '베네핏(BeneFit)',
+                            'BeneFit',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w600,
@@ -394,7 +448,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '안녕하세요! BeneFit(베네핏)입니다 :)',
+                                          '카드 혜택부터 비교까지 무엇이든 물어보세요.',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
@@ -404,7 +458,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                         ),
                                         const SizedBox(height: 1),
                                         Text(
-                                          '궁금한 점이 있다면 언제든 편하게 말씀해 주세요! 💬',
+                                          '실제 데이터 기반으로 맞춤형 카드를 추천해드려요.',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
@@ -463,26 +517,6 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                 ],
                               ),
                               const SizedBox(height: 20),
-                              // Bottom label: chat bot in use
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    size: 14,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '챗봇 이용중',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
                               const SizedBox(height: 200),
                             ],
                           ),
@@ -534,7 +568,7 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                                                 onTap: () {
                                                   Navigator.of(context).pop();
                                                   Navigator.of(context).push(
-                                                    MaterialPageRoute(builder: (_) => ChatPage(sessionId: c.sessionId)),
+                                                    MaterialPageRoute(builder: (_) => ChatPage(sessionId: c.sessionId, isNewChat: false)),
                                                   );
                                                 },
                                                 child: Container(
