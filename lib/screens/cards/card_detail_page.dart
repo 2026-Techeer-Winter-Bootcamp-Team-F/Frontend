@@ -44,7 +44,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
     const paddingLeft = 16.0;
     const peekNext = 22.0; // 26년 2월이 최우측에 살짝 보이도록
     final pos = _monthScrollController.position;
-    final offset = paddingLeft + (index + 1) * itemWidth + peekNext - pos.viewportDimension;
+    final offset =
+        paddingLeft +
+        (index + 1) * itemWidth +
+        peekNext -
+        pos.viewportDimension;
     _monthScrollController.jumpTo(offset.clamp(0.0, pos.maxScrollExtent));
   }
 
@@ -86,7 +90,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
             // 카드 아래 텍스트
             Text(
               _cardTitle(),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: onSurface),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: onSurface,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -97,7 +105,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
 
             // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
             Expanded(
-              child: _buildCircularBenefitProgress(context, onSurface, onSurfaceVariant),
+              child: _buildCircularBenefitProgress(
+                context,
+                onSurface,
+                onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 18),
           ],
@@ -130,7 +142,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
                   selected
                       ? Text(
                           _yearLabel(d),
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: onSurfaceVariant),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: onSurfaceVariant,
+                          ),
                         )
                       : const SizedBox(height: 12),
                   const SizedBox(height: 1),
@@ -162,7 +178,6 @@ class _CardDetailPageState extends State<CardDetailPage> {
 
   Widget _buildNewCard(BuildContext context) {
     const aspectRatio = 1.586;
-    final bankDisplay = _bankDisplayName(widget.card.bankName);
     final screenW = MediaQuery.of(context).size.width;
     final cardWidth = (screenW * 0.58).clamp(165.0, 215.0);
 
@@ -176,7 +191,13 @@ class _CardDetailPageState extends State<CardDetailPage> {
             decoration: BoxDecoration(
               color: const Color(0xFFE8E8E8),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -185,7 +206,14 @@ class _CardDetailPageState extends State<CardDetailPage> {
                 Center(
                   child: Opacity(
                     opacity: 0.15,
-                    child: Text('subscribe', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w300, color: Colors.grey.shade700)),
+                    child: Text(
+                      'subscribe',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w300,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
                   ),
                 ),
                 // 좌측 상단: LG전자(위) + The 구독케어(아래) 세로 배치
@@ -196,31 +224,27 @@ class _CardDetailPageState extends State<CardDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('LG전자', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black87)),
+                      Text(
+                        'LG전자',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text('The 구독케어', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.black87)),
+                      Text(
+                        'The 구독케어',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 // 좌측: 화살표 아이콘 + ShinhanCard 세로
-                Positioned(
-                  left: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.arrow_upward, size: 12, color: Colors.black54),
-                        const SizedBox(height: 4),
-                        RotatedBox(
-                          quarterTurns: 3,
-                          child: Text(bankDisplay, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black54)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 // 좌측 중앙: EMV 칩
                 Positioned(
                   left: 12,
@@ -242,11 +266,6 @@ class _CardDetailPageState extends State<CardDetailPage> {
     );
   }
 
-  String _bankDisplayName(String bankName) {
-    if (bankName.contains('신한')) return 'ShinhanCard';
-    return bankName.replaceAll('카드', '').trim();
-  }
-
   String _cardTitle() {
     return 'LG전자 The 구독케어 ${widget.card.bankName}';
   }
@@ -259,7 +278,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
     return '${widget.card.maskedNumber} 본인';
   }
 
-  Widget _buildCircularBenefitProgress(BuildContext context, Color onSurface, Color onSurfaceVariant) {
+  Widget _buildCircularBenefitProgress(
+    BuildContext context,
+    Color onSurface,
+    Color onSurfaceVariant,
+  ) {
     const totalBenefit = 33000;
     const receivedBenefit = 23000;
     final percent = (receivedBenefit / totalBenefit).clamp(0.0, 1.0);
@@ -270,12 +293,19 @@ class _CardDetailPageState extends State<CardDetailPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         const scale = 0.6; // 링 0.6배에 맞춘 내부 비율
-        final ringSize = (math.min(maxFromWidth, constraints.maxHeight).clamp(260.0, 500.0)) * scale;
+        final ringSize =
+            (math
+                .min(maxFromWidth, constraints.maxHeight)
+                .clamp(260.0, 500.0)) *
+            scale;
         final stroke = (ringSize * 18 / 220).clamp(16.0 * scale, 32.0 * scale);
         final fs1 = (ringSize * 12 / 220).clamp(12.0 * scale, 16.0 * scale);
         final fs2 = (ringSize * 13 / 220).clamp(13.0 * scale, 17.0 * scale);
         final fs3 = (ringSize * 26 / 220).clamp(26.0 * scale, 36.0 * scale);
-        final fs4 = (ringSize * 13 / 220).clamp(13.0 * scale, 16.0 * scale); // % 달성 pill
+        final fs4 = (ringSize * 13 / 220).clamp(
+          13.0 * scale,
+          16.0 * scale,
+        ); // % 달성 pill
         final padH = (14.0 * scale).roundToDouble();
         final padV = (6.0 * scale).roundToDouble();
         final gap1 = (6.0 * scale).roundToDouble();
@@ -299,20 +329,47 @@ class _CardDetailPageState extends State<CardDetailPage> {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('이번 달 총 혜택 ${_formatWon(totalBenefit)}', style: TextStyle(fontSize: fs1, color: onSurfaceVariant)),
+                    Text(
+                      '이번 달 총 혜택 ${_formatWon(totalBenefit)}',
+                      style: TextStyle(fontSize: fs1, color: onSurfaceVariant),
+                    ),
                     SizedBox(height: gap1),
-                    Text('내가 받은 혜택', style: TextStyle(fontSize: fs2, fontWeight: FontWeight.w600, color: _accentColor)),
+                    Text(
+                      '내가 받은 혜택',
+                      style: TextStyle(
+                        fontSize: fs2,
+                        fontWeight: FontWeight.w600,
+                        color: _accentColor,
+                      ),
+                    ),
                     SizedBox(height: gap1),
-                    Text(_formatWon(receivedBenefit), style: TextStyle(fontSize: fs3, fontWeight: FontWeight.w800, color: onSurface)),
+                    Text(
+                      _formatWon(receivedBenefit),
+                      style: TextStyle(
+                        fontSize: fs3,
+                        fontWeight: FontWeight.w800,
+                        color: onSurface,
+                      ),
+                    ),
                     SizedBox(height: gap2),
                     // 69.7% 달성 — 파란 알약
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: padH,
+                        vertical: padV,
+                      ),
                       decoration: BoxDecoration(
                         color: _accentColor,
                         borderRadius: BorderRadius.circular(100),
                       ),
-                      child: Text('$percentText% 달성', style: TextStyle(fontSize: fs4, fontWeight: FontWeight.w700, color: Colors.white)),
+                      child: Text(
+                        '$percentText% 달성',
+                        style: TextStyle(
+                          fontSize: fs4,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -329,7 +386,9 @@ class _CardDetailPageState extends State<CardDetailPage> {
       width: 440,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       height: 74,
@@ -345,9 +404,15 @@ class _CardDetailPageState extends State<CardDetailPage> {
     );
   }
 
-  Widget _buildNavItem({required int index, required IconData icon, required String label}) {
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required String label,
+  }) {
     final bool selected = _currentTabIndex == index;
-    final color = selected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant;
+    final color = selected
+        ? AppColors.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     final iconSize = selected ? 26.0 : 22.0;
     final selectedCircleSize = 36.0;
     final labelFontSize = 11.0;
@@ -365,13 +430,25 @@ class _CardDetailPageState extends State<CardDetailPage> {
                 Container(
                   width: selectedCircleSize,
                   height: selectedCircleSize,
-                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                  child: Center(child: Icon(icon, color: Colors.white, size: iconSize)),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: Colors.white, size: iconSize),
+                  ),
                 )
               else
                 Icon(icon, color: color, size: iconSize),
               SizedBox(height: spacing),
-              Text(label, style: TextStyle(color: color, fontSize: labelFontSize, fontWeight: FontWeight.w400)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ],
           ),
         ),
@@ -380,10 +457,12 @@ class _CardDetailPageState extends State<CardDetailPage> {
   }
 
   void _navigateToTab(int index) {
+    if (index == 0 && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => MainNavigation(initialIndex: index),
-      ),
+      MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: index)),
       (route) => false,
     );
   }
@@ -402,12 +481,18 @@ class _CircleProgressPainter extends CustomPainter {
   final Color progressColor;
   final double strokeWidth;
 
-  _CircleProgressPainter({required this.percent, required this.trackColor, required this.progressColor, this.strokeWidth = 14.0});
+  _CircleProgressPainter({
+    required this.percent,
+    required this.trackColor,
+    required this.progressColor,
+    this.strokeWidth = 14.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - (strokeWidth / 2 + 4);
+    final radius =
+        math.min(size.width, size.height) / 2 - (strokeWidth / 2 + 4);
     final stroke = strokeWidth;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
@@ -432,5 +517,7 @@ class _CircleProgressPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CircleProgressPainter oldDelegate) =>
-      oldDelegate.percent != percent || oldDelegate.trackColor != trackColor || oldDelegate.progressColor != progressColor;
+      oldDelegate.percent != percent ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.progressColor != progressColor;
 }

@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:http/http.dart' as http;
 import 'package:my_app/models/user.dart';
+import 'package:my_app/screens/cards/card_analysis_page.dart';
+import 'package:my_app/screens/cards/card_detail_page.dart';
 import 'package:my_app/services/user_service.dart';
 
 // --- Gemini API 설정 ---
@@ -702,7 +704,18 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     );
   }
 
-  // 프리미엄 신용카드 디자인 (토스 카드 참고)
+  WalletCard _toWalletCard(UserCardInfo card) {
+    final style = _getCardStyle(card.company);
+    return WalletCard(
+      color: style.baseColor,
+      label: card.cardName,
+      bankName: card.company,
+      maskedNumber: card.cardNumber,
+      imagePath: card.cardImageUrl.isNotEmpty ? card.cardImageUrl : null,
+    );
+  }
+
+  // 미니멀 카드 디자인 (참고 이미지 반영)
   Widget _buildCreditCard(
     BuildContext context,
     UserCardInfo card,
@@ -710,251 +723,153 @@ class _CardWalletSectionState extends State<CardWalletSection> {
   ) {
     final normalizedOffset = horizontalOffset / 100;
     final easedOffset = normalizedOffset * normalizedOffset.abs().clamp(0.0, 1.0);
-    final rotation = easedOffset * 0.10;
+    final rotation = easedOffset * 0.08;
+    final style = _getCardStyle(card.company);
 
-    final cardStyle = _getCardStyle(card.company);
-
-    return Transform.rotate(
-      angle: rotation,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20), // 토스 카드처럼 더 둥글게
-          gradient: LinearGradient(
-            begin: cardStyle.gradientBegin,
-            end: cardStyle.gradientEnd,
-            colors: cardStyle.gradientColors,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder<void>(
+            transitionDuration: const Duration(milliseconds: 320),
+            reverseTransitionDuration: const Duration(milliseconds: 260),
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return CardDetailPage(card: _toWalletCard(card));
+            },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              final curved = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+                reverseCurve: Curves.easeInCubic,
+              );
+              final slide = Tween<Offset>(
+                begin: const Offset(0.02, 0.04),
+                end: Offset.zero,
+              ).animate(curved);
+              return FadeTransition(
+                opacity: curved,
+                child: SlideTransition(
+                  position: slide,
+                  child: child,
+                ),
+              );
+            },
           ),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: cardStyle.gradientColors.first.withOpacity(0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-              spreadRadius: -5,
+        );
+      },
+      child: Transform.rotate(
+        angle: rotation,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: style.gradientColors,
             ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              // 배경 패턴/장식
-              if (cardStyle.hasPattern)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _CardPatternPainter(cardStyle),
-                  ),
-                ),
-              // 상단 하이라이트
-              Positioned(
-                top: -40,
-                right: -40,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.12),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // 카드 내용
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 상단: 카드사명 + NFC
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          card.company,
-                          style: TextStyle(
-                            color: cardStyle.textColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        Icon(
-                          Icons.contactless_outlined,
-                          color: cardStyle.textColor.withOpacity(0.5),
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // EMV 칩
-                    _buildRealisticChip(),
-                    const Spacer(flex: 2),
-                    // 하단: 카드명
-                    Text(
-                      card.cardName,
-                      style: TextStyle(
-                        color: cardStyle.textColor.withOpacity(0.85),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+            border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: style.baseColor.withOpacity(0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Stack(
+              children: [
+                // 워터마크 텍스트
+                Center(
+                  child: Text(
+                    'subscribe',
+                    style: TextStyle(
+                      color: style.textColor.withOpacity(0.08),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                // 카드 내용
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.company,
+                        style: TextStyle(
+                          color: style.textColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        card.cardName,
+                        style: TextStyle(
+                          color: style.textColor.withOpacity(0.7),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      _buildRealisticChip(),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // 카드사별 스타일 (그라데이션 포함)
   _CardStyle _getCardStyle(String company) {
     final normalized = company.toLowerCase();
 
-    // KB 국민 - 블루그레이 (참고 이미지 기반)
+    Color baseColor = const Color(0xFF4A5568);
     if (normalized.contains('kb') || normalized.contains('국민')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF7B8794), Color(0xFF5D6D7E), Color(0xFF4A5568)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
+      baseColor = const Color(0xFF6B7C93);
+    } else if (normalized.contains('토스') || normalized.contains('toss')) {
+      baseColor = const Color(0xFF146CFF);
+    } else if (normalized.contains('신한') || normalized.contains('shinhan')) {
+      baseColor = const Color(0xFF0D4EFF);
+    } else if (normalized.contains('하나') || normalized.contains('hana')) {
+      baseColor = const Color(0xFF008773);
+    } else if (normalized.contains('삼성') || normalized.contains('samsung')) {
+      baseColor = const Color(0xFF1B2A6B);
+    } else if (normalized.contains('현대') || normalized.contains('hyundai')) {
+      baseColor = const Color(0xFF173A6B);
+    } else if (normalized.contains('bc')) {
+      baseColor = const Color(0xFFE11D48);
+    } else if (normalized.contains('롯데') || normalized.contains('lotte')) {
+      baseColor = const Color(0xFFE60012);
+    } else if (normalized.contains('우리') || normalized.contains('woori')) {
+      baseColor = const Color(0xFF0B63B6);
+    } else if (normalized.contains('농협') || normalized.contains('nh')) {
+      baseColor = const Color(0xFF0B8F5B);
+    } else if (normalized.contains('카카오') || normalized.contains('kakao')) {
+      baseColor = const Color(0xFFFEE500);
     }
-    // 토스 - 비비드 블루 그라데이션 (참고 이미지 기반)
-    if (normalized.contains('토스') || normalized.contains('toss')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF4DC8FF), Color(0xFF0078FF), Color(0xFF0055DD)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 신한 - 딥 블루
-    if (normalized.contains('신한') || normalized.contains('shinhan')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF1E5AFF), Color(0xFF0041CC), Color(0xFF002999)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 하나 - 틸 그린
-    if (normalized.contains('하나') || normalized.contains('hana')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF00B894), Color(0xFF009975), Color(0xFF007A5E)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 삼성 - 네이비
-    if (normalized.contains('삼성') || normalized.contains('samsung')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF2D47A0), Color(0xFF1A2F7A), Color(0xFF0D1B5C)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 현대 - 다크 네이비
-    if (normalized.contains('현대') || normalized.contains('hyundai')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF003D73), Color(0xFF002C5F), Color(0xFF001D40)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // BC 카드 - 레드
-    if (normalized.contains('bc')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFFFF4757), Color(0xFFE31837), Color(0xFFC41230)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 롯데 - 레드
-    if (normalized.contains('롯데') || normalized.contains('lotte')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFFFF5252), Color(0xFFE60012), Color(0xFFC00010)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 우리 - 블루
-    if (normalized.contains('우리') || normalized.contains('woori')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF2196F3), Color(0xFF0066B3), Color(0xFF004D8C)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 농협 - 그린
-    if (normalized.contains('농협') || normalized.contains('nh')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFF2ECC71), Color(0xFF006747), Color(0xFF004D35)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: Colors.white,
-        hasPattern: true,
-        showLogo: true,
-      );
-    }
-    // 카카오 - 옐로우
-    if (normalized.contains('카카오') || normalized.contains('kakao')) {
-      return _CardStyle(
-        gradientColors: const [Color(0xFFFFF176), Color(0xFFFEE500), Color(0xFFE5CF00)],
-        gradientBegin: Alignment.topLeft,
-        gradientEnd: Alignment.bottomRight,
-        textColor: const Color(0xFF3C1E1E),
-        hasPattern: false,
-        showLogo: true,
-      );
-    }
-    // 기본 - 다크
+
+    final textColor = baseColor.computeLuminance() > 0.6
+        ? const Color(0xFF1F2937)
+        : Colors.white;
+
     return _CardStyle(
-      gradientColors: const [Color(0xFF434343), Color(0xFF2C3E50), Color(0xFF1A252F)],
-      gradientBegin: Alignment.topLeft,
-      gradientEnd: Alignment.bottomRight,
-      textColor: Colors.white,
-      hasPattern: true,
-      showLogo: false,
+      baseColor: baseColor,
+      textColor: textColor,
+      gradientColors: [
+        baseColor,
+        Color.lerp(baseColor, Colors.black, 0.18) ?? baseColor,
+      ],
     );
   }
 
@@ -969,21 +884,21 @@ class _CardWalletSectionState extends State<CardWalletSection> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFE8E0C8),
-            Color(0xFFD4C8A8),
-            Color(0xFFC0B090),
-            Color(0xFFD4C8A8),
-            Color(0xFFE8E0C8),
+            Color(0xFFF2F2F2),
+            Color(0xFFD9D9D9),
+            Color(0xFFBFBFBF),
+            Color(0xFFD9D9D9),
+            Color(0xFFF2F2F2),
           ],
           stops: [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
         border: Border.all(
-          color: const Color(0xFFB0A080),
+          color: const Color(0xFFB0B0B0),
           width: 0.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withOpacity(0.12),
             blurRadius: 2,
             offset: const Offset(1, 1),
           ),
@@ -997,66 +912,16 @@ class _CardWalletSectionState extends State<CardWalletSection> {
 
 }
 
-// 카드 스타일 클래스
 class _CardStyle {
-  final List<Color> gradientColors;
-  final Alignment gradientBegin;
-  final Alignment gradientEnd;
+  final Color baseColor;
   final Color textColor;
-  final bool hasPattern;
-  final bool showLogo;
+  final List<Color> gradientColors;
 
   const _CardStyle({
-    required this.gradientColors,
-    required this.gradientBegin,
-    required this.gradientEnd,
+    required this.baseColor,
     required this.textColor,
-    required this.hasPattern,
-    required this.showLogo,
+    required this.gradientColors,
   });
-}
-
-// 카드 배경 패턴
-class _CardPatternPainter extends CustomPainter {
-  final _CardStyle style;
-
-  _CardPatternPainter(this.style);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    // 대각선 패턴
-    for (int i = -10; i < 20; i++) {
-      final startX = i * 30.0;
-      canvas.drawLine(
-        Offset(startX, 0),
-        Offset(startX + size.height, size.height),
-        paint,
-      );
-    }
-
-    // 코너 데코레이션
-    final decorPaint = Paint()
-      ..color = Colors.white.withOpacity(0.08)
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    path.moveTo(size.width, 0);
-    path.lineTo(size.width - 80, 0);
-    path.quadraticBezierTo(
-      size.width, 0,
-      size.width, 80,
-    );
-    path.close();
-    canvas.drawPath(path, decorPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // 리얼리스틱 EMV 칩 패턴
