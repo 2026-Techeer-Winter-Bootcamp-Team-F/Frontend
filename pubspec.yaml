@@ -54,6 +54,9 @@ dependencies:
   # 카드 스와이프 (Tinder 스타일)
   flutter_card_swiper: ^7.0.1
 
+  # 최근 소비 내역 스택 카드
+  stacked_notification_cards: ^0.1.0-dev.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
