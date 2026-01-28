@@ -27,10 +27,10 @@ Future<String> callGeminiAPI(String prompt) async {
         "contents": [
           {
             "parts": [
-              {"text": prompt}
-            ]
-          }
-        ]
+              {"text": prompt},
+            ],
+          },
+        ],
       }),
     );
 
@@ -103,13 +103,18 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               const SpendingReportSection(),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               const BenefitSummarySection(),
-              const SizedBox(height: 40),
-              // 카드 섹션 (2/3만 보이게)
-              const Expanded(child: CardWalletSection()),
+              const SizedBox(height: 52),
+              // 카드 섹션
+              const Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 12, bottom: 8),
+                  child: CardWalletSection(),
+                ),
+              ),
             ],
           ),
         ),
@@ -202,7 +207,9 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark ? const Color(0xFF3A3A3C) : Colors.grey[400]!,
+                          color: isDark
+                              ? const Color(0xFF3A3A3C)
+                              : Colors.grey[400]!,
                           width: 3,
                         ),
                       ),
@@ -247,12 +254,7 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
               Expanded(
                 child: Column(
                   children: [
-                    _buildCategoryRow(
-                      "Food",
-                      "45%",
-                      Colors.blue[600]!,
-                      isDark,
-                    ),
+                    _buildCategoryRow("Food", "45%", Colors.blue[600]!, isDark),
                     const SizedBox(height: 16),
                     _buildCategoryRow(
                       "Shopping",
@@ -304,10 +306,7 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
             ),
             Text(
               percent,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -329,7 +328,7 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
               ),
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -356,7 +355,10 @@ class WavePainter extends CustomPainter {
       path.lineTo(
         i,
         y +
-            math.sin((i / size.width * 2 * math.pi) + (animationValue * 2 * math.pi)) *
+            math.sin(
+                  (i / size.width * 2 * math.pi) +
+                      (animationValue * 2 * math.pi),
+                ) *
                 5,
       );
     }
@@ -375,9 +377,11 @@ class WavePainter extends CustomPainter {
       path2.lineTo(
         i,
         y +
-            math.sin((i / size.width * 2 * math.pi) +
-                    (animationValue * 2 * math.pi) +
-                    2) * // Phase shift
+            math.sin(
+                  (i / size.width * 2 * math.pi) +
+                      (animationValue * 2 * math.pi) +
+                      2,
+                ) * // Phase shift
                 5,
       );
     }
@@ -476,7 +480,9 @@ class BenefitSummarySection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1E293B),
                         ),
                       ),
                     ],
@@ -517,7 +523,11 @@ class BenefitSummarySection extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: iconColor),
                       ),
-                      child: Icon(Icons.info_outline, size: 16, color: iconColor),
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: iconColor,
+                      ),
                     ),
                   ),
                 ),
@@ -582,7 +592,11 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     }
   }
 
-  bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+  bool _onSwipe(
+    int previousIndex,
+    int? currentIndex,
+    CardSwiperDirection direction,
+  ) {
     if (currentIndex != null) {
       setState(() {
         _currentIndex = currentIndex;
@@ -648,10 +662,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
             children: [
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _loadCards,
-                child: const Text('다시 시도'),
-              ),
+              OutlinedButton(onPressed: _loadCards, child: const Text('다시 시도')),
             ],
           ),
         ),
@@ -663,40 +674,53 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     return _buildCardSwiper();
   }
 
-  // Tinder 스타일 카드 스와이퍼
+  // Dribbble 스타일 카드 스와이퍼
   Widget _buildCardSwiper() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // 토스 카드 참고: 약 1.58 비율 (가로:세로)
+          // BC 카드 비율 기준 (ISO 7810 ID-1: 85.6mm × 53.98mm = 1.586)
           final cardWidth = constraints.maxWidth;
-          final cardHeight = cardWidth / 1.58;
-          
+          final cardHeight = cardWidth / 1.586;
+
           return SizedBox(
-            height: cardHeight + 20, // 스택 공간
+            height: cardHeight + 50, // 스택 공간
             child: CardSwiper(
               controller: _swiperController,
               cardsCount: _cards.length,
-              numberOfCardsDisplayed: math.min(2, _cards.length),
-              backCardOffset: const Offset(0, 20),
-              padding: EdgeInsets.zero,
-              scale: 0.96,
+              numberOfCardsDisplayed: math.min(3, _cards.length),
+              backCardOffset: const Offset(0, 40), // 뒤 카드 오프셋
+              padding: EdgeInsets.zero, // 카드 비율 유지
+              scale: 0.9, // 뒤→앞 전환 시 확대 효과
               onSwipe: _onSwipe,
-              duration: const Duration(milliseconds: 350),
-              threshold: 35,
-              maxAngle: 12,
+              duration: const Duration(milliseconds: 200), // 빠르고 자연스러운 전환
+              threshold: 50,
+              maxAngle: 35, // angle.gif 스타일: 회전 효과
               allowedSwipeDirection: const AllowedSwipeDirection.symmetric(
                 horizontal: true,
                 vertical: false,
               ),
-              cardBuilder: (context, index, horizontalOffsetPercentage, verticalOffsetPercentage) {
-                return _buildCreditCard(
-                  context,
-                  _cards[index],
-                  horizontalOffsetPercentage.toDouble(),
-                );
-              },
+              cardBuilder:
+                  (
+                    context,
+                    index,
+                    horizontalOffsetPercentage,
+                    verticalOffsetPercentage,
+                  ) {
+                    return Align(
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: cardWidth,
+                        height: cardHeight,
+                        child: _buildCreditCard(
+                          context,
+                          _cards[index],
+                          horizontalOffsetPercentage.toDouble(),
+                        ),
+                      ),
+                    );
+                  },
             ),
           );
         },
@@ -715,15 +739,12 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     );
   }
 
-  // 미니멀 카드 디자인 (참고 이미지 반영)
+  // 심플한 카드 디자인 (CardSwiper 기본 애니메이션 활용)
   Widget _buildCreditCard(
     BuildContext context,
     UserCardInfo card,
     double horizontalOffset,
   ) {
-    final normalizedOffset = horizontalOffset / 100;
-    final easedOffset = normalizedOffset * normalizedOffset.abs().clamp(0.0, 1.0);
-    final rotation = easedOffset * 0.08;
     final style = _getCardStyle(card.company);
 
     return GestureDetector(
@@ -736,95 +757,90 @@ class _CardWalletSectionState extends State<CardWalletSection> {
             pageBuilder: (context, animation, secondaryAnimation) {
               return CardDetailPage(card: _toWalletCard(card));
             },
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              final slide = Tween<Offset>(
-                begin: const Offset(0.02, 0.04),
-                end: Offset.zero,
-              ).animate(curved);
-              return FadeTransition(
-                opacity: curved,
-                child: SlideTransition(
-                  position: slide,
-                  child: child,
-                ),
-              );
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  final curved = CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                    reverseCurve: Curves.easeInCubic,
+                  );
+                  final slide = Tween<Offset>(
+                    begin: const Offset(0.02, 0.04),
+                    end: Offset.zero,
+                  ).animate(curved);
+                  return FadeTransition(
+                    opacity: curved,
+                    child: SlideTransition(position: slide, child: child),
+                  );
+                },
           ),
         );
       },
-      child: Transform.rotate(
-        angle: rotation,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: style.gradientColors,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: style.gradientColors,
+          ),
+          border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: style.baseColor.withOpacity(0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
-            border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: style.baseColor.withOpacity(0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Stack(
+            children: [
+              // 워터마크 텍스트
+              Center(
+                child: Text(
+                  'subscribe',
+                  style: TextStyle(
+                    color: style.textColor.withOpacity(0.08),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              // 카드 내용
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      card.company,
+                      style: TextStyle(
+                        color: style.textColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      card.cardName,
+                      style: TextStyle(
+                        color: style.textColor.withOpacity(0.7),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    _buildRealisticChip(),
+                    const SizedBox(height: 6),
+                  ],
+                ),
               ),
             ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Stack(
-              children: [
-                // 워터마크 텍스트
-                Center(
-                  child: Text(
-                    'subscribe',
-                    style: TextStyle(
-                      color: style.textColor.withOpacity(0.08),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                // 카드 내용
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card.company,
-                        style: TextStyle(
-                          color: style.textColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        card.cardName,
-                        style: TextStyle(
-                          color: style.textColor.withOpacity(0.7),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      _buildRealisticChip(),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -892,10 +908,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
           ],
           stops: [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
-        border: Border.all(
-          color: const Color(0xFFB0B0B0),
-          width: 0.5,
-        ),
+        border: Border.all(color: const Color(0xFFB0B0B0), width: 0.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.12),
@@ -904,12 +917,9 @@ class _CardWalletSectionState extends State<CardWalletSection> {
           ),
         ],
       ),
-      child: CustomPaint(
-        painter: _RealisticChipPainter(),
-      ),
+      child: CustomPaint(painter: _RealisticChipPainter()),
     );
   }
-
 }
 
 class _CardStyle {
@@ -1004,8 +1014,16 @@ class ChipPatternPainter extends CustomPainter {
     final rectHeight = size.height * 0.2;
     final spacing = size.width * 0.1;
 
-    for (double x = spacing; x < size.width - spacing; x += rectWidth + spacing * 0.5) {
-      for (double y = spacing; y < size.height - spacing; y += rectHeight + spacing * 0.5) {
+    for (
+      double x = spacing;
+      x < size.width - spacing;
+      x += rectWidth + spacing * 0.5
+    ) {
+      for (
+        double y = spacing;
+        y < size.height - spacing;
+        y += rectHeight + spacing * 0.5
+      ) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromLTWH(x, y, rectWidth, rectHeight),
@@ -1078,9 +1096,7 @@ class CustomBottomNav extends StatelessWidget {
             ? const Color(0xFF000000).withOpacity(0.9)
             : Colors.white.withOpacity(0.95),
         border: Border(
-          top: BorderSide(
-            color: isDark ? Colors.white10 : Colors.grey[200]!,
-          ),
+          top: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!),
         ),
       ),
       child: Row(
@@ -1100,7 +1116,9 @@ class CustomBottomNav extends StatelessWidget {
     String label,
     bool isActive,
   ) {
-    final color = isActive ? Theme.of(context).colorScheme.primary : Colors.grey;
+    final color = isActive
+        ? Theme.of(context).colorScheme.primary
+        : Colors.grey;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

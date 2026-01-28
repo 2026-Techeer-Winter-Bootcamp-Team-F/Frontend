@@ -10,28 +10,26 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _logoPositionAnimation;
   late Animation<double> _logoOpacityAnimation;
   late Animation<double> _buttonsOpacityAnimation;
-  
+
   bool _showButtons = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
 
     // 로고가 중앙에서 위로 이동하는 애니메이션 (0.5초 후 시작)
-    _logoPositionAnimation = Tween<double>(
-      begin: 0.0,
-      end: -150.0,
-    ).animate(
+    _logoPositionAnimation = Tween<double>(begin: 0.0, end: -150.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.5, 0.8, curve: Curves.easeInOut),
@@ -39,10 +37,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     );
 
     // 로고 투명도
-    _logoOpacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
+    _logoOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.0, 0.3, curve: Curves.easeIn),
@@ -50,10 +45,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     );
 
     // 버튼 나타나는 애니메이션
-    _buttonsOpacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
+    _buttonsOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.7, 1.0, curve: Curves.easeIn),
@@ -87,7 +79,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           animation: _animationController,
           builder: (context, child) {
             return Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 2.0),
               child: Column(
                 children: [
                   const SizedBox(height: 24),
@@ -138,7 +130,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const PhoneLoginPage()),
+                              MaterialPageRoute(
+                                builder: (_) => const PhoneLoginPage(),
+                              ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -151,7 +145,10 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           ),
                           child: const Text(
                             '로그인',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -165,20 +162,31 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const NameInputPage()),
+                              MaterialPageRoute(
+                                builder: (_) => const NameInputPage(),
+                              ),
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.surface,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
-                            side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onSurface,
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           child: const Text(
                             '회원가입',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
