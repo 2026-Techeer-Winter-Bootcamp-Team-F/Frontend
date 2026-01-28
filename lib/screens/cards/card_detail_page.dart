@@ -77,7 +77,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
     const paddingLeft = 16.0;
     const peekNext = 22.0; // 26년 2월이 최우측에 살짝 보이도록
     final pos = _monthScrollController.position;
-    final offset = paddingLeft + (index + 1) * itemWidth + peekNext - pos.viewportDimension;
+    final offset =
+        paddingLeft +
+        (index + 1) * itemWidth +
+        peekNext -
+        pos.viewportDimension;
     _monthScrollController.jumpTo(offset.clamp(0.0, pos.maxScrollExtent));
   }
 
@@ -118,24 +122,32 @@ class _CardDetailPageState extends State<CardDetailPage> {
               // 카드-제목 간격: 10 → 4 (촘촘하게)
               const SizedBox(height: 4),
 
-              // 카드 아래 텍스트
-              Text(_cardTitle, style: _cardTitleStyle),
-              // 제목-서브 간격: 6 → 3 (촘촘하게)
-              const SizedBox(height: 3),
-              Text(_maskedNumber, style: _cardNumberStyle),
-              // 서브-링 간격: 6 → 4 (링을 위로 당기기)
-              const SizedBox(height: 4),
+            // 카드 아래 텍스트
+            Text(
+              _cardTitle(),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _maskedNumberFormatted(),
+              style: TextStyle(fontSize: 13, color: onSurfaceVariant),
+            ),
+            SizedBox(height: (20 * 0.3).roundToDouble()),
 
-              // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
-              _buildCircularBenefitProgress(context),
-              // 링-최근소비내역 간격: 18 → 8 (링 바로 아래에 오도록)
-              const SizedBox(height: 8),
-
-              // 3. 최근 소비 내역 섹션
-              _buildRecentSpendingHistory(),
-              const SizedBox(height: 100), // 하단 네비게이션 바 여유 공간
-            ],
-          ),
+            // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
+            Expanded(
+              child: _buildCircularBenefitProgress(
+                context,
+                onSurface,
+                onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 18),
+          ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavBar(context),
@@ -152,11 +164,49 @@ class _CardDetailPageState extends State<CardDetailPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: _displayMonths.length,
         itemExtent: 48,
-        itemBuilder: (context, i) => _MonthTabItem(
-          date: _displayMonths[i],
-          selected: _selectedMonthIndex == i,
-          onTap: () => setState(() => _selectedMonthIndex = i),
-        ),
+        itemBuilder: (context, i) {
+          final d = _displayMonths[i];
+          final selected = _selectedMonthIndex == i;
+          return InkWell(
+            onTap: () => setState(() => _selectedMonthIndex = i),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  selected
+                      ? Text(
+                          _yearLabel(d),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: onSurfaceVariant,
+                          ),
+                        )
+                      : const SizedBox(height: 12),
+                  const SizedBox(height: 1),
+                  Text(
+                    _monthLabel(d),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? onSurface : onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 2,
+                    width: 28,
+                    decoration: BoxDecoration(
+                      color: selected ? _accentColor : Colors.transparent,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -164,8 +214,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
   Widget _buildNewCard(BuildContext context) {
     const aspectRatio = 1.586;
     final screenW = MediaQuery.of(context).size.width;
-    // 카드 크기: 0.58 → 0.50 (더 작게, 이미지처럼)
-    final cardWidth = (screenW * 0.50).clamp(150.0, 190.0);
+    final cardWidth = (screenW * 0.58).clamp(165.0, 215.0);
+    final baseColor = widget.card.color;
+    final textColor = baseColor.computeLuminance() > 0.6
+        ? const Color(0xFF1F2937)
+        : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -175,11 +228,18 @@ class _CardDetailPageState extends State<CardDetailPage> {
           aspectRatio: aspectRatio,
           child: Container(
             decoration: BoxDecoration(
-              color: _cardBackgroundColor,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  baseColor,
+                  Color.lerp(baseColor, Colors.black, 0.18) ?? baseColor,
+                ],
+              ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: baseColor.withOpacity(0.35),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -191,14 +251,13 @@ class _CardDetailPageState extends State<CardDetailPage> {
                 // 워터마크 "subscribe" (중앙, 흐릿한 회색)
                 Center(
                   child: Opacity(
-                    opacity: 0.15,
+                    opacity: 0.12,
                     child: Text(
                       'subscribe',
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 22,
                         fontWeight: FontWeight.w300,
-                        color: Colors.grey.shade700,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -211,40 +270,27 @@ class _CardDetailPageState extends State<CardDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         'LG전자',
-                        style: TextStyle(fontFamily: 'Pretendard', fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
+                        ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         'The 구독케어',
-                        style: TextStyle(fontFamily: 'Pretendard', fontSize: 9, fontWeight: FontWeight.w600, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: textColor.withOpacity(0.85),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 // 좌측: 화살표 아이콘 + ShinhanCard 세로
-                Positioned(
-                  left: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.arrow_upward, size: 12, color: Colors.black54),
-                        const SizedBox(height: 4),
-                        RotatedBox(
-                          quarterTurns: 3,
-                          child: Text(
-                            _bankDisplay,
-                            style: const TextStyle(fontFamily: 'Pretendard', fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black54),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 // 좌측 중앙: EMV 칩
                 Positioned(
                   left: 12,
@@ -266,9 +312,8 @@ class _CardDetailPageState extends State<CardDetailPage> {
     );
   }
 
-  String _bankDisplayName(String bankName) {
-    if (bankName.contains('신한')) return 'ShinhanCard';
-    return bankName.replaceAll('카드', '').trim();
+  String _cardTitle() {
+    return 'LG전자 The 구독케어 ${widget.card.bankName}';
   }
 
   String _maskedNumberFormatted() {
@@ -279,7 +324,11 @@ class _CardDetailPageState extends State<CardDetailPage> {
     return '${widget.card.maskedNumber} 본인';
   }
 
-  Widget _buildCircularBenefitProgress(BuildContext context) {
+  Widget _buildCircularBenefitProgress(
+    BuildContext context,
+    Color onSurface,
+    Color onSurfaceVariant,
+  ) {
     const totalBenefit = 33000;
     const receivedBenefit = 23000;
     final percent = (receivedBenefit / totalBenefit).clamp(0.0, 1.0);
@@ -289,104 +338,89 @@ class _CardDetailPageState extends State<CardDetailPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 링 크기: scale 0.5 → 0.7 (전반적인 크기 증가)
-        const scale = 0.7;
-        final ringSize = (math.min(maxFromWidth, constraints.maxHeight).clamp(200.0, 400.0)) * scale;
+        const scale = 0.6; // 링 0.6배에 맞춘 내부 비율
+        final ringSize =
+            (math
+                .min(maxFromWidth, constraints.maxHeight)
+                .clamp(260.0, 500.0)) *
+            scale;
         final stroke = (ringSize * 18 / 220).clamp(16.0 * scale, 32.0 * scale);
-        // 내부 텍스트 크기 조정 (이미지 기준으로 중앙 텍스트 블록 강조)
-        final fs1 = (ringSize * 10 / 220).clamp(10.0 * scale, 14.0 * scale); // "이번 달 총 혜택..."
-        final fs2 = (ringSize * 12 / 220).clamp(12.0 * scale, 16.0 * scale); // "내가 받은 혜택"
-        final fs3 = (ringSize * 32 / 220).clamp(32.0 * scale, 48.0 * scale); // "23,000원" - 이미지처럼 크게, 중앙에 꽉 차게
-        final fs4 = (ringSize * 11 / 220).clamp(11.0 * scale, 14.0 * scale); // % 달성 pill
-        final padH = (12.0 * scale).roundToDouble();
-        final padV = (5.0 * scale).roundToDouble();
-        // 내부 간격 조정
-        final gap1 = (6.0 * scale).roundToDouble(); // "이번 달 총 혜택" - 중앙 블록 사이
-        final gap2 = (10.0 * scale).roundToDouble(); // 중앙 블록 - "69.7% 달성" 사이
-        
-        return SizedBox(
-          width: ringSize,
-          height: ringSize,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CustomPaint(
-                size: Size(ringSize, ringSize),
-                painter: _CircleProgressPainter(
-                  percent: percent,
-                  trackColor: _trackColor,
-                  progressColor: _accentColor,
-                  strokeWidth: stroke,
+        final fs1 = (ringSize * 12 / 220).clamp(12.0 * scale, 16.0 * scale);
+        final fs2 = (ringSize * 13 / 220).clamp(13.0 * scale, 17.0 * scale);
+        final fs3 = (ringSize * 26 / 220).clamp(26.0 * scale, 36.0 * scale);
+        final fs4 = (ringSize * 13 / 220).clamp(
+          13.0 * scale,
+          16.0 * scale,
+        ); // % 달성 pill
+        final padH = (14.0 * scale).roundToDouble();
+        final padV = (6.0 * scale).roundToDouble();
+        final gap1 = (6.0 * scale).roundToDouble();
+        final gap2 = (12.0 * scale).roundToDouble();
+        return Center(
+          child: SizedBox(
+            width: ringSize,
+            height: ringSize,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: Size(ringSize, ringSize),
+                  painter: _CircleProgressPainter(
+                    percent: percent,
+                    trackColor: const Color(0xFF282828),
+                    progressColor: _accentColor,
+                    strokeWidth: stroke,
+                  ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 상단 텍스트
-                  Text(
-                    '이번 달 총 혜택 ${_formatWon(totalBenefit)}',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: fs1,
-                      color: _onSurfaceVariant,
-                      height: 1.2,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '이번 달 총 혜택 ${_formatWon(totalBenefit)}',
+                      style: TextStyle(fontSize: fs1, color: onSurfaceVariant),
                     ),
-                  ),
-                  SizedBox(height: gap1),
-                  
-                  // 중앙 텍스트 블록: "내가 받은 혜택" + "23,000원" 하나의 덩어리처럼
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '내가 받은 혜택',
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontSize: fs2,
-                          fontWeight: FontWeight.w600,
-                          color: _accentColor,
-                          height: 1.0, // line-height를 1.0으로 설정하여 밀착
-                        ),
-                      ),
-                      Text(
-                        _formatWon(receivedBenefit),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontSize: fs3,
-                          fontWeight: FontWeight.w800,
-                          color: _onSurface,
-                          height: 1.0, // line-height를 1.0으로 설정하여 밀착
-                          letterSpacing: -0.5, // 약간의 letter spacing으로 자연스러운 느낌
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  SizedBox(height: gap2),
-                  
-                  // 69.7% 달성 — 파란 알약
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
-                    decoration: BoxDecoration(
-                      color: _accentColor,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      '$percentText% 달성',
+                    SizedBox(height: gap1),
+                    Text(
+                      '내가 받은 혜택',
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: fs4,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1.0,
+                        fontSize: fs2,
+                        fontWeight: FontWeight.w600,
+                        color: _accentColor,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    SizedBox(height: gap1),
+                    Text(
+                      _formatWon(receivedBenefit),
+                      style: TextStyle(
+                        fontSize: fs3,
+                        fontWeight: FontWeight.w800,
+                        color: onSurface,
+                      ),
+                    ),
+                    SizedBox(height: gap2),
+                    // 69.7% 달성 — 파란 알약
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: padH,
+                        vertical: padV,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _accentColor,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text(
+                        '$percentText% 달성',
+                        style: TextStyle(
+                          fontSize: fs4,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -398,7 +432,9 @@ class _CardDetailPageState extends State<CardDetailPage> {
       width: 440,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       height: 74,
@@ -414,21 +450,65 @@ class _CardDetailPageState extends State<CardDetailPage> {
     );
   }
 
-  Widget _buildNavItem({required int index, required IconData icon, required String label}) {
-    return _NavItem(
-      index: index,
-      icon: icon,
-      label: label,
-      selected: _currentTabIndex == index,
-      onTap: () => _navigateToTab(index),
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required String label,
+  }) {
+    final bool selected = _currentTabIndex == index;
+    final color = selected
+        ? AppColors.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final iconSize = selected ? 26.0 : 22.0;
+    final selectedCircleSize = 36.0;
+    final labelFontSize = 11.0;
+    final spacing = 2.0;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _navigateToTab(index),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: spacing),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected)
+                Container(
+                  width: selectedCircleSize,
+                  height: selectedCircleSize,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: Colors.white, size: iconSize),
+                  ),
+                )
+              else
+                Icon(icon, color: color, size: iconSize),
+              SizedBox(height: spacing),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   void _navigateToTab(int index) {
+    if (index == 0 && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => MainNavigation(initialIndex: index),
-      ),
+      MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: index)),
       (route) => false,
     );
   }
@@ -673,16 +753,19 @@ class _CircleProgressPainter extends CustomPainter {
   final Color progressColor;
   final double strokeWidth;
 
-  _CircleProgressPainter({required this.percent, required this.trackColor, required this.progressColor, this.strokeWidth = 14.0});
+  _CircleProgressPainter({
+    required this.percent,
+    required this.trackColor,
+    required this.progressColor,
+    this.strokeWidth = 14.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    
-    // 스트로크 두께 증가: 기본값의 1.4배 (약 +40%)
-    // 조절 포인트: 1.3~1.5 사이에서 조절 가능
-    final baseStroke = strokeWidth * 1.4;
-    final radius = math.min(size.width, size.height) / 2 - (baseStroke / 2 + 4);
+    final radius =
+        math.min(size.width, size.height) / 2 - (strokeWidth / 2 + 4);
+    final stroke = strokeWidth;
     final rect = Rect.fromCircle(center: center, radius: radius);
     final startAngle = 5 * math.pi / 4; // 시작 각도 유지
     final sweep = 2 * math.pi * percent.clamp(0.0, 1.0);
@@ -759,114 +842,5 @@ class _CircleProgressPainter extends CustomPainter {
   bool shouldRepaint(covariant _CircleProgressPainter oldDelegate) =>
       oldDelegate.percent != percent ||
       oldDelegate.trackColor != trackColor ||
-      oldDelegate.progressColor != progressColor ||
-      oldDelegate.strokeWidth != strokeWidth;
-}
-
-/// 월 탭 아이템 위젯 (rebuild 최적화)
-class _MonthTabItem extends StatelessWidget {
-  final DateTime date;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _MonthTabItem({
-    required this.date,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            selected
-                ? Text(
-                    _CardDetailPageState._yearLabel(date),
-                    style: const TextStyle(fontFamily: 'Pretendard', fontSize: 10, fontWeight: FontWeight.w500, color: _onSurfaceVariant),
-                  )
-                : const SizedBox(height: 12),
-            const SizedBox(height: 1),
-            Text(
-              _CardDetailPageState._monthLabel(date),
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: selected ? _onSurface : _onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              height: 2,
-              width: 28,
-              decoration: BoxDecoration(
-                color: selected ? _accentColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 네비게이션 아이템 위젯 (rebuild 최적화)
-class _NavItem extends StatelessWidget {
-  final int index;
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.index,
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant;
-    const iconSize = 26.0;
-    const unselectedIconSize = 22.0;
-    const selectedCircleSize = 36.0;
-    const labelFontSize = 11.0;
-    const spacing = 2.0;
-
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: spacing),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected)
-                Container(
-                  width: selectedCircleSize,
-                  height: selectedCircleSize,
-                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                  child: Center(child: Icon(icon, color: Colors.white, size: iconSize)),
-                )
-              else
-                Icon(icon, color: color, size: unselectedIconSize),
-              const SizedBox(height: spacing),
-              Text(
-                label,
-                style: TextStyle(fontFamily: 'Pretendard', color: color, fontSize: labelFontSize, fontWeight: FontWeight.w400),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      oldDelegate.progressColor != progressColor;
 }
