@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:stacked_notification_cards/stacked_notification_cards.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/main_navigation.dart';
 import 'card_analysis_page.dart';
@@ -13,12 +14,19 @@ const Color _accentColor = Color(0xFF005FFF);
 const Color _onSurface = Colors.white;
 const Color _onSurfaceVariant = Colors.white70;
 const Color _backgroundColor = Color(0xFF1C1C1E);
-const Color _cardBackgroundColor = Color(0xFFE8E8E8);
-const Color _trackColor = Color(0xFF282828);
 
 // 스타일 상수
-const TextStyle _cardTitleStyle = TextStyle(fontFamily: 'Pretendard', fontSize: 16, fontWeight: FontWeight.w800, color: _onSurface);
-const TextStyle _cardNumberStyle = TextStyle(fontFamily: 'Pretendard', fontSize: 13, color: _onSurfaceVariant);
+const TextStyle _cardTitleStyle = TextStyle(
+  fontFamily: 'Pretendard',
+  fontSize: 16,
+  fontWeight: FontWeight.w800,
+  color: _onSurface,
+);
+const TextStyle _cardNumberStyle = TextStyle(
+  fontFamily: 'Pretendard',
+  fontSize: 13,
+  color: _onSurfaceVariant,
+);
 
 class CardDetailPage extends StatefulWidget {
   final WalletCard card;
@@ -35,19 +43,13 @@ class _CardDetailPageState extends State<CardDetailPage> {
   late final List<DateTime> _displayMonths;
   final ScrollController _monthScrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
-  
+
   // 캐싱된 값들
   late final String _cardTitle;
   late final String _maskedNumber;
-  late final String _bankDisplay;
-  
-  // 최근 소비 내역 더미 데이터
-  static const List<Map<String, dynamic>> _recentSpendingData = [
-    {'icon': Icons.shopping_cart, 'merchant': 'GS25', 'amount': 24300},
-    {'icon': Icons.local_cafe, 'merchant': '스타벅스', 'amount': 7500},
-    {'icon': Icons.directions_bus, 'merchant': '지하철 버스', 'amount': 4500},
-    {'icon': Icons.restaurant, 'merchant': '맘스터치', 'amount': 9600},
-  ];
+
+  // 최근 소비 내역 더미 데이터 (상태로 관리하여 삭제 가능하게)
+  List<Map<String, dynamic>> _recentSpendingData = [];
 
   /// 26년 1월을 기준으로, 25년 1월 ~ 26년 12월 (24개월). 진입 시 26년 1월 선택·노출.
   @override
@@ -59,13 +61,36 @@ class _CardDetailPageState extends State<CardDetailPage> {
     // 캐시된 값들 초기화
     _cardTitle = 'LG전자 The 구독케어 ${widget.card.bankName}';
     _maskedNumber = _maskedNumberFormatted();
-    _bankDisplay = _getBankDisplayName(widget.card.bankName);
+
+    // 최근 소비 내역 데이터 초기화
+    _recentSpendingData = [
+      {
+        'icon': Icons.shopping_cart,
+        'merchant': 'GS25',
+        'amount': 24300,
+        'date': DateTime.now().subtract(const Duration(days: 1)),
+      },
+      {
+        'icon': Icons.local_cafe,
+        'merchant': '스타벅스',
+        'amount': 7500,
+        'date': DateTime.now().subtract(const Duration(days: 2)),
+      },
+      {
+        'icon': Icons.directions_bus,
+        'merchant': '지하철 버스',
+        'amount': 4500,
+        'date': DateTime.now().subtract(const Duration(days: 3)),
+      },
+      {
+        'icon': Icons.restaurant,
+        'merchant': '맘스터치',
+        'amount': 9600,
+        'date': DateTime.now().subtract(const Duration(days: 5)),
+      },
+    ];
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToMonth(12));
-  }
-
-  String _getBankDisplayName(String bankName) {
-    return bankName;
   }
 
   @override
@@ -127,15 +152,9 @@ class _CardDetailPageState extends State<CardDetailPage> {
               const SizedBox(height: 4),
 
               // 카드 아래 텍스트
-              Text(
-                _cardTitle,
-                style: _cardTitleStyle,
-              ),
+              Text(_cardTitle, style: _cardTitleStyle),
               const SizedBox(height: 6),
-              Text(
-                _maskedNumber,
-                style: _cardNumberStyle,
-              ),
+              Text(_maskedNumber, style: _cardNumberStyle),
               SizedBox(height: (20 * 0.3).roundToDouble()),
 
               // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
@@ -219,7 +238,8 @@ class _CardDetailPageState extends State<CardDetailPage> {
     final screenW = MediaQuery.of(context).size.width;
     final cardWidth = (screenW * 0.58).clamp(165.0, 215.0);
     final baseColor = widget.card.color;
-    final imagePath = widget.card.imagePath ?? _assetCardImage(widget.card.bankName);
+    final imagePath =
+        widget.card.imagePath ?? _assetCardImage(widget.card.bankName);
     final rotateImage = _shouldRotateCardImage(widget.card.bankName);
     final imageScale = _cardImageScale(widget.card.bankName);
     final textColor = baseColor.computeLuminance() > 0.6
@@ -236,7 +256,12 @@ class _CardDetailPageState extends State<CardDetailPage> {
             borderRadius: BorderRadius.circular(12),
             child: imagePath == null
                 ? _buildCardFallback(textColor)
-                : _buildCardImage(imagePath, rotateImage, imageScale, textColor),
+                : _buildCardImage(
+                    imagePath,
+                    rotateImage,
+                    imageScale,
+                    textColor,
+                  ),
           ),
         ),
       ),
@@ -265,10 +290,7 @@ class _CardDetailPageState extends State<CardDetailPage> {
       if (imageScale == 1.0) return image;
       return ClipRect(
         child: Center(
-          child: Transform.scale(
-            scale: imageScale,
-            child: image,
-          ),
+          child: Transform.scale(scale: imageScale, child: image),
         ),
       );
     }
@@ -582,230 +604,251 @@ class _CardDetailPageState extends State<CardDetailPage> {
   }
 
   Widget _buildRecentSpendingHistory() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 섹션 제목
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Text(
-            '최근 소비 내역',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: _onSurface,
-            ),
-          ),
-        ),
-        
-        // 항상 리스트로 표시 (스택 애니메이션 제거)
-        _buildListView(),
-      ],
-    );
-  }
+    final notifications = _recentSpendingData.map((data) {
+      return NotificationCard(
+        date: data['date'] as DateTime,
+        title: data['merchant'] as String,
+        subtitle: '${_formatWon(data['amount'] as int)} • ${_formatDate(data['date'] as DateTime)}',
+        leading: _buildSpendingLeading(data['icon'] as IconData),
+      );
+    }).toList();
 
-  Widget _buildStackedView(double t) {
-    const stackOffsetStep = 16.0;
-    const initialScaleStep = 0.02;
-    const initialOpacityStep = 0.05; // opacity 감소 폭 줄임 (더 선명하게)
-    const maxBlur = 3.0;
-    const minBackgroundOpacity = 0.85; // 배경 opacity 최소값 강제
-    
-    return SizedBox(
-      height: 280, // 스택 높이 고정
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: List.generate(_recentSpendingData.length, (index) {
-          // 보간: t가 1에 가까울수록 스택 효과 감소
-          final yOffset = stackOffsetStep * index * (1 - t);
-          final scale = 1.0 - (initialScaleStep * index * (1 - t));
-          
-          // 배경 opacity: 첫 번째 카드는 1.0, 뒤로 갈수록 약간만 감소 (최소 0.85 이상)
-          final baseBackgroundOpacity = index == 0 
-              ? 1.0 
-              : (1.0 - (initialOpacityStep * index)).clamp(minBackgroundOpacity, 1.0);
-          // 스크롤 시 opacity 1.0으로 수렴, t=0일 때도 최소값 보장
-          final backgroundOpacity = (baseBackgroundOpacity * (1 - t) + 1.0 * t).clamp(minBackgroundOpacity, 1.0);
-          
-          // blur: 첫 번째 카드는 0, 나머지는 단계적으로 (배경에만 적용)
-          final baseBlur = index == 0 
-              ? 0.0 
-              : (maxBlur * (index - 1) / 2.0).clamp(0.0, maxBlur);
-          final blur = baseBlur * (1 - t); // 스크롤 시 blur 0으로 수렴
-          
-          return Positioned(
-            top: yOffset,
-            left: 24,
-            right: 24,
-            child: Transform.scale(
-              scale: scale.clamp(0.85, 1.0),
-              alignment: Alignment.topCenter,
-              // 전체 카드에 Opacity 적용하지 않고, 배경에만 opacity 적용
-              child: _buildSpendingCardWithBlurredBackground(
-                _recentSpendingData[index],
-                index,
-                blur,
-                backgroundOpacity, // 배경 opacity 전달
-              ),
-            ),
-          );
-        }),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: StackedNotificationCards(
+        notificationCards: notifications,
+        notificationCardTitle: '최근 소비 내역',
+        cardColor: const Color(0xFF2C2C2E),
+        padding: 0,
+        cardsSpacing: 12,
+        cardCornerRadius: 12,
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: _onSurface,
+        ),
+        subtitleTextStyle: const TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: _onSurfaceVariant,
+        ),
+        boxShadow: const [],
+        actionTitle: const SizedBox.shrink(),
+        showLessAction: const SizedBox.shrink(),
+        clearAllNotificationsAction: const SizedBox.shrink(),
+        clearAllStacked: const SizedBox.shrink(),
+        cardClearButton: _buildSlideAction(
+          label: '삭제',
+          icon: Icons.delete,
+        ),
+        cardViewButton: _buildSlideAction(
+          label: '상세 보기',
+          icon: Icons.visibility,
+        ),
+        onTapClearAll: () {},
+        onTapClearCallback: (index) {
+          setState(() {
+            if (index >= 0 && index < _recentSpendingData.length) {
+              _recentSpendingData.removeAt(index);
+            }
+          });
+        },
+        onTapViewCallback: (index) {
+          if (index >= 0 && index < _recentSpendingData.length) {
+            final data = _recentSpendingData[index];
+            _showSpendingDetail(data);
+          }
+        },
       ),
     );
   }
 
-  /// 배경만 blur 처리하고 텍스트/아이콘은 선명하게 유지하는 카드
-  /// 배경 opacity는 전달받아 적용하고, 텍스트/아이콘은 항상 opacity 1.0
-  Widget _buildSpendingCardWithBlurredBackground(
-    Map<String, dynamic> data,
-    int index,
-    double blur,
-    double backgroundOpacity,
-  ) {
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+
+    if (difference == 0) {
+      return '오늘';
+    } else if (difference == 1) {
+      return '어제';
+    } else if (difference < 7) {
+      return '$difference일 전';
+    } else {
+      return '${date.month}/${date.day}';
+    }
+  }
+
+  Widget _buildSpendingLeading(IconData icon) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3A3A3C),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Icon(icon, color: Colors.white70, size: 18),
+    );
+  }
+
+  Widget _buildSlideAction({
+    required String label,
+    required IconData icon,
+  }) {
+    const actionColor = Color(0xFF3A3A3C);
+    return Container(
+      color: _backgroundColor, // 버튼 사이 간격을 배경색으로 분리
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      alignment: Alignment.center,
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: actionColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Pretendard',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSpendingDetail(Map<String, dynamic> data) {
     final icon = data['icon'] as IconData;
     final merchant = data['merchant'] as String;
     final amount = data['amount'] as int;
+    final date = data['date'] as DateTime;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Stack(
-        children: [
-          // 배경만 blur 처리 및 opacity 적용 (blur가 0이면 일반 Container)
-          // ImageFiltered는 child를 blur하므로, 빈 배경 Container만 blur 처리
-          if (blur > 0.3)
-            Opacity(
-              opacity: backgroundOpacity,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                child: Container(
-                  color: const Color(0xFF2C2C2E),
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-              ),
-            )
-          else
-            Opacity(
-              opacity: backgroundOpacity,
-              child: Container(
-                color: const Color(0xFF2C2C2E),
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-          // 텍스트/아이콘 콘텐츠 (blur 밖에서 렌더링, 항상 선명, opacity 1.0 고정)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                // 아이콘
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3A3A3C),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(icon, color: _onSurface, size: 20),
-                ),
-                const SizedBox(width: 16),
-                // 상점명
-                Expanded(
-                  child: Text(
-                    merchant,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: _onSurface,
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _buildSpendingLeading(icon),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          merchant,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: _onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(date),
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 14,
+                            color: _onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                // 금액
-                Text(
-                  _formatWon(amount),
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _onSurface,
+                  IconButton(
+                    icon: const Icon(Icons.close, color: _onSurfaceVariant),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C2C2E),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '결제 금액',
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 16,
+                        color: _onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      _formatWon(amount),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: _onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C2C2E),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '결제 일시',
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 16,
+                        color: _onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListView() {
-    return Column(
-      children: List.generate(
-        _recentSpendingData.length,
-        (index) => Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            bottom: index < _recentSpendingData.length - 1 ? 12 : 0,
-          ),
-          child: _buildSpendingCard(_recentSpendingData[index], index),
         ),
       ),
     );
   }
 
-  Widget _buildSpendingCard(Map<String, dynamic> data, int index) {
-    final icon = data['icon'] as IconData;
-    final merchant = data['merchant'] as String;
-    final amount = data['amount'] as int;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2E),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          // 아이콘
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3A3A3C),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(icon, color: _onSurface, size: 20),
-          ),
-          const SizedBox(width: 16),
-          // 상점명
-          Expanded(
-            child: Text(
-              merchant,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _onSurface,
-              ),
-            ),
-          ),
-          // 금액
-          Text(
-            _formatWon(amount),
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: _onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// 원형 혜택 진행률 (이번 달 총 혜택 / 내가 받은 혜택)
@@ -827,7 +870,6 @@ class _CircleProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius =
         math.min(size.width, size.height) / 2 - (strokeWidth / 2 + 4);
-    final stroke = strokeWidth;
     final rect = Rect.fromCircle(center: center, radius: radius);
     final startAngle = 5 * math.pi / 4; // 시작 각도 유지
     final sweep = 2 * math.pi * percent.clamp(0.0, 1.0);
@@ -858,22 +900,34 @@ class _CircleProgressPainter extends CustomPainter {
       // 레이어 1: 가장 아래, 가장 두껍고 blur 강함 (외곽 글로우)
       // 조절 포인트: strokeWidth 배수 1.5~2.0, sigma 8~12, opacity 0.15~0.25
       final outerGlowPaint = Paint()
-        ..color = progressColor.withOpacity(0.15) // 조절 포인트: opacity (번짐 줄임)
+        ..color = progressColor
+            .withOpacity(0.15) // 조절 포인트: opacity (번짐 줄임)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth * 1.6 // 조절 포인트: 두께 배수 (번짐 줄임)
+        ..strokeWidth =
+            strokeWidth *
+            1.6 // 조절 포인트: 두께 배수 (번짐 줄임)
         ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7); // 조절 포인트: sigma 값 (번짐 줄임: 10→7)
+        ..maskFilter = const MaskFilter.blur(
+          BlurStyle.normal,
+          7,
+        ); // 조절 포인트: sigma 값 (번짐 줄임: 10→7)
 
       canvas.drawArc(rect, startAngle, sweep, false, outerGlowPaint);
 
       // 레이어 2: 중간, 중간 두께와 blur (중간 글로우)
       // 조절 포인트: strokeWidth 배수 1.2~1.4, sigma 5~8, opacity 0.3~0.4
       final middleGlowPaint = Paint()
-        ..color = progressColor.withOpacity(0.3) // 조절 포인트: opacity (번짐 줄임)
+        ..color = progressColor
+            .withOpacity(0.3) // 조절 포인트: opacity (번짐 줄임)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth * 1.25 // 조절 포인트: 두께 배수 (번짐 줄임)
+        ..strokeWidth =
+            strokeWidth *
+            1.25 // 조절 포인트: 두께 배수 (번짐 줄임)
         ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4); // 조절 포인트: sigma 값 (번짐 줄임: 6→4)
+        ..maskFilter = const MaskFilter.blur(
+          BlurStyle.normal,
+          4,
+        ); // 조절 포인트: sigma 값 (번짐 줄임: 6→4)
 
       canvas.drawArc(rect, startAngle, sweep, false, middleGlowPaint);
 

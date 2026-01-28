@@ -147,6 +147,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_slidable:
+    dependency: transitive
+    description:
+      name: flutter_slidable
+      sha256: a857de7ea701f276fd6a6c4c67ae885b60729a3449e42766bb0e655171042801
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.2"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -418,6 +426,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.1"
+  stacked_notification_cards:
+    dependency: "direct main"
+    description:
+      name: stacked_notification_cards
+      sha256: "4e9c0a4c161dde5c39950a9c904034795a1b7b2f78fd2aff173e3770dab7facc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0-dev.6"
   stream_channel:
     dependency: transitive
     description:
