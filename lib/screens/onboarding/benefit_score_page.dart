@@ -535,18 +535,33 @@ class CardWalletSection extends StatefulWidget {
   State<CardWalletSection> createState() => _CardWalletSectionState();
 }
 
-class _CardWalletSectionState extends State<CardWalletSection> {
+class _CardWalletSectionState extends State<CardWalletSection>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  bool _isGridView = false; // 그리드 뷰 토글
+  bool _isGridView = false;
   List<UserCardInfo> _cards = [];
   bool _isLoading = true;
   String? _error;
-  int? _hoveredOrTouchedBackIndex; // 뒤 카드 터치/호버 시 펼쳐 보일 인덱스
+
+  // 스와이프 애니메이션을 위한 컨트롤러
+  late AnimationController _animationController;
+  double _dragOffset = 0.0; // 현재 드래그 오프셋 (픽셀)
+  double _dragVelocity = 0.0; // 드래그 속도
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
     _loadCards();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCards() async {
@@ -574,23 +589,92 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     }
   }
 
-  void _goToPrevious() {
-    if (_currentIndex > 0) {
+  // 부드러운 스프링 효과 애니메이션 실행
+  void _runSpringAnimation(double targetOffset) {
+    final startOffset = _dragOffset;
+    
+    // Tween 기반 애니메이션 (부드러운 감속)
+    final Animation<double> animation = Tween<double>(
+      begin: startOffset,
+      end: targetOffset,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      // 더 부드러운 커브 사용
+      curve: Curves.easeOutExpo,
+    ));
+
+    void listener() {
+      if (!mounted) return;
       setState(() {
-        _hoveredOrTouchedBackIndex = null;
-        _currentIndex--;
+        _dragOffset = animation.value;
       });
+    }
+
+    void statusListener(AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        _animationController.removeListener(listener);
+        _animationController.removeStatusListener(statusListener);
+        if (!mounted) return;
+        setState(() {
+          _dragOffset = 0.0;
+        });
+      }
+    }
+
+    _animationController.removeStatusListener(statusListener);
+    _animationController.removeListener(listener);
+    _animationController.addListener(listener);
+    _animationController.addStatusListener(statusListener);
+    
+    // 애니메이션 실행 (더 긴 duration으로 부드럽게)
+    _animationController.reset();
+    _animationController.duration = const Duration(milliseconds: 600);
+    _animationController.forward();
+  }
+
+  // 드래그 종료 시 다음/이전 카드로 스냅
+  void _onDragEnd(double velocity, double cardWidth) {
+    _dragVelocity = velocity;
+    final threshold = cardWidth * 0.25; // 25% 이상 드래그하면 다음 카드로
+
+    if (_dragOffset < -threshold || velocity < -500) {
+      // 오른쪽에서 왼쪽으로 스와이프 → 다음 카드
+      if (_currentIndex < _cards.length - 1) {
+        setState(() {
+          _currentIndex++;
+        });
+        _runSpringAnimation(0);
+      } else {
+        // 마지막 카드면 원래 위치로
+        _runSpringAnimation(0);
+      }
+    } else if (_dragOffset > threshold || velocity > 500) {
+      // 왼쪽에서 오른쪽으로 스와이프 → 이전 카드
+      if (_currentIndex > 0) {
+        setState(() {
+          _currentIndex--;
+        });
+        _runSpringAnimation(0);
+      } else {
+        // 첫 번째 카드면 원래 위치로
+        _runSpringAnimation(0);
+      }
+    } else {
+      // 임계값 미달 → 원래 위치로 복귀
+      _runSpringAnimation(0);
     }
   }
 
-  void _goToNext() {
-    if (_currentIndex < _cards.length - 1) {
-      setState(() {
-        _hoveredOrTouchedBackIndex = null;
-        _currentIndex++;
-      });
-    }
+  // 인디케이터 탭 시 해당 인덱스로 스무스하게 이동
+  void _animateToIndex(int targetIndex) {
+    if (targetIndex == _currentIndex) return;
+    
+    setState(() {
+      _currentIndex = targetIndex;
+      _dragOffset = 0;
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -640,10 +724,8 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                         _cards.length,
                         (index) => GestureDetector(
                           onTap: () {
-                            setState(() {
-                              _hoveredOrTouchedBackIndex = null;
-                              _currentIndex = index;
-                            });
+                            // 해당 인덱스로 스무스하게 이동
+                            _animateToIndex(index);
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
@@ -764,16 +846,19 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     );
   }
 
-  // 스택 뷰 (겹쳐진 카드)
+  // 스택 뷰 (겹쳐진 카드 + 스프링 물리 애니메이션)
   Widget _buildStackView() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const bottomReserve = 8.0; // 카드 세로 여유 확보(회사명·끝4자리 활짝 보이게)
+        const bottomReserve = 8.0;
         final availableHeight = (constraints.maxHeight - bottomReserve).clamp(0.0, double.infinity);
         final screenWidth = MediaQuery.of(context).size.width;
         final cardWidth = screenWidth - 80;
         final fullCardHeight = cardWidth * 1.4;
         final visibleHeight = math.min(availableHeight, fullCardHeight);
+
+        // 드래그 진행률 (-1 ~ 1 사이, -1은 완전히 왼쪽, 1은 완전히 오른쪽)
+        final dragProgress = (_dragOffset / cardWidth).clamp(-1.0, 1.0);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -781,171 +866,231 @@ class _CardWalletSectionState extends State<CardWalletSection> {
             SizedBox(
               height: availableHeight,
               child: GestureDetector(
-          onTapUp: (details) {
-            final tapX = details.localPosition.dx;
-            // 뒤 카드 펼친 상태에서 탭 시 펼침만 해제
-            if (_hoveredOrTouchedBackIndex != null) {
-              setState(() => _hoveredOrTouchedBackIndex = null);
-              return;
-            }
-            // 뒤 카드 터치 영역(우측)에서는 카드 전환하지 않음
-            if (tapX >= 24 + cardWidth - 56) return;
-            if (tapX < screenWidth / 3) {
-              _goToPrevious();
-            } else {
-              _goToNext();
-            }
-          },
-          onHorizontalDragEnd: (details) {
-            if (details.primaryVelocity != null) {
-              if (details.primaryVelocity! > 0) {
-                _goToPrevious();
-              } else if (details.primaryVelocity! < 0) {
-                _goToNext();
-              }
-            }
-          },
-          child: ClipRect(
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                for (int i = _cards.length - 1; i >= 0; i--)
-                  if (i != _currentIndex)
-                    Positioned(
-                      left: 24 + (i - _currentIndex).abs() * 8.0,
-                      top: 0,
-                      child: Transform.translate(
-                        offset: Offset(
-                          i > _currentIndex ? (i - _currentIndex) * 12.0 : 0,
-                          0,
-                        ),
-                        child: Opacity(
-                          opacity: (_hoveredOrTouchedBackIndex == i)
-                              ? 0.0
-                              : (i > _currentIndex ? 0.7 : 0.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              if (_hoveredOrTouchedBackIndex == i) {
-                                setState(() => _hoveredOrTouchedBackIndex = null);
-                              }
-                            },
-                            behavior: HitTestBehavior.deferToChild,
-                            child: SizedBox(
-                              width: cardWidth,
-                              height: visibleHeight,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: OverflowBox(
-                                  alignment: Alignment.topCenter,
-                                  maxHeight: fullCardHeight,
-                                  child: _buildVerticalCreditCard(
-                                    context,
-                                    _cards[i],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                onHorizontalDragStart: (_) {
+                  _animationController.stop();
+                },
+                onHorizontalDragUpdate: (details) {
+                  setState(() {
+                    _dragOffset += details.delta.dx;
+                    // 첫 번째/마지막 카드에서 저항감 추가
+                    if ((_currentIndex == 0 && _dragOffset > 0) ||
+                        (_currentIndex == _cards.length - 1 && _dragOffset < 0)) {
+                      _dragOffset *= 0.3; // 저항감
+                    }
+                  });
+                },
+                onHorizontalDragEnd: (details) {
+                  _onDragEnd(details.primaryVelocity ?? 0, cardWidth);
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // 뒤에 있는 카드들 (최대 2장만 표시)
+                    for (int i = math.min(_currentIndex + 2, _cards.length - 1);
+                        i > _currentIndex;
+                        i--)
+                      _buildStackedCard(
+                        context: context,
+                        index: i,
+                        cardWidth: cardWidth,
+                        visibleHeight: visibleHeight,
+                        fullCardHeight: fullCardHeight,
+                        dragProgress: dragProgress,
+                        stackPosition: i - _currentIndex,
                       ),
-                  ),
-              Positioned(
-                left: 24,
-                top: 0,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                  child: SizedBox(
-                    key: ValueKey<int>(_currentIndex),
-                    width: cardWidth,
-                    height: visibleHeight,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: OverflowBox(
-                        alignment: Alignment.topCenter,
-                        maxHeight: fullCardHeight,
-                        child: _buildVerticalCreditCard(
-                          context,
-                          _cards[_currentIndex],
-                        ),
+                    
+                    // 이전 카드 (왼쪽으로 스와이프 시 보임)
+                    if (_currentIndex > 0 && dragProgress > 0)
+                      _buildPreviousCard(
+                        context: context,
+                        cardWidth: cardWidth,
+                        visibleHeight: visibleHeight,
+                        fullCardHeight: fullCardHeight,
+                        dragProgress: dragProgress,
                       ),
+                    
+                    // 현재 카드 (가장 앞)
+                    _buildCurrentCard(
+                      context: context,
+                      cardWidth: cardWidth,
+                      visibleHeight: visibleHeight,
+                      fullCardHeight: fullCardHeight,
+                      dragProgress: dragProgress,
                     ),
-                  ),
+                  ],
                 ),
               ),
-              // 뒤 카드 터치/호버 영역: 닿으면 다음 카드(회사명·끝4자리)가 더 보이게
-              if (_cards.isNotEmpty && _currentIndex + 1 < _cards.length)
-                Positioned(
-                  left: 24 + cardWidth - 56,
-                  top: 0,
-                  child: SizedBox(
-                    width: 56,
-                    height: availableHeight,
-                    child: MouseRegion(
-                      onEnter: (_) => setState(
-                          () => _hoveredOrTouchedBackIndex = _currentIndex + 1),
-                      onExit: (_) =>
-                          setState(() => _hoveredOrTouchedBackIndex = null),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (_) => setState(
-                            () => _hoveredOrTouchedBackIndex = _currentIndex + 1),
-                        onTapUp: (_) =>
-                            setState(() => _hoveredOrTouchedBackIndex = null),
-                        onTapCancel: () =>
-                            setState(() => _hoveredOrTouchedBackIndex = null),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
-                ),
-              // 뒤 카드 펼침 시: 해당 카드를 앞으로 가져와 회사명·끝4자리 활짝 보이게
-              if (_hoveredOrTouchedBackIndex != null &&
-                  _hoveredOrTouchedBackIndex! < _cards.length)
-                Positioned(
-                  left: 24,
-                  top: 0,
-                  child: MouseRegion(
-                    onExit: (_) =>
-                        setState(() => _hoveredOrTouchedBackIndex = null),
-                    child: GestureDetector(
-                      onTapUp: (_) =>
-                          setState(() => _hoveredOrTouchedBackIndex = null),
-                      onTapCancel: () =>
-                          setState(() => _hoveredOrTouchedBackIndex = null),
-                      behavior: HitTestBehavior.opaque,
-                      child: SizedBox(
-                        width: cardWidth,
-                        height: visibleHeight,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: OverflowBox(
-                            alignment: Alignment.topCenter,
-                            maxHeight: fullCardHeight,
-                            child: _buildVerticalCreditCard(
-                              context,
-                              _cards[_hoveredOrTouchedBackIndex!],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
             ),
             SizedBox(height: bottomReserve),
           ],
         );
       },
+    );
+  }
+
+  // 현재 카드 (가장 앞에 있는 카드)
+  Widget _buildCurrentCard({
+    required BuildContext context,
+    required double cardWidth,
+    required double visibleHeight,
+    required double fullCardHeight,
+    required double dragProgress,
+  }) {
+    // 드래그에 따른 X 이동
+    final translateX = _dragOffset;
+    // 드래그에 따른 회전 (최대 15도)
+    final rotation = dragProgress * 0.15;
+    // 드래그 시 약간 위로 올라가는 효과
+    final translateY = -dragProgress.abs() * 20;
+
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.001) // 원근감
+        ..translate(translateX, translateY)
+        ..rotateZ(rotation),
+      child: Container(
+        width: cardWidth,
+        height: visibleHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: OverflowBox(
+            alignment: Alignment.topCenter,
+            maxHeight: fullCardHeight,
+            child: _buildVerticalCreditCard(
+              context,
+              _cards[_currentIndex],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 뒤에 겹쳐진 카드들
+  Widget _buildStackedCard({
+    required BuildContext context,
+    required int index,
+    required double cardWidth,
+    required double visibleHeight,
+    required double fullCardHeight,
+    required double dragProgress,
+    required int stackPosition,
+  }) {
+    // 스택 위치에 따른 오프셋 (오른쪽으로 살짝씩 밀림)
+    final baseOffsetX = stackPosition * 15.0;
+    // 스택 위치에 따른 스케일 (뒤로 갈수록 작아짐)
+    final baseScale = 1.0 - (stackPosition * 0.05);
+    // 스택 위치에 따른 투명도
+    final baseOpacity = 1.0 - (stackPosition * 0.2);
+    
+    // 드래그 시 다음 카드가 앞으로 나오는 효과
+    final dragEffect = (-dragProgress).clamp(0.0, 1.0);
+    final scale = baseScale + (dragEffect * 0.05 * (stackPosition == 1 ? 1 : 0.5));
+    final offsetX = baseOffsetX - (dragEffect * baseOffsetX * (stackPosition == 1 ? 1 : 0.5));
+    final opacity = (baseOpacity + (dragEffect * 0.2)).clamp(0.0, 1.0);
+
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.001)
+        ..translate(offsetX, 0.0)
+        ..scale(scale),
+      child: Opacity(
+        opacity: opacity,
+        child: Container(
+          width: cardWidth,
+          height: visibleHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              maxHeight: fullCardHeight,
+              child: _buildVerticalCreditCard(
+                context,
+                _cards[index],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 이전 카드 (왼쪽에서 나타남)
+  Widget _buildPreviousCard({
+    required BuildContext context,
+    required double cardWidth,
+    required double visibleHeight,
+    required double fullCardHeight,
+    required double dragProgress,
+  }) {
+    // 오른쪽으로 드래그할 때만 보임
+    final appearProgress = dragProgress.clamp(0.0, 1.0);
+    // 왼쪽에서 들어오는 효과
+    final translateX = -cardWidth * (1 - appearProgress * 0.8);
+    // 들어오면서 스케일 증가
+    final scale = 0.9 + (appearProgress * 0.1);
+    // 회전 효과
+    final rotation = -0.15 * (1 - appearProgress);
+
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.001)
+        ..translate(translateX, 0.0)
+        ..scale(scale)
+        ..rotateZ(rotation),
+      child: Opacity(
+        opacity: appearProgress,
+        child: Container(
+          width: cardWidth,
+          height: visibleHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              maxHeight: fullCardHeight,
+              child: _buildVerticalCreditCard(
+                context,
+                _cards[_currentIndex - 1],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
