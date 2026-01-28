@@ -183,6 +183,7 @@ class _CardDetailPageState extends State<CardDetailPage> {
     final baseColor = widget.card.color;
     final imagePath = widget.card.imagePath ?? _assetCardImage(widget.card.bankName);
     final rotateImage = _shouldRotateCardImage(widget.card.bankName);
+    final imageScale = _cardImageScale(widget.card.bankName);
     final textColor = baseColor.computeLuminance() > 0.6
         ? const Color(0xFF1F2937)
         : Colors.white;
@@ -197,14 +198,19 @@ class _CardDetailPageState extends State<CardDetailPage> {
             borderRadius: BorderRadius.circular(12),
             child: imagePath == null
                 ? _buildCardFallback(textColor)
-                : _buildCardImage(imagePath, rotateImage, textColor),
+                : _buildCardImage(imagePath, rotateImage, imageScale, textColor),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCardImage(String imagePath, bool rotateImage, Color textColor) {
+  Widget _buildCardImage(
+    String imagePath,
+    bool rotateImage,
+    double imageScale,
+    Color textColor,
+  ) {
     final image = imagePath.startsWith('http')
         ? Image.network(
             imagePath,
@@ -217,7 +223,17 @@ class _CardDetailPageState extends State<CardDetailPage> {
             errorBuilder: (c, e, s) => _buildCardFallback(textColor),
           );
 
-    if (!rotateImage) return image;
+    if (!rotateImage) {
+      if (imageScale == 1.0) return image;
+      return ClipRect(
+        child: Center(
+          child: Transform.scale(
+            scale: imageScale,
+            child: image,
+          ),
+        ),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         return ClipRect(
@@ -225,10 +241,13 @@ class _CardDetailPageState extends State<CardDetailPage> {
             fit: BoxFit.cover,
             child: Transform.rotate(
               angle: -math.pi / 2,
-              child: SizedBox(
-                width: constraints.maxHeight,
-                height: constraints.maxWidth,
-                child: image,
+              child: Transform.scale(
+                scale: imageScale,
+                child: SizedBox(
+                  width: constraints.maxHeight,
+                  height: constraints.maxWidth,
+                  child: image,
+                ),
               ),
             ),
           ),
@@ -312,6 +331,13 @@ class _CardDetailPageState extends State<CardDetailPage> {
 
   bool _shouldRotateCardImage(String company) {
     return company.contains('삼성') || company.toLowerCase().contains('samsung');
+  }
+
+  double _cardImageScale(String company) {
+    if (company.contains('삼성') || company.toLowerCase().contains('samsung')) {
+      return 1.2;
+    }
+    return 1.0;
   }
 
   String _cardTitle() {
