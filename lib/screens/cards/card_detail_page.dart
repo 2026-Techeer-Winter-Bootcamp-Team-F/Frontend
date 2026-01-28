@@ -181,6 +181,9 @@ class _CardDetailPageState extends State<CardDetailPage> {
     final screenW = MediaQuery.of(context).size.width;
     final cardWidth = (screenW * 0.58).clamp(165.0, 215.0);
     final baseColor = widget.card.color;
+    final imagePath = widget.card.imagePath ?? _assetCardImage(widget.card.bankName);
+    final rotateImage = _shouldRotateCardImage(widget.card.bankName);
+    final imageScale = _cardImageScale(widget.card.bankName);
     final textColor = baseColor.computeLuminance() > 0.6
         ? const Color(0xFF1F2937)
         : Colors.white;
@@ -191,90 +194,150 @@ class _CardDetailPageState extends State<CardDetailPage> {
         width: cardWidth,
         child: AspectRatio(
           aspectRatio: aspectRatio,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  baseColor,
-                  Color.lerp(baseColor, Colors.black, 0.18) ?? baseColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: baseColor.withOpacity(0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // 워터마크 "subscribe" (중앙, 흐릿한 회색)
-                Center(
-                  child: Opacity(
-                    opacity: 0.12,
-                    child: Text(
-                      'subscribe',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w300,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                ),
-                // 좌측 상단: LG전자(위) + The 구독케어(아래) 세로 배치
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'LG전자',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'The 구독케어',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: textColor.withOpacity(0.85),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 좌측: 화살표 아이콘 + ShinhanCard 세로
-                // 좌측 중앙: EMV 칩
-                Positioned(
-                  left: 12,
-                  bottom: 32,
-                  child: Container(
-                    width: 28,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: imagePath == null
+                ? _buildCardFallback(textColor)
+                : _buildCardImage(imagePath, rotateImage, imageScale, textColor),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildCardImage(
+    String imagePath,
+    bool rotateImage,
+    double imageScale,
+    Color textColor,
+  ) {
+    final image = imagePath.startsWith('http')
+        ? Image.network(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (c, e, s) => _buildCardFallback(textColor),
+          )
+        : Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (c, e, s) => _buildCardFallback(textColor),
+          );
+
+    if (!rotateImage) {
+      if (imageScale == 1.0) return image;
+      return ClipRect(
+        child: Center(
+          child: Transform.scale(
+            scale: imageScale,
+            child: image,
+          ),
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ClipRect(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: Transform.rotate(
+              angle: -math.pi / 2,
+              child: Transform.scale(
+                scale: imageScale,
+                child: SizedBox(
+                  width: constraints.maxHeight,
+                  height: constraints.maxWidth,
+                  child: image,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCardFallback(Color textColor) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // 워터마크 "subscribe" (중앙, 흐릿한 회색)
+        Center(
+          child: Opacity(
+            opacity: 0.12,
+            child: Text(
+              'subscribe',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w300,
+                color: textColor,
+              ),
+            ),
+          ),
+        ),
+        // 좌측 상단: LG전자(위) + The 구독케어(아래) 세로 배치
+        Positioned(
+          left: 12,
+          top: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'LG전자',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'The 구독케어',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: textColor.withOpacity(0.85),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 좌측 중앙: EMV 칩
+        Positioned(
+          left: 12,
+          bottom: 32,
+          child: Container(
+            width: 28,
+            height: 22,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD4AF37),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String? _assetCardImage(String company) {
+    if (company.contains('삼성') || company.toLowerCase().contains('samsung')) {
+      return 'assets/images/samsung_select_all_card.png';
+    }
+    if (company.contains('신한') || company.toLowerCase().contains('shinhan')) {
+      return 'assets/images/sinhan_mr_life.png';
+    }
+    return null;
+  }
+
+  bool _shouldRotateCardImage(String company) {
+    return company.contains('삼성') || company.toLowerCase().contains('samsung');
+  }
+
+  double _cardImageScale(String company) {
+    if (company.contains('삼성') || company.toLowerCase().contains('samsung')) {
+      return 1.2;
+    }
+    return 1.0;
   }
 
   String _cardTitle() {

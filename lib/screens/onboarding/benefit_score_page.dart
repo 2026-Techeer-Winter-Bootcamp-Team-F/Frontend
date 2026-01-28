@@ -730,12 +730,15 @@ class _CardWalletSectionState extends State<CardWalletSection> {
 
   WalletCard _toWalletCard(UserCardInfo card) {
     final style = _getCardStyle(card.company);
+    final assetImage = _assetCardImage(card.company);
     return WalletCard(
       color: style.baseColor,
       label: card.cardName,
       bankName: card.company,
       maskedNumber: card.cardNumber,
-      imagePath: card.cardImageUrl.isNotEmpty ? card.cardImageUrl : null,
+      imagePath:
+          assetImage ??
+          (card.cardImageUrl.isNotEmpty ? card.cardImageUrl : null),
     );
   }
 
@@ -746,6 +749,11 @@ class _CardWalletSectionState extends State<CardWalletSection> {
     double horizontalOffset,
   ) {
     final style = _getCardStyle(card.company);
+    final imagePath =
+        _assetCardImage(card.company) ??
+        (card.cardImageUrl.isNotEmpty ? card.cardImageUrl : null);
+    final rotateImage = _shouldRotateCardImage(card.company);
+    final imageScale = _cardImageScale(card.company);
 
     return GestureDetector(
       onTap: () {
@@ -776,75 +784,149 @@ class _CardWalletSectionState extends State<CardWalletSection> {
           ),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: style.gradientColors,
-          ),
-          border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: style.baseColor.withOpacity(0.35),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: imagePath == null
+            ? Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: style.gradientColors,
+                  ),
+                ),
+                child: _buildFallbackCard(style, card),
+              )
+            : _buildImageCard(imagePath, style, card, rotateImage, imageScale),
+      ),
+    );
+  }
+
+  Widget _buildImageCard(
+    String imagePath,
+    _CardStyle style,
+    UserCardInfo card,
+    bool rotateImage,
+    double imageScale,
+  ) {
+    if (imagePath.startsWith('http')) {
+      final image = Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (c, e, s) => _buildFallbackCard(style, card),
+      );
+      return _wrapCardImage(image, rotateImage, imageScale);
+    }
+    final image = Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      errorBuilder: (c, e, s) => _buildFallbackCard(style, card),
+    );
+    return _wrapCardImage(image, rotateImage, imageScale);
+  }
+
+  Widget _wrapCardImage(Widget image, bool rotateImage, double imageScale) {
+    if (!rotateImage) {
+      if (imageScale == 1.0) return image;
+      return ClipRect(
+        child: Center(
+          child: Transform.scale(scale: imageScale, child: image),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            children: [
-              // 워터마크 텍스트
-              Center(
-                child: Text(
-                  'subscribe',
-                  style: TextStyle(
-                    color: style.textColor.withOpacity(0.08),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ClipRect(
+          child: Center(
+            child: Transform.rotate(
+              angle: -math.pi / 2,
+              child: Transform.scale(
+                scale: imageScale,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: constraints.maxHeight,
+                    height: constraints.maxWidth,
+                    child: image,
                   ),
                 ),
               ),
-              // 카드 내용
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      card.company,
-                      style: TextStyle(
-                        color: style.textColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      card.cardName,
-                      style: TextStyle(
-                        color: style.textColor.withOpacity(0.7),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    _buildRealisticChip(),
-                    const SizedBox(height: 6),
-                  ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFallbackCard(_CardStyle style, UserCardInfo card) {
+    return Stack(
+      children: [
+        // 워터마크 텍스트
+        Center(
+          child: Text(
+            'subscribe',
+            style: TextStyle(
+              color: style.textColor.withOpacity(0.08),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        // 카드 내용
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                card.company,
+                style: TextStyle(
+                  color: style.textColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                card.cardName,
+                style: TextStyle(
+                  color: style.textColor.withOpacity(0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              _buildRealisticChip(),
+              const SizedBox(height: 6),
             ],
           ),
         ),
-      ),
+      ],
     );
+  }
+
+  String? _assetCardImage(String company) {
+    if (company.contains('삼성') || company.toLowerCase().contains('samsung')) {
+      return 'assets/images/samsung_select_all_card.png';
+    }
+    if (company.contains('신한') || company.toLowerCase().contains('shinhan')) {
+      return 'assets/images/sinhan_mr_life.png';
+    }
+    return null;
+  }
+
+  bool _shouldRotateCardImage(String company) {
+    return company.contains('삼성') || company.toLowerCase().contains('samsung');
+  }
+
+  double _cardImageScale(String company) {
+    if (company.contains('삼성') || company.toLowerCase().contains('samsung')) {
+      return 1.5;
+    }
+    return 1.0;
   }
 
   _CardStyle _getCardStyle(String company) {
