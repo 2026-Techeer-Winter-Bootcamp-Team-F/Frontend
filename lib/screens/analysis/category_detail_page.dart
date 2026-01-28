@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/models/transaction_models.dart';
 import 'package:my_app/services/transaction_service.dart';
+import 'package:my_app/services/user_service.dart';
 import 'package:my_app/screens/analysis/category_transaction_page.dart';
 import 'package:my_app/screens/main_navigation.dart';
 
@@ -17,6 +18,7 @@ class CategoryDetailPage extends StatefulWidget {
 
 class _CategoryDetailPageState extends State<CategoryDetailPage> {
   final TransactionService _service = TransactionService();
+  final UserService _userService = UserService();
 
   late DateTime selectedMonth;
   String selectedFilter = '전체';
@@ -30,6 +32,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   List<CategorySummaryItem> _categoryList = [];
   int _totalSpending = 0;
   int _lastMonthDifference = 0;
+  String _userName = '';
 
   // Convenience getters
   List<Map<String, dynamic>> get categoryData {
@@ -73,16 +76,19 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         _service.getCategorySummary(year, month),
         _service.getAccumulated(year, month),
         _service.getMonthComparison(year, month),
+        _userService.getProfile(),
       ]);
 
       final categories = results[0] as List<CategorySummaryItem>;
       final accumulated = results[1] as AccumulatedData;
       final comparison = results[2] as MonthComparison;
+      final user = results[3] as dynamic;
 
       setState(() {
         _categoryList = categories;
         _totalSpending = accumulated.total;
         _lastMonthDifference = comparison.thisMonthTotal - comparison.lastMonthSameDay;
+        _userName = user.name ?? '';
         _isLoading = false;
       });
     } catch (e) {
@@ -528,7 +534,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '김용진 님은',
+            '$_userName 님은',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -676,9 +682,9 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        '김용진 님의 카드를 분석해봤어요!',
-                        style: TextStyle(
+                      Text(
+                        '$_userName 님의 카드를 분석해봤어요!',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,

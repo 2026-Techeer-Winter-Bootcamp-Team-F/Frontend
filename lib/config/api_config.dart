@@ -17,6 +17,7 @@ class ApiConfig {
 
   // Cards
   static const String cards = '/api/v1/cards';
+  static const String cardRecommendations = '/api/v1/cards/recommendations/';
 
   // Expenses
   static const String expenses = '/api/v1/expenses';

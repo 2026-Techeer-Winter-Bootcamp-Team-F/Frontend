@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/card.dart';
+import 'package:my_app/models/card_recommendation.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
 import 'package:my_app/screens/cards/recommended_card_detail_page.dart';
 import 'package:my_app/services/card_service.dart';
@@ -14,9 +15,17 @@ class CardAnalysisPage extends StatefulWidget {
 class _CardAnalysisPageState extends State<CardAnalysisPage> {
   static const double _cardAspectRatio = 1.586; // 85.60mm x 53.98mm
 
+  final CardService _cardService = CardService();
+
+  // 내 카드 목록
   final List<WalletCard> _cards = [];
-  bool _isLoading = true;
-  String? _error;
+  bool _isLoadingCards = true;
+  String? _cardsError;
+
+  // 추천 카드 목록
+  List<CategoryRecommendation> _recommendations = [];
+  bool _isLoadingRecommendations = true;
+  String? _recommendationsError;
 
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0;
@@ -25,7 +34,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   @override
   void initState() {
     super.initState();
-    _loadCards();
+    _loadData();
     _scrollController.addListener(() {
       if (mounted) setState(() => _scrollOffset = _scrollController.offset);
     });
@@ -37,26 +46,53 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
     super.dispose();
   }
 
+  Future<void> _loadData() async {
+    await Future.wait([
+      _loadCards(),
+      _loadRecommendations(),
+    ]);
+  }
+
   Future<void> _loadCards() async {
     try {
       setState(() {
-        _isLoading = true;
-        _error = null;
+        _isLoadingCards = true;
+        _cardsError = null;
       });
-      final cardService = CardService();
-      final cards = await cardService.getMyCards();
+      final cards = await _cardService.getMyCards();
       if (!mounted) return;
       setState(() {
         _cards
           ..clear()
           ..addAll(cards.map(_toWalletCard));
-        _isLoading = false;
+        _isLoadingCards = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = '카드 정보를 불러올 수 없습니다.';
-        _isLoading = false;
+        _cardsError = '카드 정보를 불러올 수 없습니다.';
+        _isLoadingCards = false;
+      });
+    }
+  }
+
+  Future<void> _loadRecommendations() async {
+    try {
+      setState(() {
+        _isLoadingRecommendations = true;
+        _recommendationsError = null;
+      });
+      final response = await _cardService.getRecommendations();
+      if (!mounted) return;
+      setState(() {
+        _recommendations = response.categories;
+        _isLoadingRecommendations = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _recommendationsError = '추천 카드를 불러올 수 없습니다.';
+        _isLoadingRecommendations = false;
       });
     }
   }
@@ -65,7 +101,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Title intentionally left blank per UI request
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -81,7 +116,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Wallet stack (full width inside padding)
+                // Wallet stack
                 SizedBox(
                   width: double.infinity,
                   height: _walletSectionHeight(context),
@@ -90,22 +125,27 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
 
                 const SizedBox(height: 28),
 
-                // Header text like the screenshot (left-aligned)
+                // Header text
                 Text(
                   '이 카드는 어때요?',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
-                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 18),
 
                 // Recommendation sections
-                Column(
-                  children: _recommendations.map((section) => _buildRecommendationSection(context, section)).toList(),
-                ),
+                _buildRecommendationsContent(context),
               ],
             ),
           ),
@@ -114,11 +154,62 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
     );
   }
 
+  Widget _buildRecommendationsContent(BuildContext context) {
+    if (_isLoadingRecommendations) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_recommendationsError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _recommendationsError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loadRecommendations,
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_recommendations.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text(
+            '추천 카드가 없습니다.\n최근 3개월간 거래 내역이 필요합니다.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: _recommendations
+          .map((category) => _buildRecommendationSection(context, category))
+          .toList(),
+    );
+  }
+
   Widget _buildWalletContent(BuildContext context) {
-    if (_isLoading) {
+    if (_isLoadingCards) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
+    if (_cardsError != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -126,7 +217,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _error ?? '카드 정보를 불러올 수 없습니다.',
+                _cardsError ?? '카드 정보를 불러올 수 없습니다.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 14),
               ),
@@ -157,12 +248,9 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   }
 
   double _walletSectionHeight(BuildContext context) {
-    final availableWidth =
-        MediaQuery.of(context).size.width - 40 - 12; // padding + card margin
-    final cardHeight = availableWidth > 0
-        ? availableWidth / _cardAspectRatio
-        : 200.0;
-    if (_isLoading || _error != null || _cards.isEmpty) {
+    final availableWidth = MediaQuery.of(context).size.width - 40 - 12;
+    final cardHeight = availableWidth > 0 ? availableWidth / _cardAspectRatio : 200.0;
+    if (_isLoadingCards || _cardsError != null || _cards.isEmpty) {
       return cardHeight.clamp(200.0, 320.0);
     }
 
@@ -187,7 +275,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
 
   Widget _buildWalletStack(BuildContext context) {
     final step = _stackOffsetStep();
-    // 스크롤 시 뒤 카드 상단이 더 보이도록 간격 보정 (0~14px)
     final revealAmount = (_scrollOffset * 0.06).clamp(0.0, 14.0);
     final effectiveStep = (step - revealAmount).clamp(14.0, step);
 
@@ -209,8 +296,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
               i == _cards.length - 1,
               cardIndex: i,
               isHighlighted: _highlightedCardIndex == i,
-              onHighlight: (h) =>
-                  setState(() => _highlightedCardIndex = h ? i : null),
+              onHighlight: (h) => setState(() => _highlightedCardIndex = h ? i : null),
             ),
           ),
         );
@@ -219,12 +305,8 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   }
 
   double _stackOffsetStep() {
-    if (_cards.length <= 2) {
-      return 28;
-    }
-    if (_cards.length == 3) {
-      return 34;
-    }
+    if (_cards.length <= 2) return 28;
+    if (_cards.length == 3) return 34;
     return 40;
   }
 
@@ -241,9 +323,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
 
   String _extractLast4(String raw) {
     final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length < 4) {
-      return '****';
-    }
+    if (digits.length < 4) return '****';
     return digits.substring(digits.length - 4);
   }
 
@@ -270,237 +350,96 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
     return company.replaceAll('카드', '');
   }
 
-  // Sample recommendation data: category, totalSpent, recommended cards
-  static final List<Map<String, dynamic>> _recommendations = [
-    {
-      'category': '택시',
-      'total': 27133,
-      'items': [
-        {
-          'image': 'assets/images/mywallet_shinhan_card.jpeg',
-          'title': 'LIKIT FUN+',
-          'subtitle': '연회비: 1만 5천 원',
-          'percent': '210%',
-          'mainBenefitLines': [
-            '스타벅스 최대 60%, 영화 50% 할인',
-            '대중교통, 통신비 10%, 배달의민족 5% 할인',
-          ],
-          'benefits': [
-            {'category': '커피', 'desc': '스타벅스 최대 60% 할인'},
-            {'category': '문화', 'desc': '롯데시네마, CGV 50% 할인'},
-            {'category': '교통', 'desc': '대중교통 10% 할인'},
-            {'category': '통신', 'desc': '통신비 10% 할인'},
-            {'category': '외식', 'desc': '배달의민족, 요기요 5% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_toss_card.png',
-          'title': 'BC카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '110%',
-          'mainBenefitLines': [
-            '택시·대리운전 최대 15% 할인',
-            '주유 10%, 음식 배달 7% 할인',
-          ],
-          'benefits': [
-            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
-            {'category': '주유', 'desc': '주유 결제 10% 할인'},
-            {'category': '교통', 'desc': '대중교통 7% 할인'},
-            {'category': '외식', 'desc': '배달앱 7% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_bc_card.png',
-          'title': '롯데카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '230%',
-          'mainBenefitLines': [
-            '택시 20%, 쇼핑 5% 할인',
-            '영화·콘서트 30% 할인',
-          ],
-          'benefits': [
-            {'category': '택시', 'desc': '택시 결제 20% 할인'},
-            {'category': '쇼핑', 'desc': '백화점·대형마트 5% 할인'},
-            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_kookmin_card.png',
-          'title': 'Mr.Life',
-          'subtitle': '연회비: 20만 원',
-          'percent': '190%',
-          'mainBenefitLines': [
-            '생활비·통신 10% 할인',
-            '카페·외식 5~10% 할인',
-          ],
-          'benefits': [
-            {'category': '통신', 'desc': '통신요금 10% 할인'},
-            {'category': '커피', 'desc': '카페 10% 할인'},
-            {'category': '외식', 'desc': '배달·외식 5% 할인'},
-          ],
-        },
-      ],
-    },
-    {
-      'category': '교통',
-      'total': 7816,
-      'items': [
-        {
-          'image': 'assets/images/mywallet_shinhan_card.jpeg',
-          'title': '현대카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': 'ROI',
-          'mainBenefitLines': [
-            '대중교통 20%, 주유 15% 할인',
-            '통신비 10%, 영화 50% 할인',
-          ],
-          'benefits': [
-            {'category': '교통', 'desc': '대중교통 20% 할인'},
-            {'category': '주유', 'desc': '주유 15% 할인'},
-            {'category': '통신', 'desc': '통신요금 10% 할인'},
-            {'category': '문화', 'desc': '영화 50% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_toss_card.png',
-          'title': 'BC카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '110%',
-          'mainBenefitLines': [
-            '택시·대리운전 최대 15% 할인',
-            '주유 10%, 음식 배달 7% 할인',
-          ],
-          'benefits': [
-            {'category': '택시', 'desc': '카카오T, 티맵 최대 15% 할인'},
-            {'category': '주유', 'desc': '주유 결제 10% 할인'},
-            {'category': '교통', 'desc': '대중교통 7% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_bc_card.png',
-          'title': '롯데카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '95%',
-          'mainBenefitLines': [
-            '택시 20%, 쇼핑 5% 할인',
-            '영화·콘서트 30% 할인',
-          ],
-          'benefits': [
-            {'category': '교통', 'desc': '택시 20% 할인'},
-            {'category': '쇼핑', 'desc': '백화점·마트 5% 할인'},
-            {'category': '문화', 'desc': '영화, 공연 30% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_kookmin_card.png',
-          'title': '신한카드',
-          'subtitle': '연회비: 20만 원',
-          'percent': '130%',
-          'mainBenefitLines': [
-            '대중교통 15%, 주유 10% 할인',
-            '편의점·카페 5% 할인',
-          ],
-          'benefits': [
-            {'category': '교통', 'desc': '대중교통 15% 할인'},
-            {'category': '주유', 'desc': '주유 10% 할인'},
-            {'category': '편의점', 'desc': '편의점 5% 할인'},
-            {'category': '커피', 'desc': '카페 5% 할인'},
-          ],
-        },
-      ],
-    },
-    {
-      'category': '마트',
-      'total': 4500,
-      'items': [
-        {
-          'image': 'assets/images/mywallet_toss_card.png',
-          'title': '이마트카드',
-          'subtitle': '연회비: 10만 원',
-          'percent': '150%',
-          'mainBenefitLines': [
-            '이마트·트레이더스 5% 할인',
-            '주유 10%, 교통 5% 할인',
-          ],
-          'benefits': [
-            {'category': '마트', 'desc': '이마트·트레이더스 5% 할인'},
-            {'category': '주유', 'desc': '이마트 주유 10% 할인'},
-            {'category': '교통', 'desc': '대중교통 5% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_bc_card.png',
-          'title': '롯데마트카드',
-          'subtitle': '연회비: 12만 원',
-          'percent': '140%',
-          'mainBenefitLines': [
-            '롯데마트 5%, 영화 30% 할인',
-            '주유·주차 10% 할인',
-          ],
-          'benefits': [
-            {'category': '마트', 'desc': '롯데마트 5% 할인'},
-            {'category': '문화', 'desc': '롯데시네마 30% 할인'},
-            {'category': '주유', 'desc': '주유 10% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_kookmin_card.png',
-          'title': '홈플러스카드',
-          'subtitle': '연회비: 8만 원',
-          'percent': '125%',
-          'mainBenefitLines': [
-            '홈플러스 5%, 주유 7% 할인',
-            '생활서비스 10% 할인',
-          ],
-          'benefits': [
-            {'category': '마트', 'desc': '홈플러스 5% 할인'},
-            {'category': '주유', 'desc': '주유 7% 할인'},
-            {'category': '생활', 'desc': '세탁·이사 10% 할인'},
-          ],
-        },
-        {
-          'image': 'assets/images/mywallet_shinhan_card.jpeg',
-          'title': '쿠팡카드',
-          'subtitle': '연회비: 0원',
-          'percent': '115%',
-          'mainBenefitLines': [
-            '쿠팡 5% 할인, 로켓배송 추가 혜택',
-            '주유 7%, 대중교통 5% 할인',
-          ],
-          'benefits': [
-            {'category': '쇼핑', 'desc': '쿠팡 5% 할인'},
-            {'category': '주유', 'desc': '주유 7% 할인'},
-            {'category': '교통', 'desc': '대중교통 5% 할인'},
-          ],
-        },
-      ],
-    },
-  ];
+  Widget _buildRecommendationSection(BuildContext context, CategoryRecommendation category) {
+    // 연회비 없는 카드 (왼쪽)와 연회비 있는 카드 (오른쪽) 분리
+    final freeCards = category.recommendedCards.where((c) => c.annualFee == 0).toList();
+    final paidCards = category.recommendedCards.where((c) => c.annualFee > 0).toList();
 
-  Widget _buildRecommendationSection(BuildContext context, Map<String, dynamic> section) {
-    final items = section['items'] as List<dynamic>;
+    // 각각 첫 번째 카드만 선택
+    final RecommendedCard? freeCard = freeCards.isNotEmpty ? freeCards.first : null;
+    final RecommendedCard? paidCard = paidCards.isNotEmpty ? paidCards.first : null;
+
+    // 표시할 카드가 없으면 섹션 숨김
+    if (freeCard == null && paidCard == null) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(section['category'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-            Text('총 ${_formatWon(section['total'] as int)} 썼어요', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            Row(
+              children: [
+                Text(
+                  category.emoji,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  category.categoryName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '월평균 ${_formatWon(category.monthlyAverage)}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          childAspectRatio: 1.15,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: items.map((it) => _RecommendationCard(data: it as Map<String, dynamic>)).toList(),
+        Row(
+          children: [
+            // 왼쪽: 연회비 무료 카드
+            Expanded(
+              child: freeCard != null
+                  ? _RecommendationCard(card: freeCard, showAnnualFee: false)
+                  : _buildEmptyCard(context, '연회비 무료 카드 없음'),
+            ),
+            const SizedBox(width: 12),
+            // 오른쪽: 연회비 유료 카드
+            Expanded(
+              child: paidCard != null
+                  ? _RecommendationCard(card: paidCard, showAnnualFee: true)
+                  : _buildEmptyCard(context, '연회비 유료 카드 없음'),
+            ),
+          ],
         ),
         const SizedBox(height: 28),
       ],
+    );
+  }
+
+  Widget _buildEmptyCard(BuildContext context, String message) {
+    return AspectRatio(
+      aspectRatio: 0.95,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            message,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 
@@ -527,79 +466,103 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
         curve: Curves.easeOut,
         child: GestureDetector(
           onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+            MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
+          ),
           onTapDown: (_) => onHighlight(true),
           onTapUp: (_) => onHighlight(false),
           onTapCancel: () => onHighlight(false),
           child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        child: AspectRatio(
-          aspectRatio: _cardAspectRatio,
-          child: Container(
-            decoration: BoxDecoration(
-              color: card.color,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
-              ],
-            ),
-            child: Stack(
-              children: [
-          Positioned(
-            left: 20,
-            top: 20,
-            child: Container(
-              width: 48,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-          ),
-          // optional badge on top-right
-          Positioned(
-            right: 18,
-            top: 18,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(card.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-            ),
-          ),
-          Positioned(
-            left: 20,
-            bottom: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(card.bankName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
-                const SizedBox(height: 6),
-                Text(card.maskedNumber, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-              ],
-            ),
-          ),
-          if (!isBottom)
-            Positioned.fill(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            child: AspectRatio(
+              aspectRatio: _cardAspectRatio,
               child: Container(
                 decoration: BoxDecoration(
+                  color: card.color,
                   borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.02)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 20,
+                      top: 20,
+                      child: Container(
+                        width: 48,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 18,
+                      top: 18,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          card.label,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 20,
+                      bottom: 24,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            card.bankName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            card.maskedNumber,
+                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!isBottom)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.0),
+                                Colors.white.withOpacity(0.02),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
-              ],
-            ),
           ),
-        ),
-      ),
         ),
       ),
     );
@@ -613,96 +576,203 @@ class WalletCard {
   final String maskedNumber;
   final String? imagePath;
 
-  const WalletCard({this.imagePath, required this.color, required this.label, this.bankName = '카드', this.maskedNumber = ''});
+  const WalletCard({
+    this.imagePath,
+    required this.color,
+    required this.label,
+    this.bankName = '카드',
+    this.maskedNumber = '',
+  });
 }
 
 class _RecommendationCard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _RecommendationCard({required this.data});
+  static const double _cardAspectRatio = 1.586;
+
+  final RecommendedCard card;
+  final bool showAnnualFee;
+  const _RecommendationCard({required this.card, this.showAnnualFee = false});
 
   void _openDetail(BuildContext context) {
-    final main = (data['mainBenefitLines'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
-    final ben = (data['benefits'] as List?)?.map((e) {
-      final m = e as Map;
-      return <String, String>{
-        'category': (m['category'] ?? '').toString(),
-        'desc': (m['desc'] ?? '').toString(),
-      };
-    }).toList() ?? <Map<String, String>>[];
+    final mainBenefits = card.mainBenefitLines;
+    final benefits = card.categoryBenefits
+        .map((b) => <String, String>{
+              'category': b.category,
+              'desc': b.description,
+            })
+        .toList();
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RecommendedCardDetailPage(
-          imagePath: data['image'] as String,
-          cardName: data['title'] as String,
-          subtitle: data['subtitle'] as String,
-          mainBenefitLines: main,
-          benefits: ben,
+          imagePath: card.cardImageUrl,
+          cardName: card.cardName,
+          subtitle: card.annualFee == 0
+              ? '연회비: 무료'
+              : '연회비: ${_formatFee(card.annualFee)}',
+          mainBenefitLines: mainBenefits,
+          benefits: benefits,
         ),
       ),
     );
   }
 
+  String _formatFee(int fee) {
+    if (fee >= 10000) {
+      final man = fee ~/ 10000;
+      final remainder = fee % 10000;
+      if (remainder == 0) {
+        return '$man만원';
+      }
+      return '$man만 ${remainder.toString().replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',')}원';
+    }
+    return '${fee.toString().replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',')}원';
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ROI 텍스트: 연회비 무료면 금액, 유료면 퍼센트
+    final roiText = card.annualFee == 0
+        ? '${_formatNumber(card.roiPercent)}원'
+        : '${card.roiPercent.toStringAsFixed(card.roiPercent % 1 == 0 ? 0 : 1)}%';
+
+    // 연회비 텍스트: 만원 단위
+    final feeText = card.annualFee == 0
+        ? '연회비 없음'
+        : '연회비 ${_formatFeeInMan(card.annualFee)}';
+
     return InkWell(
       onTap: () => _openDetail(context),
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
-      ),
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              height: 80,
-              width: double.infinity,
-              child: Image.asset(
-                data['image'] as String,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.credit_card, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            data['title'] as String,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  data['subtitle'] as String,
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                data['percent'] as String,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      child: AspectRatio(
+        aspectRatio: 0.95,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-        ],
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 카드 이미지
+              AspectRatio(
+                aspectRatio: _cardAspectRatio,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: card.cardImageUrl.isNotEmpty
+                      ? Image.network(
+                          card.cardImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => _buildPlaceholder(context),
+                        )
+                      : _buildPlaceholder(context),
+                ),
+              ),
+              const SizedBox(height: 6),
+              // 카드 이름
+              Text(
+                card.cardName,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              // 카드사 + 연회비 (한 줄)
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      card.cardCompany,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    ' · ',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    feeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: card.annualFee == 0
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: card.annualFee == 0 ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              // ROI
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    card.annualFee == 0 ? '예상 혜택' : 'ROI',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    roiText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
+  }
+
+  String _formatNumber(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (m) => ',',
+    );
+  }
+
+  String _formatFeeInMan(int fee) {
+    final man = fee / 10000;
+    if (man == man.toInt()) {
+      return '${man.toInt()}만원';
+    }
+    return '${man}만원';
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.credit_card,
+        size: 28,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
   }
 }
-
