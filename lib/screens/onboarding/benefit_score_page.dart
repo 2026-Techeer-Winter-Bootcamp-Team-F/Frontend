@@ -692,7 +692,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
               numberOfCardsDisplayed: math.min(3, _cards.length),
               backCardOffset: const Offset(0, 24), // 뒤 카드 상승 폭 완화
               padding: EdgeInsets.zero, // 카드 비율 유지
-              scale: 0.05, // 뒤→앞 전환 확대 폭 완화
+              scale: 0.95, // 뒤→앞 전환 확대 폭 완화
               onSwipe: _onSwipe,
               duration: const Duration(milliseconds: 240), // 부드러운 전환
               threshold: 50,
