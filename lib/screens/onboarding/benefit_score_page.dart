@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:http/http.dart' as http;
 import 'package:my_app/models/user.dart';
 import 'package:my_app/services/user_service.dart';
@@ -527,7 +528,7 @@ class BenefitSummarySection extends StatelessWidget {
   }
 }
 
-// --- 3. Card Wallet (카드 지갑) ---
+// --- 3. Card Wallet (카드 지갑) - Tinder 스타일 ---
 class CardWalletSection extends StatefulWidget {
   const CardWalletSection({super.key});
 
@@ -535,32 +536,22 @@ class CardWalletSection extends StatefulWidget {
   State<CardWalletSection> createState() => _CardWalletSectionState();
 }
 
-class _CardWalletSectionState extends State<CardWalletSection>
-    with SingleTickerProviderStateMixin {
+class _CardWalletSectionState extends State<CardWalletSection> {
   int _currentIndex = 0;
-  bool _isGridView = false;
   List<UserCardInfo> _cards = [];
   bool _isLoading = true;
   String? _error;
-
-  // 스와이프 애니메이션을 위한 컨트롤러
-  late AnimationController _animationController;
-  double _dragOffset = 0.0; // 현재 드래그 오프셋 (픽셀)
-  double _dragVelocity = 0.0; // 드래그 속도
+  final CardSwiperController _swiperController = CardSwiperController();
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
     _loadCards();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _swiperController.dispose();
     super.dispose();
   }
 
@@ -589,535 +580,121 @@ class _CardWalletSectionState extends State<CardWalletSection>
     }
   }
 
-  // 부드러운 스프링 효과 애니메이션 실행
-  void _runSpringAnimation(double targetOffset) {
-    final startOffset = _dragOffset;
-    
-    // Tween 기반 애니메이션 (부드러운 감속)
-    final Animation<double> animation = Tween<double>(
-      begin: startOffset,
-      end: targetOffset,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      // 더 부드러운 커브 사용
-      curve: Curves.easeOutExpo,
-    ));
-
-    void listener() {
-      if (!mounted) return;
+  bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+    if (currentIndex != null) {
       setState(() {
-        _dragOffset = animation.value;
+        _currentIndex = currentIndex;
       });
     }
-
-    void statusListener(AnimationStatus status) {
-      if (status == AnimationStatus.completed) {
-        _animationController.removeListener(listener);
-        _animationController.removeStatusListener(statusListener);
-        if (!mounted) return;
-        setState(() {
-          _dragOffset = 0.0;
-        });
-      }
-    }
-
-    _animationController.removeStatusListener(statusListener);
-    _animationController.removeListener(listener);
-    _animationController.addListener(listener);
-    _animationController.addStatusListener(statusListener);
-    
-    // 애니메이션 실행 (더 긴 duration으로 부드럽게)
-    _animationController.reset();
-    _animationController.duration = const Duration(milliseconds: 600);
-    _animationController.forward();
+    return true;
   }
-
-  // 드래그 종료 시 다음/이전 카드로 스냅
-  void _onDragEnd(double velocity, double cardWidth) {
-    _dragVelocity = velocity;
-    final threshold = cardWidth * 0.25; // 25% 이상 드래그하면 다음 카드로
-
-    if (_dragOffset < -threshold || velocity < -500) {
-      // 오른쪽에서 왼쪽으로 스와이프 → 다음 카드
-      if (_currentIndex < _cards.length - 1) {
-        setState(() {
-          _currentIndex++;
-        });
-        _runSpringAnimation(0);
-      } else {
-        // 마지막 카드면 원래 위치로
-        _runSpringAnimation(0);
-      }
-    } else if (_dragOffset > threshold || velocity > 500) {
-      // 왼쪽에서 오른쪽으로 스와이프 → 이전 카드
-      if (_currentIndex > 0) {
-        setState(() {
-          _currentIndex--;
-        });
-        _runSpringAnimation(0);
-      } else {
-        // 첫 번째 카드면 원래 위치로
-        _runSpringAnimation(0);
-      }
-    } else {
-      // 임계값 미달 → 원래 위치로 복귀
-      _runSpringAnimation(0);
-    }
-  }
-
-  // 인디케이터 탭 시 해당 인덱스로 스무스하게 이동
-  void _animateToIndex(int targetIndex) {
-    if (targetIndex == _currentIndex) return;
-    
-    setState(() {
-      _currentIndex = targetIndex;
-      _dragOffset = 0;
-    });
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "My Wallet",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  // 그리드/스택 뷰 토글 버튼
-                  if (_cards.isNotEmpty && !_isLoading)
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isGridView = !_isGridView;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: _isGridView
-                              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                              : Colors.grey[800],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _isGridView ? Icons.view_agenda : Icons.grid_view_rounded,
-                          size: 16,
-                          color: _isGridView
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[400],
-                        ),
-                      ),
-                    ),
-                  if (_cards.isNotEmpty && !_isLoading) ...[
-                    const SizedBox(width: 12),
-                    // 인디케이터 dots (스택 뷰일 때만 표시)
-                    if (!_isGridView)
-                      ...List.generate(
-                        _cards.length,
-                        (index) => GestureDetector(
-                          onTap: () {
-                            // 해당 인덱스로 스무스하게 이동
-                            _animateToIndex(index);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(left: 4),
-                            width: _currentIndex == index ? 20 : 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: _currentIndex == index
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.grey[600],
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ],
+        // 헤더
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "My Wallet",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        Expanded(child: _buildContent()),
+        const SizedBox(height: 12),
+        // 카드 영역
+        _buildContent(),
+        // 하단 인디케이터
+        if (_cards.isNotEmpty && !_isLoading) ...[
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _cards.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _currentIndex == index ? 20 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _currentIndex == index
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey[700],
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildContent() {
     if (_isLoading) {
-      return _buildLoadingState();
+      return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return _buildErrorState();
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_error!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loadCards,
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (_cards.isEmpty) {
-      return _buildEmptyState();
+      return const Center(child: Text('등록된 카드가 없습니다.'));
     }
-    return _isGridView ? _buildGridView() : _buildStackView();
+    return _buildCardSwiper();
   }
 
-  _CardVisualStyle _cardVisualStyle(UserCardInfo card) {
-    final bgColor = _companyBaseColor(card.company);
-    final textColor =
-        bgColor.computeLuminance() > 0.6 ? Colors.black87 : Colors.white;
-    final accentColor =
-        card.company.contains('BC') || card.cardName.contains('BC')
-            ? const Color(0xFFDC143C)
-            : Colors.white;
-    return _CardVisualStyle(
-      bgColor: bgColor,
-      accentColor: accentColor,
-      textColor: textColor,
-      chipColor: const Color(0xFFC0C0C0),
-    );
-  }
-
-  Color _companyBaseColor(String company) {
-    final normalized = company.toLowerCase();
-    if (normalized.contains('kb') || normalized.contains('국민')) {
-      return const Color(0xFFB8860B);
-    }
-    if (normalized.contains('신한') || normalized.contains('shinhan')) {
-      return const Color(0xFF8B4C9F);
-    }
-    if (normalized.contains('하나') || normalized.contains('hana')) {
-      return const Color(0xFF4A90E2);
-    }
-    if (normalized.contains('bc')) {
-      return const Color(0xFFE8E8E8);
-    }
-    return const Color(0xFFB0B0B0);
-  }
-
-  String _maskCardNumber(String raw) {
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length < 4) {
-      return '**** **** **** ****';
-    }
-    final last4 = digits.substring(digits.length - 4);
-    return '**** **** **** $last4';
-  }
-
-  Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _error ?? '카드 정보를 불러올 수 없습니다.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _loadCards,
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Text(
-        '등록된 카드가 없습니다.',
-        style: TextStyle(fontSize: 14),
-      ),
-    );
-  }
-
-  // 스택 뷰 (겹쳐진 카드 + 스프링 물리 애니메이션)
-  Widget _buildStackView() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const bottomReserve = 8.0;
-        final availableHeight = (constraints.maxHeight - bottomReserve).clamp(0.0, double.infinity);
-        final screenWidth = MediaQuery.of(context).size.width;
-        final cardWidth = screenWidth - 80;
-        final fullCardHeight = cardWidth * 1.4;
-        final visibleHeight = math.min(availableHeight, fullCardHeight);
-
-        // 드래그 진행률 (-1 ~ 1 사이, -1은 완전히 왼쪽, 1은 완전히 오른쪽)
-        final dragProgress = (_dragOffset / cardWidth).clamp(-1.0, 1.0);
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: availableHeight,
-              child: GestureDetector(
-                onHorizontalDragStart: (_) {
-                  _animationController.stop();
-                },
-                onHorizontalDragUpdate: (details) {
-                  setState(() {
-                    _dragOffset += details.delta.dx;
-                    // 첫 번째/마지막 카드에서 저항감 추가
-                    if ((_currentIndex == 0 && _dragOffset > 0) ||
-                        (_currentIndex == _cards.length - 1 && _dragOffset < 0)) {
-                      _dragOffset *= 0.3; // 저항감
-                    }
-                  });
-                },
-                onHorizontalDragEnd: (details) {
-                  _onDragEnd(details.primaryVelocity ?? 0, cardWidth);
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    // 뒤에 있는 카드들 (최대 2장만 표시)
-                    for (int i = math.min(_currentIndex + 2, _cards.length - 1);
-                        i > _currentIndex;
-                        i--)
-                      _buildStackedCard(
-                        context: context,
-                        index: i,
-                        cardWidth: cardWidth,
-                        visibleHeight: visibleHeight,
-                        fullCardHeight: fullCardHeight,
-                        dragProgress: dragProgress,
-                        stackPosition: i - _currentIndex,
-                      ),
-                    
-                    // 이전 카드 (왼쪽으로 스와이프 시 보임)
-                    if (_currentIndex > 0 && dragProgress > 0)
-                      _buildPreviousCard(
-                        context: context,
-                        cardWidth: cardWidth,
-                        visibleHeight: visibleHeight,
-                        fullCardHeight: fullCardHeight,
-                        dragProgress: dragProgress,
-                      ),
-                    
-                    // 현재 카드 (가장 앞)
-                    _buildCurrentCard(
-                      context: context,
-                      cardWidth: cardWidth,
-                      visibleHeight: visibleHeight,
-                      fullCardHeight: fullCardHeight,
-                      dragProgress: dragProgress,
-                    ),
-                  ],
-                ),
+  // Tinder 스타일 카드 스와이퍼
+  Widget _buildCardSwiper() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 토스 카드 참고: 약 1.58 비율 (가로:세로)
+          final cardWidth = constraints.maxWidth;
+          final cardHeight = cardWidth / 1.58;
+          
+          return SizedBox(
+            height: cardHeight + 20, // 스택 공간
+            child: CardSwiper(
+              controller: _swiperController,
+              cardsCount: _cards.length,
+              numberOfCardsDisplayed: math.min(2, _cards.length),
+              backCardOffset: const Offset(0, 20),
+              padding: EdgeInsets.zero,
+              scale: 0.96,
+              onSwipe: _onSwipe,
+              duration: const Duration(milliseconds: 350),
+              threshold: 35,
+              maxAngle: 12,
+              allowedSwipeDirection: const AllowedSwipeDirection.symmetric(
+                horizontal: true,
+                vertical: false,
               ),
-            ),
-            SizedBox(height: bottomReserve),
-          ],
-        );
-      },
-    );
-  }
-
-  // 현재 카드 (가장 앞에 있는 카드)
-  Widget _buildCurrentCard({
-    required BuildContext context,
-    required double cardWidth,
-    required double visibleHeight,
-    required double fullCardHeight,
-    required double dragProgress,
-  }) {
-    // 드래그에 따른 X 이동
-    final translateX = _dragOffset;
-    // 드래그에 따른 회전 (최대 15도)
-    final rotation = dragProgress * 0.15;
-    // 드래그 시 약간 위로 올라가는 효과
-    final translateY = -dragProgress.abs() * 20;
-
-    return Transform(
-      alignment: Alignment.center,
-      transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.001) // 원근감
-        ..translate(translateX, translateY)
-        ..rotateZ(rotation),
-      child: Container(
-        width: cardWidth,
-        height: visibleHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: OverflowBox(
-            alignment: Alignment.topCenter,
-            maxHeight: fullCardHeight,
-            child: _buildVerticalCreditCard(
-              context,
-              _cards[_currentIndex],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 뒤에 겹쳐진 카드들
-  Widget _buildStackedCard({
-    required BuildContext context,
-    required int index,
-    required double cardWidth,
-    required double visibleHeight,
-    required double fullCardHeight,
-    required double dragProgress,
-    required int stackPosition,
-  }) {
-    // 스택 위치에 따른 오프셋 (오른쪽으로 살짝씩 밀림)
-    final baseOffsetX = stackPosition * 15.0;
-    // 스택 위치에 따른 스케일 (뒤로 갈수록 작아짐)
-    final baseScale = 1.0 - (stackPosition * 0.05);
-    // 스택 위치에 따른 투명도
-    final baseOpacity = 1.0 - (stackPosition * 0.2);
-    
-    // 드래그 시 다음 카드가 앞으로 나오는 효과
-    final dragEffect = (-dragProgress).clamp(0.0, 1.0);
-    final scale = baseScale + (dragEffect * 0.05 * (stackPosition == 1 ? 1 : 0.5));
-    final offsetX = baseOffsetX - (dragEffect * baseOffsetX * (stackPosition == 1 ? 1 : 0.5));
-    final opacity = (baseOpacity + (dragEffect * 0.2)).clamp(0.0, 1.0);
-
-    return Transform(
-      alignment: Alignment.center,
-      transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.001)
-        ..translate(offsetX, 0.0)
-        ..scale(scale),
-      child: Opacity(
-        opacity: opacity,
-        child: Container(
-          width: cardWidth,
-          height: visibleHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: OverflowBox(
-              alignment: Alignment.topCenter,
-              maxHeight: fullCardHeight,
-              child: _buildVerticalCreditCard(
-                context,
-                _cards[index],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 이전 카드 (왼쪽에서 나타남)
-  Widget _buildPreviousCard({
-    required BuildContext context,
-    required double cardWidth,
-    required double visibleHeight,
-    required double fullCardHeight,
-    required double dragProgress,
-  }) {
-    // 오른쪽으로 드래그할 때만 보임
-    final appearProgress = dragProgress.clamp(0.0, 1.0);
-    // 왼쪽에서 들어오는 효과
-    final translateX = -cardWidth * (1 - appearProgress * 0.8);
-    // 들어오면서 스케일 증가
-    final scale = 0.9 + (appearProgress * 0.1);
-    // 회전 효과
-    final rotation = -0.15 * (1 - appearProgress);
-
-    return Transform(
-      alignment: Alignment.center,
-      transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.001)
-        ..translate(translateX, 0.0)
-        ..scale(scale)
-        ..rotateZ(rotation),
-      child: Opacity(
-        opacity: appearProgress,
-        child: Container(
-          width: cardWidth,
-          height: visibleHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: OverflowBox(
-              alignment: Alignment.topCenter,
-              maxHeight: fullCardHeight,
-              child: _buildVerticalCreditCard(
-                context,
-                _cards[_currentIndex - 1],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 그리드 뷰 (전체 카드 목록)
-  Widget _buildGridView() {
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        physics: const BouncingScrollPhysics(
-          decelerationRate: ScrollDecelerationRate.fast,
-        ),
-        cacheExtent: 500, // 미리 렌더링할 영역
-        itemCount: _cards.length,
-        itemBuilder: (context, index) {
-          final card = _cards[index];
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _currentIndex = index;
-                _isGridView = false;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(bottom: 16),
-              child: _buildHorizontalCreditCard(context, card),
+              cardBuilder: (context, index, horizontalOffsetPercentage, verticalOffsetPercentage) {
+                return _buildCreditCard(
+                  context,
+                  _cards[index],
+                  horizontalOffsetPercentage.toDouble(),
+                );
+              },
             ),
           );
         },
@@ -1125,286 +702,428 @@ class _CardWalletSectionState extends State<CardWalletSection>
     );
   }
 
-  // 가로 카드 (그리드 뷰용)
-  Widget _buildHorizontalCreditCard(
+  // 프리미엄 신용카드 디자인 (토스 카드 참고)
+  Widget _buildCreditCard(
     BuildContext context,
     UserCardInfo card,
+    double horizontalOffset,
   ) {
-    final style = _cardVisualStyle(card);
-    final bgColor = style.bgColor;
-    final textColor = style.textColor;
-    final chipColor = style.chipColor;
-    final name = card.cardName;
-    final sub = card.company;
+    final normalizedOffset = horizontalOffset / 100;
+    final easedOffset = normalizedOffset * normalizedOffset.abs().clamp(0.0, 1.0);
+    final rotation = easedOffset * 0.10;
 
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            bgColor,
-            Color.lerp(bgColor, Colors.black, 0.15) ?? bgColor,
+    final cardStyle = _getCardStyle(card.company);
+
+    return Transform.rotate(
+      angle: rotation,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20), // 토스 카드처럼 더 둥글게
+          gradient: LinearGradient(
+            begin: cardStyle.gradientBegin,
+            end: cardStyle.gradientEnd,
+            colors: cardStyle.gradientColors,
+          ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: cardStyle.gradientColors.first.withOpacity(0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+              spreadRadius: -5,
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // 배경 패턴/장식
+              if (cardStyle.hasPattern)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _CardPatternPainter(cardStyle),
+                  ),
+                ),
+              // 상단 하이라이트
+              Positioned(
+                top: -40,
+                right: -40,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.12),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // 카드 내용
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                    // 상단: 카드사명 + NFC
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          card.company,
+                          style: TextStyle(
+                            color: cardStyle.textColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        Icon(
+                          Icons.contactless_outlined,
+                          color: cardStyle.textColor.withOpacity(0.5),
+                          size: 20,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
+                    const Spacer(),
+                    // EMV 칩
+                    _buildRealisticChip(),
+                    const Spacer(flex: 2),
+                    // 하단: 카드명
                     Text(
-                      sub,
+                      card.cardName,
                       style: TextStyle(
-                        color: textColor.withOpacity(0.7),
-                        fontSize: 12,
+                        color: cardStyle.textColor.withOpacity(0.85),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                // EMV 칩
-                Container(
-                  width: 40,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: chipColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: CustomPaint(
-                    painter: ChipPatternPainter(chipColor),
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              _maskCardNumber(card.cardNumber),
-              style: TextStyle(
-                color: textColor,
-                fontSize: 16,
-                letterSpacing: 2,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  'VALID THRU',
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.6),
-                    fontSize: 8,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '12/28',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // 세로 카드 (스택 뷰용)
-  Widget _buildVerticalCreditCard(
-    BuildContext context,
-    UserCardInfo card, {
-    Key? key,
-  }) {
-    final style = _cardVisualStyle(card);
-    final bgColor = style.bgColor;
-    final accentColor = style.accentColor;
-    final textColor = style.textColor;
-    final chipColor = style.chipColor;
-    final name = card.cardName;
-    final sub = card.company;
+  // 카드사별 스타일 (그라데이션 포함)
+  _CardStyle _getCardStyle(String company) {
+    final normalized = company.toLowerCase();
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth - 80; // 스택 뷰와 동일
-    final cardHeight = cardWidth * 1.4;
+    // KB 국민 - 블루그레이 (참고 이미지 기반)
+    if (normalized.contains('kb') || normalized.contains('국민')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF7B8794), Color(0xFF5D6D7E), Color(0xFF4A5568)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 토스 - 비비드 블루 그라데이션 (참고 이미지 기반)
+    if (normalized.contains('토스') || normalized.contains('toss')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF4DC8FF), Color(0xFF0078FF), Color(0xFF0055DD)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 신한 - 딥 블루
+    if (normalized.contains('신한') || normalized.contains('shinhan')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF1E5AFF), Color(0xFF0041CC), Color(0xFF002999)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 하나 - 틸 그린
+    if (normalized.contains('하나') || normalized.contains('hana')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF00B894), Color(0xFF009975), Color(0xFF007A5E)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 삼성 - 네이비
+    if (normalized.contains('삼성') || normalized.contains('samsung')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF2D47A0), Color(0xFF1A2F7A), Color(0xFF0D1B5C)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 현대 - 다크 네이비
+    if (normalized.contains('현대') || normalized.contains('hyundai')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF003D73), Color(0xFF002C5F), Color(0xFF001D40)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // BC 카드 - 레드
+    if (normalized.contains('bc')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFFFF4757), Color(0xFFE31837), Color(0xFFC41230)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 롯데 - 레드
+    if (normalized.contains('롯데') || normalized.contains('lotte')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFFFF5252), Color(0xFFE60012), Color(0xFFC00010)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 우리 - 블루
+    if (normalized.contains('우리') || normalized.contains('woori')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF2196F3), Color(0xFF0066B3), Color(0xFF004D8C)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 농협 - 그린
+    if (normalized.contains('농협') || normalized.contains('nh')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFF2ECC71), Color(0xFF006747), Color(0xFF004D35)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: Colors.white,
+        hasPattern: true,
+        showLogo: true,
+      );
+    }
+    // 카카오 - 옐로우
+    if (normalized.contains('카카오') || normalized.contains('kakao')) {
+      return _CardStyle(
+        gradientColors: const [Color(0xFFFFF176), Color(0xFFFEE500), Color(0xFFE5CF00)],
+        gradientBegin: Alignment.topLeft,
+        gradientEnd: Alignment.bottomRight,
+        textColor: const Color(0xFF3C1E1E),
+        hasPattern: false,
+        showLogo: true,
+      );
+    }
+    // 기본 - 다크
+    return _CardStyle(
+      gradientColors: const [Color(0xFF434343), Color(0xFF2C3E50), Color(0xFF1A252F)],
+      gradientBegin: Alignment.topLeft,
+      gradientEnd: Alignment.bottomRight,
+      textColor: Colors.white,
+      hasPattern: true,
+      showLogo: false,
+    );
+  }
 
+  // 리얼리스틱 EMV 칩
+  Widget _buildRealisticChip() {
     return Container(
-      key: key,
-      width: cardWidth,
-      height: cardHeight,
+      width: 50,
+      height: 38,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
+        borderRadius: BorderRadius.circular(6),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            bgColor,
-            Color.lerp(bgColor, Colors.black, 0.15) ?? bgColor,
+            Color(0xFFE8E0C8),
+            Color(0xFFD4C8A8),
+            Color(0xFFC0B090),
+            Color(0xFFD4C8A8),
+            Color(0xFFE8E0C8),
           ],
+          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+        ),
+        border: Border.all(
+          color: const Color(0xFFB0A080),
+          width: 0.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 2,
+            offset: const Offset(1, 1),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 카드 이름
-            Text(
-              name,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              sub,
-              style: TextStyle(
-                color: textColor.withOpacity(0.8),
-                fontSize: 12,
-              ),
-            ),
-            const Spacer(),
-            // EMV 칩 (세로 방향)
-            Container(
-              width: 40,
-              height: 48,
-              decoration: BoxDecoration(
-                color: chipColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: CustomPaint(
-                painter: ChipPatternPainter(chipColor),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // 카드 번호
-            Text(
-              _maskCardNumber(card.cardNumber),
-              style: TextStyle(
-                color: textColor,
-                fontSize: 16,
-                letterSpacing: 2.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
-            // 유효기간
-            Row(
-              children: [
-                Text(
-                  'VALID\nTHRU',
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.7),
-                    fontSize: 7,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '12/28',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            // BC 카드 로고 (해당하는 경우)
-            if (card.company.contains('BC') || card.cardName.contains('BC'))
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: accentColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'BC',
-                        style: TextStyle(
-                          color: accentColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+      child: CustomPaint(
+        painter: _RealisticChipPainter(),
       ),
     );
   }
+
 }
 
-class _CardVisualStyle {
-  final Color bgColor;
-  final Color accentColor;
+// 카드 스타일 클래스
+class _CardStyle {
+  final List<Color> gradientColors;
+  final Alignment gradientBegin;
+  final Alignment gradientEnd;
   final Color textColor;
-  final Color chipColor;
+  final bool hasPattern;
+  final bool showLogo;
 
-  const _CardVisualStyle({
-    required this.bgColor,
-    required this.accentColor,
+  const _CardStyle({
+    required this.gradientColors,
+    required this.gradientBegin,
+    required this.gradientEnd,
     required this.textColor,
-    required this.chipColor,
+    required this.hasPattern,
+    required this.showLogo,
   });
 }
 
-// EMV 칩 패턴을 그리는 CustomPainter
+// 카드 배경 패턴
+class _CardPatternPainter extends CustomPainter {
+  final _CardStyle style;
+
+  _CardPatternPainter(this.style);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    // 대각선 패턴
+    for (int i = -10; i < 20; i++) {
+      final startX = i * 30.0;
+      canvas.drawLine(
+        Offset(startX, 0),
+        Offset(startX + size.height, size.height),
+        paint,
+      );
+    }
+
+    // 코너 데코레이션
+    final decorPaint = Paint()
+      ..color = Colors.white.withOpacity(0.08)
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(size.width, 0);
+    path.lineTo(size.width - 80, 0);
+    path.quadraticBezierTo(
+      size.width, 0,
+      size.width, 80,
+    );
+    path.close();
+    canvas.drawPath(path, decorPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 리얼리스틱 EMV 칩 패턴
+class _RealisticChipPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF8B7355)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final fillPaint = Paint()
+      ..color = const Color(0xFFBFAF8F).withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    // 중앙 사각형
+    final centerRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.5, size.height * 0.5),
+        width: size.width * 0.35,
+        height: size.height * 0.45,
+      ),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(centerRect, fillPaint);
+    canvas.drawRRect(centerRect, paint);
+
+    // 좌측 연결부
+    for (int i = 0; i < 4; i++) {
+      final y = size.height * (0.2 + i * 0.2);
+      canvas.drawLine(
+        Offset(size.width * 0.08, y),
+        Offset(size.width * 0.32, y),
+        paint,
+      );
+    }
+
+    // 우측 연결부
+    for (int i = 0; i < 4; i++) {
+      final y = size.height * (0.2 + i * 0.2);
+      canvas.drawLine(
+        Offset(size.width * 0.68, y),
+        Offset(size.width * 0.92, y),
+        paint,
+      );
+    }
+
+    // 상단 연결부
+    canvas.drawLine(
+      Offset(size.width * 0.5, size.height * 0.08),
+      Offset(size.width * 0.5, size.height * 0.27),
+      paint,
+    );
+
+    // 하단 연결부
+    canvas.drawLine(
+      Offset(size.width * 0.5, size.height * 0.73),
+      Offset(size.width * 0.5, size.height * 0.92),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// EMV 칩 패턴을 그리는 CustomPainter (기본)
 class ChipPatternPainter extends CustomPainter {
   final Color chipColor;
 
@@ -1416,7 +1135,6 @@ class ChipPatternPainter extends CustomPainter {
       ..color = chipColor.withOpacity(0.3)
       ..style = PaintingStyle.fill;
 
-    // 칩 내부 패턴 그리기
     final rectWidth = size.width * 0.15;
     final rectHeight = size.height * 0.2;
     final spacing = size.width * 0.1;
@@ -1432,6 +1150,48 @@ class ChipPatternPainter extends CustomPainter {
         );
       }
     }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 심플한 EMV 칩 디자인
+class SimpleChipPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = const Color(0xFFB8A070)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // 수직선 (왼쪽)
+    canvas.drawLine(
+      Offset(size.width * 0.35, size.height * 0.15),
+      Offset(size.width * 0.35, size.height * 0.85),
+      linePaint,
+    );
+
+    // 수직선 (오른쪽)
+    canvas.drawLine(
+      Offset(size.width * 0.65, size.height * 0.15),
+      Offset(size.width * 0.65, size.height * 0.85),
+      linePaint,
+    );
+
+    // 수평선 (상단)
+    canvas.drawLine(
+      Offset(size.width * 0.15, size.height * 0.35),
+      Offset(size.width * 0.85, size.height * 0.35),
+      linePaint,
+    );
+
+    // 수평선 (하단)
+    canvas.drawLine(
+      Offset(size.width * 0.15, size.height * 0.65),
+      Offset(size.width * 0.85, size.height * 0.65),
+      linePaint,
+    );
   }
 
   @override
