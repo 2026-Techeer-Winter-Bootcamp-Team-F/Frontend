@@ -690,11 +690,11 @@ class _CardWalletSectionState extends State<CardWalletSection> {
               controller: _swiperController,
               cardsCount: _cards.length,
               numberOfCardsDisplayed: math.min(3, _cards.length),
-              backCardOffset: const Offset(0, 40), // 뒤 카드 오프셋
+              backCardOffset: const Offset(0, 24), // 뒤 카드 상승 폭 완화
               padding: EdgeInsets.zero, // 카드 비율 유지
-              scale: 0.9, // 뒤→앞 전환 시 확대 효과
+              scale: 0.05, // 뒤→앞 전환 확대 폭 완화
               onSwipe: _onSwipe,
-              duration: const Duration(milliseconds: 200), // 빠르고 자연스러운 전환
+              duration: const Duration(milliseconds: 240), // 부드러운 전환
               threshold: 50,
               maxAngle: 35, // angle.gif 스타일: 회전 효과
               allowedSwipeDirection: const AllowedSwipeDirection.symmetric(
