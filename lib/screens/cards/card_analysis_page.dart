@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:my_app/models/card.dart';
 import 'package:my_app/models/card_recommendation.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
@@ -15,6 +16,12 @@ class CardAnalysisPage extends StatefulWidget {
 class _CardAnalysisPageState extends State<CardAnalysisPage> {
   static const double _cardAspectRatio = 1.586; // 85.60mm x 53.98mm
 
+  // 샘플 카드 이미지 (assets)
+  static const List<String> _sampleCardImages = [
+    'assets/images/samsung_select_all_card.png',
+    'assets/images/sinhan_mr_life.png',
+  ];
+
   final CardService _cardService = CardService();
 
   // 내 카드 목록
@@ -28,16 +35,13 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   String? _recommendationsError;
 
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0;
-  int? _highlightedCardIndex;
+  final CarouselSliderController _carouselController = CarouselSliderController();
+  int _currentCardIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _scrollController.addListener(() {
-      if (mounted) setState(() => _scrollOffset = _scrollController.offset);
-    });
   }
 
   @override
@@ -64,7 +68,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
       setState(() {
         _cards
           ..clear()
-          ..addAll(cards.map(_toWalletCard));
+          ..addAll(cards.asMap().entries.map((e) => _toWalletCardWithIndex(e.value, e.key)));
         _isLoadingCards = false;
       });
     } catch (e) {
@@ -111,43 +115,49 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
         child: SingleChildScrollView(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Wallet stack
-                SizedBox(
-                  width: double.infinity,
-                  height: _walletSectionHeight(context),
-                  child: _buildWalletContent(context),
-                ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Wallet swiper (패딩 없이 전체 너비)
+              SizedBox(
+                width: double.infinity,
+                height: _walletSectionHeight(context),
+                child: _buildWalletContent(context),
+              ),
 
-                const SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-                // Header text
-                Text(
-                  '이 카드는 어때요?',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '3개월 동안의 가장 많이 쓴 카테고리 소비 평균에 따른 실익률을 분석했어요.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 18),
+              // 이하 컨텐츠는 패딩 적용
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header text
+                    Text(
+                      '이 카드는 어때요?',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '3개월 간 카테고리 별 소비 기준 카드 실익률 분석을 제공합니다.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
 
-                // Recommendation sections
-                _buildRecommendationsContent(context),
-              ],
-            ),
+                    // Recommendation sections
+                    _buildRecommendationsContent(context),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -239,85 +249,178 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
         ),
       );
     }
-    if (_cards.length == 1) {
-      return Center(
-        child: _buildSingleCard(context, _cards.first),
-      );
-    }
-    return _buildWalletStack(context);
+    return _buildCardSwiper(context);
   }
 
-  double _walletSectionHeight(BuildContext context) {
-    final availableWidth = MediaQuery.of(context).size.width - 40 - 12;
-    final cardHeight = availableWidth > 0 ? availableWidth / _cardAspectRatio : 200.0;
-    if (_isLoadingCards || _cardsError != null || _cards.isEmpty) {
-      return cardHeight.clamp(200.0, 320.0);
-    }
+  Widget _buildCardSwiper(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth - 60;
+    final cardHeight = cardWidth / _cardAspectRatio;
 
-    final step = _stackOffsetStep();
-    final stackedHeight = cardHeight + step * (_cards.length - 1);
-    return stackedHeight.clamp(220.0, 520.0);
+    return Column(
+      children: [
+        CarouselSlider.builder(
+          carouselController: _carouselController,
+          itemCount: _cards.length,
+          options: CarouselOptions(
+            height: cardHeight + 16,
+            viewportFraction: 0.85,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.2,
+            enableInfiniteScroll: false,
+            onPageChanged: (index, reason) {
+              setState(() => _currentCardIndex = index);
+            },
+          ),
+          itemBuilder: (context, index, realIndex) {
+            final card = _cards[index];
+            return _buildSwipeCard(context, card, index);
+          },
+        ),
+        const SizedBox(height: 16),
+        // 페이지 인디케이터
+        if (_cards.length > 1)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_cards.length, (index) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _currentCardIndex == index ? 20 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _currentCardIndex == index
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+          ),
+      ],
+    );
   }
 
-  Widget _buildSingleCard(BuildContext context, WalletCard card) {
-    return SizedBox(
-      width: double.infinity,
-      child: _buildCard(
-        context,
-        card,
-        true,
-        cardIndex: 0,
-        isHighlighted: _highlightedCardIndex == 0,
-        onHighlight: (h) => setState(() => _highlightedCardIndex = h ? 0 : null),
+  Widget _buildSwipeCard(BuildContext context, WalletCard card, int index) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: AspectRatio(
+          aspectRatio: _cardAspectRatio,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 카드 이미지
+                  if (card.imagePath != null)
+                    Image.asset(
+                      card.imagePath!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: card.color,
+                      ),
+                    )
+                  else
+                    Container(color: card.color),
+                  // 오버레이 정보
+                  Positioned(
+                    right: 16,
+                    top: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        card.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 20,
+                    bottom: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.bankName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          card.maskedNumber,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildWalletStack(BuildContext context) {
-    final step = _stackOffsetStep();
-    final revealAmount = (_scrollOffset * 0.06).clamp(0.0, 14.0);
-    final effectiveStep = (step - revealAmount).clamp(14.0, step);
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: List.generate(_cards.length, (i) {
-        final card = _cards[i];
-        final top = i * effectiveStep;
-        return Positioned(
-          top: top,
-          left: 0,
-          right: 0,
-          child: Transform.scale(
-            scale: 1.0,
-            alignment: Alignment.topCenter,
-            child: _buildCard(
-              context,
-              card,
-              i == _cards.length - 1,
-              cardIndex: i,
-              isHighlighted: _highlightedCardIndex == i,
-              onHighlight: (h) => setState(() => _highlightedCardIndex = h ? i : null),
-            ),
-          ),
-        );
-      }),
-    );
+  double _walletSectionHeight(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth - 60;
+    final cardHeight = cardWidth > 0 ? cardWidth / _cardAspectRatio : 200.0;
+    // PageView 높이 + 인디케이터 영역
+    final indicatorHeight = _cards.length > 1 ? 32.0 : 0.0;
+    return cardHeight + indicatorHeight + 32;
   }
 
-  double _stackOffsetStep() {
-    if (_cards.length <= 2) return 28;
-    if (_cards.length == 3) return 34;
-    return 40;
-  }
-
-  WalletCard _toWalletCard(MyCardInfo info) {
+  WalletCard _toWalletCardWithIndex(MyCardInfo info, int index) {
     final last4 = _extractLast4(info.cardNumber);
+    // 샘플 이미지 순환 적용
+    final sampleImage = _sampleCardImages[index % _sampleCardImages.length];
     return WalletCard(
       color: _companyColor(info.company),
       label: '${_shortCompanyName(info.company)} $last4',
       bankName: info.company,
       maskedNumber: '**** $last4',
-      imagePath: info.cardImageUrl.isNotEmpty ? info.cardImageUrl : null,
+      imagePath: sampleImage,
     );
   }
 
@@ -447,125 +550,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
     return '$out원';
-  }
-
-  Widget _buildCard(
-    BuildContext context,
-    WalletCard card,
-    bool isBottom, {
-    required int cardIndex,
-    required bool isHighlighted,
-    required void Function(bool) onHighlight,
-  }) {
-    return MouseRegion(
-      onEnter: (_) => onHighlight(true),
-      onExit: (_) => onHighlight(false),
-      child: AnimatedScale(
-        scale: isHighlighted ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        child: GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => CardDetailPage(card: card)),
-          ),
-          onTapDown: (_) => onHighlight(true),
-          onTapUp: (_) => onHighlight(false),
-          onTapCancel: () => onHighlight(false),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            child: AspectRatio(
-              aspectRatio: _cardAspectRatio,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: card.color,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 20,
-                      top: 20,
-                      child: Container(
-                        width: 48,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 18,
-                      top: 18,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          card.label,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      bottom: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            card.bankName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            card.maskedNumber,
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!isBottom)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.white.withOpacity(0.0),
-                                Colors.white.withOpacity(0.02),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
