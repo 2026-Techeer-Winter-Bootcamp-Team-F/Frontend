@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_app/screens/login/login_password_page.dart';
 
 class PhoneLoginPage extends StatefulWidget {
@@ -32,47 +33,60 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '전화번호를 입력해주세요.',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 18),
-              Text('전화번호', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                autofocus: true,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                onSubmitted: (_) => _next(),
-                decoration: InputDecoration(
-                  hintText: '01012345678',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.primaryColor, width: 2)),
-                  suffixIcon: _phoneController.text.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: Container(
-                            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF0F0F0)),
-                            padding: const EdgeInsets.all(6),
-                            child: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                          onPressed: () => setState(() => _phoneController.clear()),
-                        ),
+    const darkBg = Color(0xFF1E1E1E);
+    const darkerBg = Color(0xFF121212);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: darkBg,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: darkerBg,
+        appBar: AppBar(
+          backgroundColor: darkBg,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '전화번호를 입력해주세요.',
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
-                onChanged: (_) => setState(() {}),
-              ),
+                const SizedBox(height: 18),
+                const Text('전화번호', style: TextStyle(fontSize: 12, color: Color(0xFFB0B0B0))),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  autofocus: true,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+                  onSubmitted: (_) => _next(),
+                  decoration: InputDecoration(
+                    hintText: '01012345678',
+                    hintStyle: const TextStyle(color: Color(0xFF6B6B6B)),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF4A4A4A))),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.primaryColor, width: 2)),
+                    suffixIcon: _phoneController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: Container(
+                              decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF3A3A3A)),
+                              padding: const EdgeInsets.all(6),
+                              child: const Icon(Icons.clear, size: 18, color: Color(0xFFB0B0B0)),
+                            ),
+                            onPressed: () => setState(() => _phoneController.clear()),
+                          ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
@@ -86,6 +100,6 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

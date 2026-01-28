@@ -2,6 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Flutter: macOS (Device Preview)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": ["-d", "macos"],
+      "templateFor": "lib/main.dart"
+    },
+    {
+      "name": "Flutter: iPhone 17 Pro Max",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": ["-d", "iPhone 17 Pro Max"],
+      "preLaunchTask": "Start iPhone 17 Pro Max Simulator"
+    },
+    {
       "name": "Flutter: Launch (pick device)",
       "request": "launch",
       "type": "dart",

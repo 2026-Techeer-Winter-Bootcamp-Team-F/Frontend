@@ -18,10 +18,23 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   bool _isLoading = true;
   String? _error;
 
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
+  int? _highlightedCardIndex;
+
   @override
   void initState() {
     super.initState();
     _loadCards();
+    _scrollController.addListener(() {
+      if (mounted) setState(() => _scrollOffset = _scrollController.offset);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCards() async {
@@ -61,6 +74,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -160,26 +174,44 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   Widget _buildSingleCard(BuildContext context, WalletCard card) {
     return SizedBox(
       width: double.infinity,
-      child: _buildCard(context, card, true),
+      child: _buildCard(
+        context,
+        card,
+        true,
+        cardIndex: 0,
+        isHighlighted: _highlightedCardIndex == 0,
+        onHighlight: (h) => setState(() => _highlightedCardIndex = h ? 0 : null),
+      ),
     );
   }
 
   Widget _buildWalletStack(BuildContext context) {
     final step = _stackOffsetStep();
+    // 스크롤 시 뒤 카드 상단이 더 보이도록 간격 보정 (0~14px)
+    final revealAmount = (_scrollOffset * 0.06).clamp(0.0, 14.0);
+    final effectiveStep = (step - revealAmount).clamp(14.0, step);
+
     return Stack(
       clipBehavior: Clip.none,
       children: List.generate(_cards.length, (i) {
         final card = _cards[i];
-        final offset = i * step; // tighten overlap so more cards are visible
-        const scale = 1.0;
+        final top = i * effectiveStep;
         return Positioned(
-          top: offset,
+          top: top,
           left: 0,
           right: 0,
           child: Transform.scale(
-            scale: scale,
+            scale: 1.0,
             alignment: Alignment.topCenter,
-            child: _buildCard(context, card, i == _cards.length - 1),
+            child: _buildCard(
+              context,
+              card,
+              i == _cards.length - 1,
+              cardIndex: i,
+              isHighlighted: _highlightedCardIndex == i,
+              onHighlight: (h) =>
+                  setState(() => _highlightedCardIndex = h ? i : null),
+            ),
           ),
         );
       }),
@@ -478,10 +510,28 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
     return '$out원';
   }
 
-  Widget _buildCard(BuildContext context, WalletCard card, bool isBottom) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
-      child: Container(
+  Widget _buildCard(
+    BuildContext context,
+    WalletCard card,
+    bool isBottom, {
+    required int cardIndex,
+    required bool isHighlighted,
+    required void Function(bool) onHighlight,
+  }) {
+    return MouseRegion(
+      onEnter: (_) => onHighlight(true),
+      onExit: (_) => onHighlight(false),
+      child: AnimatedScale(
+        scale: isHighlighted ? 1.02 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+          onTapDown: (_) => onHighlight(true),
+          onTapUp: (_) => onHighlight(false),
+          onTapCancel: () => onHighlight(false),
+          child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
         child: AspectRatio(
           aspectRatio: _cardAspectRatio,
@@ -548,6 +598,8 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
               ],
             ),
           ),
+        ),
+      ),
         ),
       ),
     );

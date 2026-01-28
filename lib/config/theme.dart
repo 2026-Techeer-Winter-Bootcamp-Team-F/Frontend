@@ -26,14 +26,14 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
-  // Chart Colors
+  // Chart Colors (쨍한 컬러: #005FFF, #00FFFF, #FF00FF, #FFFF00 + 녹색·주황)
   static const List<Color> chartColors = [
-    Color(0xFF4F46E5),
-    Color(0xFF10B981),
-    Color(0xFFF59E0B),
-    Color(0xFFEF4444),
-    Color(0xFF8B5CF6),
-    Color(0xFF06B6D4),
+    Color(0xFF005FFF), // 파랑
+    Color(0xFF00FFFF), // 시안
+    Color(0xFFFF00FF), // 마젠타
+    Color(0xFFFFFF00), // 노랑
+    Color(0xFF00FF00), // 초록
+    Color(0xFFFF6600), // 주황
   ];
 }
 

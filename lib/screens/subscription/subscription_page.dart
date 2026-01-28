@@ -335,56 +335,59 @@ class _SubscriptionSectionWidget extends StatelessWidget {
         const SizedBox(height: 14),
         SizedBox(
           height: 180,
-          child: Row(
-            children: [
-              _NavArrowButton(
-                icon: Icons.chevron_left,
-                onPressed: safeIndex == 0 ? null : onPrev,
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: stackWidth,
-                height: stackHeight,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    final slide = Tween<Offset>(
-                      begin: const Offset(0.06, 0),
-                      end: Offset.zero,
-                    ).animate(animation);
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(position: slide, child: child),
-                    );
-                  },
-                  child: Stack(
-                    key: ValueKey<int>(safeIndex),
-                    clipBehavior: Clip.none,
-                    children: [
-                      for (final idx in visible.reversed)
-                        Positioned(
-                          left: (idx - safeIndex) * stackOffset,
-                          child: Transform.scale(
-                            scale: 1 - (idx - safeIndex) * scaleStep,
-                            alignment: Alignment.topLeft,
-                            child: Opacity(
-                              opacity: 1 - (idx - safeIndex) * 0.06,
-                              child: _SubscriptionCard(item: section.items[idx]),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _NavArrowButton(
+                  icon: Icons.chevron_left,
+                  onPressed: safeIndex == 0 ? null : onPrev,
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: stackWidth,
+                  height: stackHeight,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      final slide = Tween<Offset>(
+                        begin: const Offset(0.06, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: slide, child: child),
+                      );
+                    },
+                    child: Stack(
+                      key: ValueKey<int>(safeIndex),
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (final idx in visible.reversed)
+                          Positioned(
+                            left: (idx - safeIndex) * stackOffset,
+                            child: Transform.scale(
+                              scale: 1 - (idx - safeIndex) * scaleStep,
+                              alignment: Alignment.topLeft,
+                              child: Opacity(
+                                opacity: 1 - (idx - safeIndex) * 0.06,
+                                child: _SubscriptionCard(item: section.items[idx]),
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _NavArrowButton(
-                icon: Icons.chevron_right,
-                onPressed: safeIndex == section.items.length - 1 ? null : onNext,
-              ),
-            ],
+                const SizedBox(width: 8),
+                _NavArrowButton(
+                  icon: Icons.chevron_right,
+                  onPressed: safeIndex == section.items.length - 1 ? null : onNext,
+                ),
+              ],
+            ),
           ),
         ),
       ],

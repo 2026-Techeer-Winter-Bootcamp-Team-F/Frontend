@@ -4,6 +4,7 @@ import 'package:my_app/config/theme.dart';
 import 'package:my_app/models/transaction_models.dart';
 import 'package:my_app/services/transaction_service.dart';
 import 'package:my_app/screens/analysis/category_transaction_page.dart';
+import 'package:my_app/screens/main_navigation.dart';
 
 class CategoryDetailPage extends StatefulWidget {
   final DateTime? initialMonth;
@@ -23,6 +24,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
 
   bool _isLoading = true;
   String? _error;
+  bool _bannerHighlighted = false;
 
   // API data
   List<CategorySummaryItem> _categoryList = [];
@@ -223,7 +225,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                           amount: selectedData['amount'] as int,
                           change: selectedData['change'] as int,
                           percent: selectedData['percent'] as int,
-                          color: selectedData['color'] as Color,
+                          color: AppColors.chartColors[categoryIndex % AppColors.chartColors.length],
                         ),
                       ),
                     );
@@ -333,7 +335,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       final isSelected = index == selectedCategoryIndex;
 
                       return PieChartSectionData(
-                        color: data['color'] as Color,
+                        color: AppColors.chartColors[index % AppColors.chartColors.length],
                         value: (data['percent'] as int).toDouble(),
                         title: '',
                         radius: isSelected ? 44 : 38,
@@ -385,7 +387,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               data['percent'] as int,
               data['amount'] as int,
               data['change'] as int,
-              data['color'] as Color,
+              AppColors.chartColors[index % AppColors.chartColors.length],
               isSelected: index == selectedCategoryIndex,
               onTap: () {
                 setState(() {
@@ -510,28 +512,35 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
+  // 다크 모드용 색상 (첫 번째 사진 레이아웃)
+  static const Color _darkCardBg = Color(0xFF2C2C2E);
+  static const Color _darkSectionBg = Color(0xFF1E1E1E);
+  static const Color _goldIcon = Color(0xFFD4AF37);
+  static const Color _higherRed = Color(0xFFFF5252);
+  static const Color _lowerBlue = Color(0xFF2196F3);
+
   Widget _buildAgeComparisonSection() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: _darkSectionBg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '김용진 님은',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
             ),
           ),
-          Text(
+          const Text(
             '20대 평균보다',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 24),
@@ -539,7 +548,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
             children: [
               Expanded(
                 child: _buildComparisonCard(
-                  ageComparisonData[0]['icon'] as String,
                   ageComparisonData[0]['name'] as String,
                   ageComparisonData[0]['difference'] as int,
                   ageComparisonData[0]['isHigher'] as bool,
@@ -548,7 +556,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildComparisonCard(
-                  ageComparisonData[1]['icon'] as String,
                   ageComparisonData[1]['name'] as String,
                   ageComparisonData[1]['difference'] as int,
                   ageComparisonData[1]['isHigher'] as bool,
@@ -561,122 +568,129 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  Widget _buildComparisonCard(
-      String icon, String name, int difference, bool isHigher) {
+  /// 첫 번째 사진 레이아웃: 아이콘 좌측 상단, 카테고리+삼각형, "X만원 높아요/낮아요" — 다크 모드
+  Widget _buildComparisonCard(String name, int difference, bool isHigher) {
+    final IconData iconData = name == '쇼핑' ? Icons.account_balance : Icons.credit_card;
+    final color = isHigher ? _higherRed : _lowerBlue;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: _darkCardBg,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 48)),
+          Icon(iconData, color: _goldIcon, size: 28),
           const SizedBox(height: 12),
-          Text(
-            name,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${(difference / 10000).toStringAsFixed(0)}만원',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isHigher ? const Color(0xFFFF5252) : const Color(0xFF2196F3),
+                name,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                isHigher ? '높아요' : '낮아요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isHigher ? const Color(0xFFFF5252) : const Color(0xFF2196F3),
-                ),
+              Icon(
+                isHigher ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                color: color,
+                size: 20,
               ),
             ],
           ),
-          Icon(
-            isHigher ? Icons.arrow_upward : Icons.arrow_downward,
-            color: isHigher ? const Color(0xFFFF5252) : const Color(0xFF2196F3),
-            size: 20,
+          const SizedBox(height: 6),
+          Text(
+            '${(difference / 10000).toStringAsFixed(0)}만원 ${isHigher ? '높아요' : '낮아요'}',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ],
       ),
     );
   }
 
+  /// 첫 번째 사진 레이아웃: 원형 아이콘(좌), "OO에 X원 지출하셨네요!", "OO 님의 카드를 분석해봤어요!" — 다크 모드. 버튼처럼 터치/호버 시 살짝 확대, 탭 시 [카드] 탭으로 이동.
   Widget _buildCardAnalysisBanner() {
     final topCategory = categoryData.isNotEmpty ? categoryData.first : null;
     final bannerText = topCategory != null
         ? '${topCategory['name']}에 ${_formatCurrencyFull(topCategory['amount'] as int)} 지출하셨네요!'
         : '지출 내역을 확인해보세요!';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3F3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _bannerHighlighted = true),
+      onExit: (_) => setState(() => _bannerHighlighted = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _bannerHighlighted = true),
+        onTapUp: (_) => setState(() => _bannerHighlighted = false),
+        onTapCancel: () => setState(() => _bannerHighlighted = false),
+        onTap: () {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const MainNavigation(initialIndex: 2)),
+            (r) => false,
+          );
+        },
+        child: AnimatedScale(
+          scale: _bannerHighlighted ? 1.02 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF5252).withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: _darkCardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
             ),
-            child: const Icon(
-              Icons.credit_card,
-              color: Color(0xFFFF5252),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  bannerText,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _higherRed.withOpacity(0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: _higherRed,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '카드를 분석해봤어요!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bannerText,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFB0B0B0),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '김용진 님의 카드를 분석해봤어요!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.chevron_right,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -5,6 +5,9 @@ import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/main_navigation.dart';
 import 'card_analysis_page.dart';
 
+/// 선택 탭, 진행률 강조색
+const Color _accentColor = Color(0xFF005FFF);
+
 class CardDetailPage extends StatefulWidget {
   final WalletCard card;
 
@@ -16,173 +19,308 @@ class CardDetailPage extends StatefulWidget {
 
 class _CardDetailPageState extends State<CardDetailPage> {
   static const int _currentTabIndex = 2;
-  late DateTime _currentMonth;
+  late int _selectedMonthIndex;
+  List<DateTime> _displayMonths = [];
+  final ScrollController _monthScrollController = ScrollController();
 
+  /// 26년 1월을 기준으로, 25년 1월 ~ 26년 12월 (24개월). 진입 시 26년 1월 선택·노출.
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _currentMonth = DateTime(now.year, now.month);
-  }
-
-  void _goToPreviousMonth() {
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-    });
-  }
-
-  void _goToNextMonth() {
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-    });
-  }
-
-  String _monthLabel(int month) {
-    return '${month.toString().padLeft(2, '0')}월';
-  }
-
-  String _currentMonthLabel() {
-    return '${_currentMonth.year}년 ${_monthLabel(_currentMonth.month)}';
-  }
-
-  String _previousMonthLabel() {
-    final prev = DateTime(_currentMonth.year, _currentMonth.month - 1);
-    return _monthLabel(prev.month);
-  }
-
-  String _nextMonthLabel() {
-    final next = DateTime(_currentMonth.year, _currentMonth.month + 1);
-    return _monthLabel(next.month);
+    _buildDisplayMonths();
+    _selectedMonthIndex = 12; // 26년 1월 (0-based: 12)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToMonth(12));
   }
 
   @override
+  void dispose() {
+    _monthScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToMonth(int index) {
+    if (!_monthScrollController.hasClients) return;
+    const itemWidth = 48.0;
+    const paddingLeft = 16.0;
+    const peekNext = 22.0; // 26년 2월이 최우측에 살짝 보이도록
+    final pos = _monthScrollController.position;
+    final offset = paddingLeft + (index + 1) * itemWidth + peekNext - pos.viewportDimension;
+    _monthScrollController.jumpTo(offset.clamp(0.0, pos.maxScrollExtent));
+  }
+
+  void _buildDisplayMonths() {
+    final list = <DateTime>[];
+    for (int y = 2025; y <= 2026; y++) {
+      for (int m = 1; m <= 12; m++) {
+        list.add(DateTime(y, m));
+      }
+    }
+    _displayMonths = list;
+  }
+
+  String _monthLabel(DateTime d) => '${d.month}월';
+  String _yearLabel(DateTime d) => '${d.year % 100}년';
+
+  @override
   Widget build(BuildContext context) {
+    final onSurface = Colors.white;
+    final onSurfaceVariant = Colors.white70;
+
     return Scaffold(
+      backgroundColor: const Color(0xFF1C1C1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: onSurface,
       ),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 8),
-            Flexible(
-              flex: 4,
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: _buildVerticalCard(context),
-                ),
-              ),
-            ),
+            _buildMonthTabs(onSurface, onSurfaceVariant),
+            const SizedBox(height: 16),
+
+            // 1. 은색/회색 카드 (LG전자 위·The 구독케어 아래, 화살표+ShinhanCard 세로, 칩, subscribe)
+            _buildNewCard(context),
             const SizedBox(height: 10),
-            Text(widget.card.label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
-            const SizedBox(height: 6),
-            Text('${widget.card.maskedNumber} 본인', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 18),
 
-            // Month selector
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(
-                    onTap: _goToPreviousMonth,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.chevron_left, size: 28, color: Colors.white),
-                          const SizedBox(width: 6),
-                          Text(_previousMonthLabel(), style: TextStyle(color: Colors.white.withOpacity(0.9))),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Text(_currentMonthLabel(), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
-                  InkWell(
-                    onTap: _goToNextMonth,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                      child: Row(
-                        children: [
-                          Text(_nextMonthLabel(), style: TextStyle(color: Colors.white.withOpacity(0.9))),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.chevron_right, size: 28, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // 카드 아래 텍스트
+            Text(
+              _cardTitle(),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: onSurface),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 6),
+            Text(
+              _maskedNumberFormatted(),
+              style: TextStyle(fontSize: 13, color: onSurfaceVariant),
+            ),
+            SizedBox(height: (20 * 0.3).roundToDouble()),
 
-            // Rounded white card area with semicircle chart
+            // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
             Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      // semicircle chart
-                      SemicircleChart(percent: 0.7, received: 23000, total: 33000),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: Color(0xFF15C1D6))),
-                                    const SizedBox(width: 8),
-                                    Text('내가 받은 혜택', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
-                                  ],
-                                ),
-                                Text(_formatWon(23000), style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: Color(0xFF8B5CF6))),
-                                    const SizedBox(width: 8),
-                                    Text('이 카드의 총 혜택', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
-                                  ],
-                                ),
-                                Text(_formatWon(33000), style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _buildCircularBenefitProgress(context, onSurface, onSurfaceVariant),
             ),
             const SizedBox(height: 18),
           ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavBar(context),
+    );
+  }
+
+  Widget _buildMonthTabs(Color onSurface, Color onSurfaceVariant) {
+    return SizedBox(
+      height: 58,
+      child: ListView.builder(
+        controller: _monthScrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        itemCount: _displayMonths.length,
+        itemExtent: 48,
+        itemBuilder: (context, i) {
+          final d = _displayMonths[i];
+          final selected = _selectedMonthIndex == i;
+          return InkWell(
+            onTap: () => setState(() => _selectedMonthIndex = i),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  selected
+                      ? Text(
+                          _yearLabel(d),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: onSurfaceVariant),
+                        )
+                      : const SizedBox(height: 12),
+                  const SizedBox(height: 1),
+                  Text(
+                    _monthLabel(d),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? onSurface : onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 2,
+                    width: 28,
+                    decoration: BoxDecoration(
+                      color: selected ? _accentColor : Colors.transparent,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNewCard(BuildContext context) {
+    const aspectRatio = 1.586;
+    final bankDisplay = _bankDisplayName(widget.card.bankName);
+    final screenW = MediaQuery.of(context).size.width;
+    final cardWidth = (screenW * 0.58).clamp(165.0, 215.0);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: SizedBox(
+        width: cardWidth,
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8E8E8),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 워터마크 "subscribe" (중앙, 흐릿한 회색)
+                Center(
+                  child: Opacity(
+                    opacity: 0.15,
+                    child: Text('subscribe', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w300, color: Colors.grey.shade700)),
+                  ),
+                ),
+                // 좌측 상단: LG전자(위) + The 구독케어(아래) 세로 배치
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('LG전자', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black87)),
+                      const SizedBox(height: 2),
+                      Text('The 구독케어', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.black87)),
+                    ],
+                  ),
+                ),
+                // 좌측: 화살표 아이콘 + ShinhanCard 세로
+                Positioned(
+                  left: 6,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.arrow_upward, size: 12, color: Colors.black54),
+                        const SizedBox(height: 4),
+                        RotatedBox(
+                          quarterTurns: 3,
+                          child: Text(bankDisplay, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black54)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 좌측 중앙: EMV 칩
+                Positioned(
+                  left: 12,
+                  bottom: 32,
+                  child: Container(
+                    width: 28,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _bankDisplayName(String bankName) {
+    if (bankName.contains('신한')) return 'ShinhanCard';
+    return bankName.replaceAll('카드', '').trim();
+  }
+
+  String _cardTitle() {
+    return 'LG전자 The 구독케어 ${widget.card.bankName}';
+  }
+
+  String _maskedNumberFormatted() {
+    final last4 = widget.card.maskedNumber.split(RegExp(r'\s+')).last;
+    if (RegExp(r'^\d{4}$').hasMatch(last4)) {
+      return '4221-55**-****-$last4 본인';
+    }
+    return '${widget.card.maskedNumber} 본인';
+  }
+
+  Widget _buildCircularBenefitProgress(BuildContext context, Color onSurface, Color onSurfaceVariant) {
+    const totalBenefit = 33000;
+    const receivedBenefit = 23000;
+    final percent = (receivedBenefit / totalBenefit).clamp(0.0, 1.0);
+    final percentText = (percent * 100).toStringAsFixed(1);
+    final screenW = MediaQuery.of(context).size.width;
+    final maxFromWidth = screenW - 24;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const scale = 0.6; // 링 0.6배에 맞춘 내부 비율
+        final ringSize = (math.min(maxFromWidth, constraints.maxHeight).clamp(260.0, 500.0)) * scale;
+        final stroke = (ringSize * 18 / 220).clamp(16.0 * scale, 32.0 * scale);
+        final fs1 = (ringSize * 12 / 220).clamp(12.0 * scale, 16.0 * scale);
+        final fs2 = (ringSize * 13 / 220).clamp(13.0 * scale, 17.0 * scale);
+        final fs3 = (ringSize * 26 / 220).clamp(26.0 * scale, 36.0 * scale);
+        final fs4 = (ringSize * 13 / 220).clamp(13.0 * scale, 16.0 * scale); // % 달성 pill
+        final padH = (14.0 * scale).roundToDouble();
+        final padV = (6.0 * scale).roundToDouble();
+        final gap1 = (6.0 * scale).roundToDouble();
+        final gap2 = (12.0 * scale).roundToDouble();
+        return Center(
+          child: SizedBox(
+            width: ringSize,
+            height: ringSize,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: Size(ringSize, ringSize),
+                  painter: _CircleProgressPainter(
+                    percent: percent,
+                    trackColor: const Color(0xFF282828),
+                    progressColor: _accentColor,
+                    strokeWidth: stroke,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('이번 달 총 혜택 ${_formatWon(totalBenefit)}', style: TextStyle(fontSize: fs1, color: onSurfaceVariant)),
+                    SizedBox(height: gap1),
+                    Text('내가 받은 혜택', style: TextStyle(fontSize: fs2, fontWeight: FontWeight.w600, color: _accentColor)),
+                    SizedBox(height: gap1),
+                    Text(_formatWon(receivedBenefit), style: TextStyle(fontSize: fs3, fontWeight: FontWeight.w800, color: onSurface)),
+                    SizedBox(height: gap2),
+                    // 69.7% 달성 — 파란 알약
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+                      decoration: BoxDecoration(
+                        color: _accentColor,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text('$percentText% 달성', style: TextStyle(fontSize: fs4, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -250,46 +388,6 @@ class _CardDetailPageState extends State<CardDetailPage> {
     );
   }
 
-  Widget _buildVerticalCard(BuildContext context) {
-    final width = MediaQuery.of(context).size.width * 0.5;
-    final height = width * 1.6;
-
-    if (widget.card.imagePath != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.asset(
-          widget.card.imagePath!,
-          width: width,
-          height: height,
-          fit: BoxFit.cover,
-          errorBuilder: (c, e, s) => _fallbackCard(width, height),
-        ),
-      );
-    }
-
-    return _fallbackCard(width, height);
-  }
-
-  Widget _fallbackCard(double width, double height) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: widget.card.color,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8))],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.credit_card, size: 56, color: Colors.white.withOpacity(0.9)),
-          const SizedBox(height: 16),
-          Text(widget.card.bankName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-
   static String _formatWon(int value) {
     final s = value.toString();
     final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
@@ -297,102 +395,42 @@ class _CardDetailPageState extends State<CardDetailPage> {
   }
 }
 
-class SemicircleChart extends StatelessWidget {
-  final double percent; // 0..1
-  final int received;
-  final int total;
-
-  const SemicircleChart({super.key, required this.percent, required this.received, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width - 64;
-        final desiredHeight = 160.0;
-        final maxHeight =
-            constraints.maxHeight.isFinite ? constraints.maxHeight : desiredHeight;
-        final height = math.min(desiredHeight, maxHeight).clamp(120.0, desiredHeight);
-        return SizedBox(
-          width: maxWidth,
-          height: height,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CustomPaint(
-                size: Size(maxWidth, height),
-                painter: _SemicirclePainter(
-                  percent: percent,
-                  background: Colors.grey.shade200,
-                  gradient: const LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Color(0xFF0A8A96),
-                      Color(0xFF15C1D6),
-                      Color(0xFF6DEDF2),
-                    ],
-                  ),
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('받은 혜택', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(height: 6),
-                  Text(_formatWonStatic(received), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  static String _formatWonStatic(int value) {
-    final s = value.toString();
-    final out = s.replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (m) => ',');
-    return '$out원';
-  }
-}
-
-class _SemicirclePainter extends CustomPainter {
+/// 원형 혜택 진행률 (이번 달 총 혜택 / 내가 받은 혜택)
+class _CircleProgressPainter extends CustomPainter {
   final double percent;
-  final Color background;
-  final Gradient gradient;
+  final Color trackColor;
+  final Color progressColor;
+  final double strokeWidth;
 
-  _SemicirclePainter({required this.percent, required this.background, required this.gradient});
+  _CircleProgressPainter({required this.percent, required this.trackColor, required this.progressColor, this.strokeWidth = 14.0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height);
-    final radius = math.min(size.width / 2, size.height);
-    final stroke = 24.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - (strokeWidth / 2 + 4);
+    final stroke = strokeWidth;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
+    // 배경 링 (다크 그레이/블랙)
     final bgPaint = Paint()
-      ..color = background
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
+    // 진행 링 (파란색) — 좌하에서 시계방향으로 우상 쪽
     final fgPaint = Paint()
-      ..shader = gradient.createShader(rect)
+      ..color = progressColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
-    // draw full semicircle background (180 degrees)
-    canvas.drawArc(rect, math.pi, math.pi, false, bgPaint);
-
-    // draw foreground proportional arc from left to right (차오르는 그라데이션)
-    final sweep = math.pi * (percent.clamp(0.0, 1.0));
-    canvas.drawArc(rect, math.pi, sweep, false, fgPaint);
+    canvas.drawCircle(center, radius, bgPaint);
+    final sweep = 2 * math.pi * percent.clamp(0.0, 1.0);
+    canvas.drawArc(rect, 5 * math.pi / 4, sweep, false, fgPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _SemicirclePainter oldDelegate) => oldDelegate.percent != percent;
+  bool shouldRepaint(covariant _CircleProgressPainter oldDelegate) =>
+      oldDelegate.percent != percent || oldDelegate.trackColor != trackColor || oldDelegate.progressColor != progressColor;
 }

@@ -21,6 +21,7 @@ class ConfirmSignupPage extends StatefulWidget {
 
 class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   late String _carrier;
   final List<String> _carriers = [
     'SKT',
@@ -32,7 +33,8 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
   ];
 
   bool get _phoneValid => RegExp(r'^\d{10,11}$').hasMatch(_phoneController.text.trim());
-  bool get _canProceed => _phoneValid;
+  bool get _emailValid => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_emailController.text.trim());
+  bool get _canProceed => _phoneValid && _emailValid;
 
   @override
   void initState() {
@@ -43,6 +45,7 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -50,7 +53,13 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
     if (!_canProceed) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => VerificationCodePage(phone: _phoneController.text.trim(), name: widget.name),
+        builder: (_) => VerificationCodePage(
+          phone: _phoneController.text.trim(),
+          name: widget.name,
+          email: _emailController.text.trim(),
+          ssnFront: widget.ssnFront,
+          ssnBackFirst: widget.ssnBackFirst,
+        ),
       ),
     );
   }
@@ -130,6 +139,15 @@ class _ConfirmSignupPageState extends State<ConfirmSignupPage> {
               Text('이름', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 6),
               Text(widget.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 18),
+              Text('이메일', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _fieldDecoration(theme).copyWith(hintText: 'example@email.com'),
+                onChanged: (_) => setState(() {}),
+              ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,

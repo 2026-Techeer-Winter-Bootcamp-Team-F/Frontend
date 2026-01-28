@@ -1194,13 +1194,13 @@ class _HomePageState extends State<HomePage> {
       (a.value['amount'] as int) > (b.value['amount'] as int) ? a : b
     ).key;
 
-    // 도넛 차트 섹션 구성 (상위 5 + 기타)
+    // 도넛 차트 섹션 구성 (상위 5 + 기타) — 쨍한 컬러 팔레트
     final chartSections = <PieChartSectionData>[];
     for (var i = 0; i < topCount; i++) {
       final data = allEntries[i].value;
       final isSelected = !isOtherAggregate && safeIndex == i;
       chartSections.add(PieChartSectionData(
-        color: data['color'] as Color,
+        color: AppColors.chartColors[i % AppColors.chartColors.length],
         value: (data['percent'] as int).toDouble(),
         title: '',
         radius: isSelected ? 35 : 30,
@@ -1209,7 +1209,7 @@ class _HomePageState extends State<HomePage> {
     if (hasOthers) {
       final isSelected = isOtherAggregate || safeIndex >= maxChartSlices;
       chartSections.add(PieChartSectionData(
-        color: const Color(0xFFBDBDBD),
+        color: AppColors.chartColors[5],
         value: otherPercent.toDouble(),
         title: '',
         radius: isSelected ? 35 : 30,
@@ -1338,7 +1338,7 @@ class _HomePageState extends State<HomePage> {
               data.value['percent'] as int,
               data.value['amount'] as int,
               data.value['change'] as int,
-              data.value['color'] as Color,
+              AppColors.chartColors[index % AppColors.chartColors.length],
               isSelected: isSelected,
               onTap: () {
                 setState(() {
@@ -1497,7 +1497,9 @@ class _HomePageState extends State<HomePage> {
             height: 200,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: categoryData.entries.take(5).map((entry) {
+              children: categoryData.entries.take(5).toList().asMap().entries.map((e) {
+                final i = e.key;
+                final entry = e.value;
                 final percent = entry.value['percent'] as int;
                 final change = entry.value['change'] as int;
                 final lastMonthPercent = percent + (change / 10000).round();
@@ -1507,7 +1509,7 @@ class _HomePageState extends State<HomePage> {
                     entry.key,
                     lastMonthPercent,
                     percent,
-                    entry.value['color'] as Color,
+                    AppColors.chartColors[i % AppColors.chartColors.length],
                   ),
                 );
               }).toList(),
