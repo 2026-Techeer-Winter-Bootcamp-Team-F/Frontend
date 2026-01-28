@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:my_app/models/card.dart';
 import 'package:my_app/models/card_recommendation.dart';
 import 'package:my_app/screens/cards/card_detail_page.dart';
@@ -34,7 +35,7 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   String? _recommendationsError;
 
   final ScrollController _scrollController = ScrollController();
-  final PageController _cardPageController = PageController(viewportFraction: 0.85);
+  final CarouselSliderController _carouselController = CarouselSliderController();
   int _currentCardIndex = 0;
 
   @override
@@ -46,7 +47,6 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _cardPageController.dispose();
     super.dispose();
   }
 
@@ -254,30 +254,30 @@ class _CardAnalysisPageState extends State<CardAnalysisPage> {
 
   Widget _buildCardSwiper(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth - 60; // 좌우 30px 여백
+    final cardWidth = screenWidth - 60;
     final cardHeight = cardWidth / _cardAspectRatio;
 
     return Column(
       children: [
-        SizedBox(
-          height: cardHeight + 20,
-          child: PageView.builder(
-            controller: _cardPageController,
-            itemCount: _cards.length,
-            padEnds: true,
-            onPageChanged: (index) {
+        CarouselSlider.builder(
+          carouselController: _carouselController,
+          itemCount: _cards.length,
+          options: CarouselOptions(
+            height: cardHeight + 16,
+            viewportFraction: 0.85,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.2,
+            enableInfiniteScroll: false,
+            onPageChanged: (index, reason) {
               setState(() => _currentCardIndex = index);
             },
-            itemBuilder: (context, index) {
-              final card = _cards[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: _buildSwipeCard(context, card, index),
-              );
-            },
           ),
+          itemBuilder: (context, index, realIndex) {
+            final card = _cards[index];
+            return _buildSwipeCard(context, card, index);
+          },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         // 페이지 인디케이터
         if (_cards.length > 1)
           Row(
