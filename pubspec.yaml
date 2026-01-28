@@ -50,6 +50,9 @@ dependencies:
   # 아이콘
   flutter_svg: ^2.0.10
 
+  # 카드 스와이프 (Tinder 스타일)
+  flutter_card_swiper: ^7.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
