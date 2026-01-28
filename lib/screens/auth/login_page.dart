@@ -72,24 +72,16 @@ class _LoginPageState extends State<LoginPage> {
                 Center(
                   child: Column(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.credit_card,
-                          color: Colors.white,
-                          size: 40,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 200,
+                        height: 200,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 0),
                       const Text(
                         'BeneFit',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 48,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
                         ),
