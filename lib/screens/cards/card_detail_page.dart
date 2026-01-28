@@ -4,7 +4,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:my_app/config/theme.dart';
 import 'package:my_app/screens/main_navigation.dart';
-import 'package:stacked_notification_cards/stacked_notification_cards.dart';
 import 'card_analysis_page.dart';
 
 /// 선택 탭, 진행률 강조색
@@ -39,6 +38,8 @@ class _CardDetailPageState extends State<CardDetailPage> {
   late final String _cardTitle;
   late final String _maskedNumber;
   
+  bool _isSpendingExpanded = true;
+
   // 최근 소비 내역 더미 데이터
   static const List<Map<String, dynamic>> _recentSpendingData = [
     {'icon': Icons.shopping_cart, 'merchant': 'GS25', 'amount': 24300},
@@ -576,81 +577,77 @@ class _CardDetailPageState extends State<CardDetailPage> {
   }
 
   Widget _buildRecentSpendingHistory() {
-    final notifications = _recentSpendingData.asMap().entries.map((entry) {
-      final index = entry.key;
-      final data = entry.value;
-      return NotificationCard(
-        date: DateTime.now().subtract(Duration(days: index)),
-        title: data['merchant'] as String,
-        subtitle: _formatWon(data['amount'] as int),
-        leading: _buildSpendingLeading(data['icon'] as IconData),
-      );
-    }).toList();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: StackedNotificationCards(
-            notificationCards: notifications,
-            notificationCardTitle: '최근 소비 내역',
-            cardColor: const Color(0xFF2C2C2E),
-            padding: 12,
-            cardsSpacing: 12,
-            cardCornerRadius: 14,
-            titleTextStyle: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: _onSurface,
-            ),
-            subtitleTextStyle: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 13,
-              color: _onSurfaceVariant,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 6),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '최근 소비 내역',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: _onSurface,
+                ),
+              ),
+              InkWell(
+                onTap: () => setState(() => _isSpendingExpanded = !_isSpendingExpanded),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        _isSpendingExpanded ? '접기' : '펼치기',
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 13,
+                          color: _onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        _isSpendingExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: _onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
-            actionTitle: const Text(
-              '최근 소비 내역',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: _onSurface,
-              ),
-            ),
-            showLessAction: const Text(
-              '접기',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 13,
-                color: _onSurfaceVariant,
-              ),
-            ),
-            clearAllNotificationsAction: const Text(
-              '전체 삭제',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 13,
-                color: _onSurfaceVariant,
-              ),
-            ),
-            clearAllStacked: const SizedBox.shrink(),
-            cardClearButton: const Icon(Icons.delete_outline, color: Colors.white70),
-            cardViewButton: const Icon(Icons.chevron_right, color: Colors.white70),
-            onTapClearAll: () {},
-            onTapClearCallback: (_) {},
-            onTapViewCallback: (_) {},
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: AnimatedCrossFade(
+            duration: const Duration(milliseconds: 220),
+            crossFadeState:
+                _isSpendingExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+            firstChild: _buildSpendingListView(),
+            secondChild: _buildSpendingStackedView(),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSpendingListView() {
+    return Column(
+      children: _recentSpendingData.asMap().entries.map((entry) {
+        final index = entry.key;
+        final data = entry.value;
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < _recentSpendingData.length - 1 ? 12.0 : 0),
+          child: _buildSpendingCard(data),
+        );
+      }).toList(),
     );
   }
 
@@ -663,6 +660,82 @@ class _CardDetailPageState extends State<CardDetailPage> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Icon(icon, color: Colors.white70, size: 18),
+    );
+  }
+
+
+  Widget _buildSpendingStackedView() {
+    const peekHeight = 10.0; // 뒤 카드가 보이는 높이
+    final visibleCount = math.min(3, _recentSpendingData.length);
+    const cardHeight = 64.0;
+    final stackHeight = cardHeight + peekHeight * (visibleCount - 1);
+
+    // 역순으로 생성: 마지막 카드(뒤)부터 첫 번째 카드(앞)까지
+    final children = <Widget>[];
+    for (int i = visibleCount - 1; i >= 0; i--) {
+      final distanceFromTop = i; // 0이 맨 앞, 숫자가 클수록 뒤
+      final opacity = (1.0 - 0.2 * distanceFromTop).clamp(0.4, 1.0);
+      final scale = (1.0 - 0.02 * distanceFromTop).clamp(0.94, 1.0);
+      children.add(
+        Positioned(
+          top: peekHeight * distanceFromTop,
+          left: 0,
+          right: 0,
+          child: Opacity(
+            opacity: opacity,
+            child: Transform.scale(
+              scale: scale,
+              alignment: Alignment.topCenter,
+              child: _buildSpendingCard(_recentSpendingData[i]),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: stackHeight,
+      child: Stack(children: children),
+    );
+  }
+
+  Widget _buildSpendingCard(Map<String, dynamic> data) {
+    final icon = data['icon'] as IconData;
+    final merchant = data['merchant'] as String;
+    final amount = data['amount'] as int;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _buildSpendingLeading(icon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              merchant,
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: _onSurface,
+              ),
+            ),
+          ),
+          Text(
+            _formatWon(amount),
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: _onSurface,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
