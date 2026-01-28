@@ -102,7 +102,7 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
                 ),
               const SizedBox(height: 32),
               const SpendingReportSection(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 8),
               const BenefitSummarySection(),
               const SizedBox(height: 40),
               // 카드 섹션 (2/3만 보이게)
@@ -395,113 +395,130 @@ class BenefitSummarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final labelColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+    final iconColor = isDark ? Colors.grey[600]! : Colors.grey[500]!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 받은 혜택
+          // 받은 혜택 (세로 파란 바 + 라벨/금액)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.blue[400],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '받은 혜택',
-                      style: TextStyle(
-                        color: subTextColor,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '₩12,500',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 구분선
-          Container(
-            width: 1,
-            height: 40,
-            color: isDark ? Colors.grey[700] : Colors.grey[300],
-          ),
-          // 놓친 혜택
-          Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: subTextColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '놓친 혜택',
-                      style: TextStyle(
-                        color: subTextColor,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                Container(
+                  width: 3,
+                  height: 24,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '₩2,100',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '받은 혜택',
+                        style: TextStyle(color: labelColor, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₩15,400',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF60A5FA),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // 정보 아이콘
-          GestureDetector(
-            onTap: () {
-              // 정보 표시
-            },
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+          // 선물 상자 아이콘 (가운데)
+          Icon(Icons.card_giftcard, size: 24, color: iconColor),
+          const SizedBox(width: 16),
+          // 놓친 혜택 (세로 회색 바 + 라벨/금액)
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 3,
+                  height: 24,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: labelColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              child: Icon(
-                Icons.info_outline,
-                size: 16,
-                color: isDark ? Colors.grey[500] : Colors.grey[500],
-              ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '놓친 혜택',
+                        style: TextStyle(color: labelColor, fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₩12,500',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 우측 겹치는 정보 아이콘 두 개
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: iconColor),
+                    ),
+                    child: Icon(Icons.info_outline, size: 16, color: iconColor),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Opacity(
+                    opacity: 0.7,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: iconColor),
+                      ),
+                      child: Icon(Icons.info_outline, size: 16, color: iconColor),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -524,6 +541,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
   List<UserCardInfo> _cards = [];
   bool _isLoading = true;
   String? _error;
+  int? _hoveredOrTouchedBackIndex; // 뒤 카드 터치/호버 시 펼쳐 보일 인덱스
 
   @override
   void initState() {
@@ -559,6 +577,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
   void _goToPrevious() {
     if (_currentIndex > 0) {
       setState(() {
+        _hoveredOrTouchedBackIndex = null;
         _currentIndex--;
       });
     }
@@ -567,6 +586,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
   void _goToNext() {
     if (_currentIndex < _cards.length - 1) {
       setState(() {
+        _hoveredOrTouchedBackIndex = null;
         _currentIndex++;
       });
     }
@@ -621,6 +641,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                         (index) => GestureDetector(
                           onTap: () {
                             setState(() {
+                              _hoveredOrTouchedBackIndex = null;
                               _currentIndex = index;
                             });
                           },
@@ -644,7 +665,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
         Expanded(child: _buildContent()),
       ],
     );
@@ -747,14 +768,28 @@ class _CardWalletSectionState extends State<CardWalletSection> {
   Widget _buildStackView() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        const bottomReserve = 8.0; // 카드 세로 여유 확보(회사명·끝4자리 활짝 보이게)
+        final availableHeight = (constraints.maxHeight - bottomReserve).clamp(0.0, double.infinity);
         final screenWidth = MediaQuery.of(context).size.width;
         final cardWidth = screenWidth - 80;
-        final fullCardHeight = cardWidth * 1.4; // 카드 높이 비율 조정
-        final visibleHeight = constraints.maxHeight + 20; // 더 많이 보이도록
-        
-        return GestureDetector(
+        final fullCardHeight = cardWidth * 1.4;
+        final visibleHeight = math.min(availableHeight, fullCardHeight);
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: availableHeight,
+              child: GestureDetector(
           onTapUp: (details) {
             final tapX = details.localPosition.dx;
+            // 뒤 카드 펼친 상태에서 탭 시 펼침만 해제
+            if (_hoveredOrTouchedBackIndex != null) {
+              setState(() => _hoveredOrTouchedBackIndex = null);
+              return;
+            }
+            // 뒤 카드 터치 영역(우측)에서는 카드 전환하지 않음
+            if (tapX >= 24 + cardWidth - 56) return;
             if (tapX < screenWidth / 3) {
               _goToPrevious();
             } else {
@@ -785,18 +820,28 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                           0,
                         ),
                         child: Opacity(
-                          opacity: i > _currentIndex ? 0.7 : 0.0,
-                          child: SizedBox(
-                            width: cardWidth,
-                            height: visibleHeight,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: OverflowBox(
-                                alignment: Alignment.topCenter,
-                                maxHeight: fullCardHeight,
-                                child: _buildVerticalCreditCard(
-                                  context,
-                                  _cards[i],
+                          opacity: (_hoveredOrTouchedBackIndex == i)
+                              ? 0.0
+                              : (i > _currentIndex ? 0.7 : 0.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_hoveredOrTouchedBackIndex == i) {
+                                setState(() => _hoveredOrTouchedBackIndex = null);
+                              }
+                            },
+                            behavior: HitTestBehavior.deferToChild,
+                            child: SizedBox(
+                              width: cardWidth,
+                              height: visibleHeight,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: OverflowBox(
+                                  alignment: Alignment.topCenter,
+                                  maxHeight: fullCardHeight,
+                                  child: _buildVerticalCreditCard(
+                                    context,
+                                    _cards[i],
+                                  ),
                                 ),
                               ),
                             ),
@@ -833,9 +878,72 @@ class _CardWalletSectionState extends State<CardWalletSection> {
                   ),
                 ),
               ),
+              // 뒤 카드 터치/호버 영역: 닿으면 다음 카드(회사명·끝4자리)가 더 보이게
+              if (_cards.isNotEmpty && _currentIndex + 1 < _cards.length)
+                Positioned(
+                  left: 24 + cardWidth - 56,
+                  top: 0,
+                  child: SizedBox(
+                    width: 56,
+                    height: availableHeight,
+                    child: MouseRegion(
+                      onEnter: (_) => setState(
+                          () => _hoveredOrTouchedBackIndex = _currentIndex + 1),
+                      onExit: (_) =>
+                          setState(() => _hoveredOrTouchedBackIndex = null),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (_) => setState(
+                            () => _hoveredOrTouchedBackIndex = _currentIndex + 1),
+                        onTapUp: (_) =>
+                            setState(() => _hoveredOrTouchedBackIndex = null),
+                        onTapCancel: () =>
+                            setState(() => _hoveredOrTouchedBackIndex = null),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                ),
+              // 뒤 카드 펼침 시: 해당 카드를 앞으로 가져와 회사명·끝4자리 활짝 보이게
+              if (_hoveredOrTouchedBackIndex != null &&
+                  _hoveredOrTouchedBackIndex! < _cards.length)
+                Positioned(
+                  left: 24,
+                  top: 0,
+                  child: MouseRegion(
+                    onExit: (_) =>
+                        setState(() => _hoveredOrTouchedBackIndex = null),
+                    child: GestureDetector(
+                      onTapUp: (_) =>
+                          setState(() => _hoveredOrTouchedBackIndex = null),
+                      onTapCancel: () =>
+                          setState(() => _hoveredOrTouchedBackIndex = null),
+                      behavior: HitTestBehavior.opaque,
+                      child: SizedBox(
+                        width: cardWidth,
+                        height: visibleHeight,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: OverflowBox(
+                            alignment: Alignment.topCenter,
+                            maxHeight: fullCardHeight,
+                            child: _buildVerticalCreditCard(
+                              context,
+                              _cards[_hoveredOrTouchedBackIndex!],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+            ),
+            SizedBox(height: bottomReserve),
+          ],
         );
       },
     );
@@ -1001,7 +1109,6 @@ class _CardWalletSectionState extends State<CardWalletSection> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth - 80; // 스택 뷰와 동일
-    // 세로 카드 비율 조정
     final cardHeight = cardWidth * 1.4;
 
     return Container(

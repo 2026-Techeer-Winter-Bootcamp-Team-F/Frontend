@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start iPhone 17 Pro Max Simulator",
+      "type": "shell",
+      "command": "xcrun simctl boot 'iPhone 17 Pro Max' 2>/dev/null || true; open -a Simulator 2>/dev/null || true; sleep 4",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    }
+  ]
+}

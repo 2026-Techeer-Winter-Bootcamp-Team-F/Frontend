@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'password_page.dart';
+import 'package:my_app/screens/login/login_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!_canProceed) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PasswordPage(phone: _phoneController.text.trim(), name: ''),
+        builder: (_) => LoginPasswordPage(phone: _phoneController.text.trim()),
       ),
     );
   }

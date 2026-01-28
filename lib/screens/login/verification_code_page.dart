@@ -5,7 +5,17 @@ import 'package:my_app/screens/login/password_page.dart';
 class VerificationCodePage extends StatefulWidget {
   final String phone;
   final String name;
-  const VerificationCodePage({super.key, required this.phone, required this.name});
+  final String email;
+  final String ssnFront;
+  final String ssnBackFirst;
+  const VerificationCodePage({
+    super.key,
+    required this.phone,
+    required this.name,
+    required this.email,
+    required this.ssnFront,
+    required this.ssnBackFirst,
+  });
 
   @override
   State<VerificationCodePage> createState() => _VerificationCodePageState();
@@ -54,7 +64,15 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
   void _onConfirm() {
     if (!_codeComplete) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => PasswordPage(phone: widget.phone, name: widget.name)),
+      MaterialPageRoute(
+        builder: (_) => PasswordPage(
+          phone: widget.phone,
+          name: widget.name,
+          email: widget.email,
+          ssnFront: widget.ssnFront,
+          ssnBackFirst: widget.ssnBackFirst,
+        ),
+      ),
     );
   }
 
