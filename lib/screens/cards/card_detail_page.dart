@@ -55,13 +55,17 @@ class _CardDetailPageState extends State<CardDetailPage> {
     super.initState();
     _displayMonths = _buildDisplayMonths();
     _selectedMonthIndex = 12; // 26년 1월 (0-based: 12)
-    
+
     // 캐시된 값들 초기화
     _cardTitle = 'LG전자 The 구독케어 ${widget.card.bankName}';
     _maskedNumber = _maskedNumberFormatted();
-    _bankDisplay = _bankDisplayName(widget.card.bankName);
-    
+    _bankDisplay = _getBankDisplayName(widget.card.bankName);
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToMonth(12));
+  }
+
+  String _getBankDisplayName(String bankName) {
+    return bankName;
   }
 
   @override
@@ -122,32 +126,27 @@ class _CardDetailPageState extends State<CardDetailPage> {
               // 카드-제목 간격: 10 → 4 (촘촘하게)
               const SizedBox(height: 4),
 
-            // 카드 아래 텍스트
-            Text(
-              _cardTitle(),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: onSurface,
+              // 카드 아래 텍스트
+              Text(
+                _cardTitle,
+                style: _cardTitleStyle,
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _maskedNumberFormatted(),
-              style: TextStyle(fontSize: 13, color: onSurfaceVariant),
-            ),
-            SizedBox(height: (20 * 0.3).roundToDouble()),
+              const SizedBox(height: 6),
+              Text(
+                _maskedNumber,
+                style: _cardNumberStyle,
+              ),
+              SizedBox(height: (20 * 0.3).roundToDouble()),
 
-            // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
-            Expanded(
-              child: _buildCircularBenefitProgress(
+              // 2. 원형 혜택 진행률 (33,000원 / 23,000원, 내가 받은 혜택 파란색, 69.7% 달성 pill)
+              _buildCircularBenefitProgress(
                 context,
-                onSurface,
-                onSurfaceVariant,
+                _onSurface,
+                _onSurfaceVariant,
               ),
-            ),
-            const SizedBox(height: 18),
-          ],
+              const SizedBox(height: 18),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavBar(context),
@@ -180,7 +179,7 @@ class _CardDetailPageState extends State<CardDetailPage> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: onSurfaceVariant,
+                            color: _onSurfaceVariant,
                           ),
                         )
                       : const SizedBox(height: 12),
@@ -190,7 +189,7 @@ class _CardDetailPageState extends State<CardDetailPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: selected ? onSurface : onSurfaceVariant,
+                      color: selected ? _onSurface : _onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -310,10 +309,6 @@ class _CardDetailPageState extends State<CardDetailPage> {
         ),
       ),
     );
-  }
-
-  String _cardTitle() {
-    return 'LG전자 The 구독케어 ${widget.card.bankName}';
   }
 
   String _maskedNumberFormatted() {
@@ -785,7 +780,7 @@ class _CircleProgressPainter extends CustomPainter {
     final trackGradientPaint = Paint()
       ..shader = trackGradient.createShader(rect)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = baseStroke
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
     // 전체 원 그리기 (트랙)
@@ -798,7 +793,7 @@ class _CircleProgressPainter extends CustomPainter {
       final outerGlowPaint = Paint()
         ..color = progressColor.withOpacity(0.15) // 조절 포인트: opacity (번짐 줄임)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = baseStroke * 1.6 // 조절 포인트: 두께 배수 (번짐 줄임)
+        ..strokeWidth = strokeWidth * 1.6 // 조절 포인트: 두께 배수 (번짐 줄임)
         ..strokeCap = StrokeCap.round
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7); // 조절 포인트: sigma 값 (번짐 줄임: 10→7)
 
@@ -809,7 +804,7 @@ class _CircleProgressPainter extends CustomPainter {
       final middleGlowPaint = Paint()
         ..color = progressColor.withOpacity(0.3) // 조절 포인트: opacity (번짐 줄임)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = baseStroke * 1.25 // 조절 포인트: 두께 배수 (번짐 줄임)
+        ..strokeWidth = strokeWidth * 1.25 // 조절 포인트: 두께 배수 (번짐 줄임)
         ..strokeCap = StrokeCap.round
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4); // 조절 포인트: sigma 값 (번짐 줄임: 6→4)
 
@@ -831,7 +826,7 @@ class _CircleProgressPainter extends CustomPainter {
       final mainProgressPaint = Paint()
         ..shader = progressGradient.createShader(rect)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = baseStroke
+        ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round;
 
       canvas.drawArc(rect, startAngle, sweep, false, mainProgressPaint);
