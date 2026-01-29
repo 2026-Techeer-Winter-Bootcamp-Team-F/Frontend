@@ -46,89 +46,6 @@ Future<String> callGeminiAPI(String prompt) async {
   }
 }
 
-// Top category bars shown above My Wallet
-class TopCategorySection extends StatelessWidget {
-  const TopCategorySection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Widget categoryRow(String label, String percent, Color color) {
-      final pct = double.tryParse(percent.replaceAll('%', '')) ?? 0.0;
-      return Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontSize: 13,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                percent,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 8,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: (pct.clamp(0, 100)) / 100,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '가장 많이 쓰는 소비 카테고리',
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 12),
-          categoryRow('마트/편의점', '64%', const Color(0xFF3A7BFF)),
-          const SizedBox(height: 8),
-          categoryRow('카페', '32%', const Color(0xFFB97AFF)),
-        ],
-      ),
-    );
-  }
-}
-
 class BenefitScorePage extends StatefulWidget {
   final String name;
   const BenefitScorePage({super.key, this.name = ''});
@@ -146,6 +63,7 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
       data: _isDarkMode
           ? ThemeData(
               brightness: Brightness.dark,
+              fontFamily: 'Pretendard',
               scaffoldBackgroundColor: Colors.black,
               colorScheme: const ColorScheme.dark(
                 primary: Color(0xFF2563EB),
@@ -157,6 +75,7 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
             )
           : ThemeData(
               brightness: Brightness.light,
+              fontFamily: 'Pretendard',
               scaffoldBackgroundColor: const Color(0xFFF8F9FA),
               colorScheme: const ColorScheme.light(
                 primary: Color(0xFF2563EB),
@@ -187,8 +106,8 @@ class _BenefitScorePageState extends State<BenefitScorePage> {
               const SizedBox(height: 20),
               const SpendingReportSection(),
               const SizedBox(height: 16),
-              const TopCategorySection(),
-              const SizedBox(height: 36),
+              const BenefitSummarySection(),
+              const SizedBox(height: 52),
               // 카드 섹션
               const Expanded(
                 child: Padding(
@@ -273,7 +192,7 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
                               painter: WavePainter(
                                 _controller.value,
                                 primaryColor,
-                                0.65, // 65%
+                                0.63, // 63%
                               ),
                               size: const Size(150, 150),
                             );
@@ -300,19 +219,19 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '이번 달 혜택 점수',
+                          "TARGET",
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.9),
-                            letterSpacing: 0.2,
+                            color: Colors.white.withOpacity(0.8),
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         const Text(
-                          '65점',
+                          "63%",
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 36,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
                             height: 1.0,
@@ -331,89 +250,17 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
                 ),
               ),
               const SizedBox(width: 32),
-              // Right-side compact benefit summary (matches attachment)
+              // Categories
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      '받을 수 있는 총 혜택',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.grey[300] : Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '₩120,000',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF3A7BFF),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '받은 혜택',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '₩75,600',
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.grey[500] : Colors.grey[400],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '놓친 혜택',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '₩44,400',
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+                    _buildCategoryRow("Food", "45%", Colors.blue[600]!, isDark),
+                    const SizedBox(height: 16),
+                    _buildCategoryRow(
+                      "Shopping",
+                      "30%",
+                      Colors.indigo[400]!,
+                      isDark,
                     ),
                   ],
                 ),
@@ -425,7 +272,66 @@ class _SpendingReportSectionState extends State<SpendingReportSection>
     );
   }
 
-  // category row helper removed (not used anymore)
+  Widget _buildCategoryRow(
+    String label,
+    String percent,
+    Color color,
+    bool isDark,
+  ) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              percent,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 6,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[900] : Colors.grey[200],
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: double.parse(percent.replaceAll('%', '')) / 100,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // Wave Painter for the water effect
@@ -716,7 +622,7 @@ class _CardWalletSectionState extends State<CardWalletSection> {
         ),
         const SizedBox(height: 12),
         // 카드 영역
-        Expanded(child: _buildContent()),
+        _buildContent(),
         // 하단 인디케이터
         if (_cards.isNotEmpty && !_isLoading) ...[
           const SizedBox(height: 12),
